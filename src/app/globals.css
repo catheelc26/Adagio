@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy-950: #060a1a;
+  --color-navy-900: #0a0e2e;
+  --color-navy-800: #101640;
+  --color-navy-700: #182056;
+  --color-navy-600: #232d6e;
+  --color-cream: #f7f4ec;
+  --color-cream-dim: #e9e3d3;
+  --color-gold: #c9a66b;
+  --color-gold-light: #e4cd9c;
+  --color-teal: #4fb3ac;
+  --color-teal-dark: #2f7d78;
+}
+
+@theme inline {
+  --color-navy-950: var(--color-navy-950);
+  --color-navy-900: var(--color-navy-900);
+  --color-navy-800: var(--color-navy-800);
+  --color-navy-700: var(--color-navy-700);
+  --color-navy-600: var(--color-navy-600);
+  --color-cream: var(--color-cream);
+  --color-cream-dim: var(--color-cream-dim);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-teal: var(--color-teal);
+  --color-teal-dark: var(--color-teal-dark);
+
+  --font-serif: var(--font-playfair);
+  --font-accent: var(--font-cormorant);
+  --font-sans: var(--font-inter);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-navy-950);
+  color: var(--color-cream);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-navy-950);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s ease-out both;
+}
