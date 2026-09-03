@@ -39,7 +39,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/iniciar-sesion");
 
   const status = user.subscription?.status ?? "INACTIVE";
-  const hasAccess = status === "ACTIVE" || status === "TRIALING";
+  const hasAccess = status === "ACTIVE" || status === "TRIALING" || user.role === "ADMIN";
   const favoriteIds = new Set(favorites.map((f) => f.videoId));
 
   return (

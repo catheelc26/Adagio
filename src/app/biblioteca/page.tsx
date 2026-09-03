@@ -29,7 +29,7 @@ export default async function BibliotecaPage({
       orderBy: [{ level: { pillar: { order: "asc" } } }, { level: { order: "asc" } }, { order: "asc" }],
       include: { level: { include: { pillar: true } } },
     }),
-    hasActiveAccess(userId),
+    hasActiveAccess(userId, session?.user?.role),
     userId
       ? prisma.favorite.findMany({ where: { userId }, select: { videoId: true } })
       : Promise.resolve([]),

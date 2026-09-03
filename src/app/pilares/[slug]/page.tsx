@@ -28,10 +28,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: pillar.name, description: pillar.description };
 }
 
-export async function generateStaticParams() {
-  const pillars = await prisma.pillar.findMany({ select: { slug: true } });
-  return pillars.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function PillarDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
@@ -41,7 +38,7 @@ export default async function PillarDetailPage({ params }: { params: Params }) {
   const session = await auth();
   const userId = session?.user?.id;
   const [access, favorites] = await Promise.all([
-    hasActiveAccess(userId),
+    hasActiveAccess(userId, session?.user?.role),
     userId
       ? prisma.favorite.findMany({ where: { userId }, select: { videoId: true } })
       : Promise.resolve([]),

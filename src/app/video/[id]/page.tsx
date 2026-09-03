@@ -33,7 +33,7 @@ export default async function VideoPage({ params }: { params: Params }) {
 
   const session = await auth();
   const userId = session?.user?.id;
-  const access = await hasActiveAccess(userId);
+  const access = await hasActiveAccess(userId, session?.user?.role);
   const canWatch = video.isPreview || access;
 
   const [favorite, related] = await Promise.all([
