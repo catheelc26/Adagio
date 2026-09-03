@@ -135,13 +135,15 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-6 py-24 lg:px-10">
         <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
           <Card className="relative aspect-4/5 overflow-hidden p-0 order-2 lg:order-1">
-            <div className="absolute inset-0 bg-linear-to-b from-navy-800 via-navy-900 to-navy-950" />
-            <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_30%_10%,rgba(79,179,172,0.35),transparent_55%)]" />
-            <div className="relative flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
-              <span className="flex h-24 w-24 items-center justify-center rounded-full border border-gold/40 font-serif text-3xl text-gold">
-                A
-              </span>
-              <p className="mt-4 text-xs uppercase tracking-[0.3em] text-cream-dim/60">
+            <Image
+              src="/brand/catherine-portrait.jpg"
+              alt="Catherine, fundadora de The Adagio Method"
+              fill
+              sizes="(min-width: 1024px) 40vw, 90vw"
+              className="object-cover object-top"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-navy-950 via-navy-950/70 to-transparent px-8 pb-6 pt-16">
+              <p className="text-xs uppercase tracking-[0.3em] text-cream-dim/80">
                 Fundadora de The Adagio Method
               </p>
             </div>
