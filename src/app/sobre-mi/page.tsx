@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Card, ButtonLink, Eyebrow } from "@/components/ui";
 
 export const metadata: Metadata = {
@@ -72,6 +73,30 @@ export default function SobreMiPage() {
             &ldquo;Bailar es una forma de escuchar al cuerpo, no solo de
             exigirle.&rdquo;
           </span>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-6 py-20 lg:px-10">
+        <div className="flex flex-col items-center gap-6 rounded-2xl bg-cream px-8 py-10 text-center sm:flex-row sm:gap-10 sm:text-left">
+          <Image
+            src="/brand/ballet-clasico-cif-adagio-logo.png"
+            alt="Ballet Clásico CIF Adagio"
+            width={1563}
+            height={1563}
+            className="h-24 w-24 shrink-0 sm:h-28 sm:w-28"
+          />
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-navy-700/60">
+              El origen
+            </p>
+            <p className="mt-2 text-navy-950/80 leading-relaxed">
+              Antes de The Adagio Method, todo esto se enseñaba en las salas
+              de <strong>Ballet Clásico CIF Adagio</strong>, mi escuela de
+              danza. Este ecosistema online nace de esa misma experiencia,
+              ahora al alcance de cualquier bailarina o bailarín, viva donde
+              viva.
+            </p>
+          </div>
         </div>
       </section>
     </div>

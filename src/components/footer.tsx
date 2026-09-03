@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Logo } from "@/components/logo";
 import { NAV_LINKS } from "@/components/nav-links";
 
@@ -8,7 +9,16 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-10">
         <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr]">
           <div>
-            <Logo className="text-[15px]" />
+            <div className="flex items-center gap-3">
+              <Image
+                src="/brand/adagio-emblem.png"
+                alt=""
+                width={1602}
+                height={1602}
+                className="h-9 w-9 opacity-90"
+              />
+              <Logo className="text-[15px]" />
+            </div>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-cream-dim/70">
               Un ecosistema de enseñanza que une danza, ciencia y consciencia
               corporal para formar bailarines más fuertes, conscientes y

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PillarIcon } from "@/components/pillar-icon";
 import { ButtonLink, Eyebrow, SectionHeading, Card } from "@/components/ui";
@@ -12,7 +13,15 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-b border-cream/10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(201,166,107,0.14),transparent_60%)]" />
         <div className="relative mx-auto flex max-w-5xl flex-col items-center px-6 py-28 text-center lg:py-36">
-          <span className="animate-fade-up rounded-full border border-gold/30 px-4 py-1 text-xs uppercase tracking-[0.3em] text-gold">
+          <Image
+            src="/brand/adagio-emblem.png"
+            alt=""
+            width={1602}
+            height={1602}
+            priority
+            className="animate-fade-up h-16 w-16 sm:h-20 sm:w-20"
+          />
+          <span className="animate-fade-up mt-6 rounded-full border border-gold/30 px-4 py-1 text-xs uppercase tracking-[0.3em] text-gold">
             Escuela online · 8 pilares · 1 ecosistema
           </span>
           <h1 className="animate-fade-up mt-8 font-serif text-4xl leading-tight text-cream text-balance sm:text-5xl lg:text-6xl">
@@ -65,13 +74,15 @@ export default async function HomePage() {
           </div>
 
           <Card className="relative aspect-4/5 overflow-hidden p-0">
-            <div className="absolute inset-0 bg-linear-to-br from-navy-700 via-navy-800 to-navy-950" />
-            <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_70%_20%,rgba(201,166,107,0.35),transparent_55%)]" />
-            <div className="relative flex h-full flex-col items-center justify-center gap-4 p-10 text-center">
-              <span className="font-accent italic text-5xl text-gold/80">
-                Adagio
-              </span>
-              <p className="max-w-[22ch] text-sm text-cream-dim/70">
+            <Image
+              src="/brand/adagio-method-logo-dark-bg.jpg"
+              alt="The Adagio Method"
+              fill
+              sizes="(min-width: 1024px) 40vw, 90vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-navy-950 via-navy-950/80 to-transparent p-10 pt-24">
+              <p className="mx-auto max-w-[26ch] text-center text-sm text-cream-dim/85">
                 Del italiano, &ldquo;despacio&rdquo;: el tiempo musical del
                 movimiento sostenido, controlado y consciente. Así se
                 construye este método.
