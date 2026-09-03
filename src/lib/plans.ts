@@ -13,7 +13,7 @@ export const PLANS: Plan[] = [
   {
     id: "monthly",
     name: "Mensual",
-    price: "29€",
+    price: "$30",
     cadence: "/ mes",
     description: "Ideal para probar el ecosistema completo sin compromiso.",
     priceId: process.env.STRIPE_PRICE_ID_MONTHLY,
@@ -27,14 +27,14 @@ export const PLANS: Plan[] = [
   {
     id: "annual",
     name: "Anual",
-    price: "279€",
+    price: "$250",
     cadence: "/ año",
-    description: "Dos meses gratis para quienes se comprometen con su proceso.",
+    description: "Ahorra frente al plan mensual para quienes se comprometen con su proceso.",
     priceId: process.env.STRIPE_PRICE_ID_ANNUAL,
     featured: true,
     features: [
       "Todo lo del plan mensual",
-      "Equivale a 23,25€/mes",
+      "Equivale a $20.83/mes",
       "Acceso prioritario a nuevas clases",
       "Cancela cuando quieras",
     ],
