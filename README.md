@@ -5,7 +5,7 @@ enseñanza que une **Ballet, Fisioterapia, Pilates/PBT, Yoga, Meditación,
 Anatomía, Biomecánica y Conciencia Corporal** en una sola biblioteca de
 video-clases organizadas por pilar y nivel.
 
-Construido con Next.js 16 (App Router), Prisma + SQLite, Auth.js v5
+Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
 (credenciales) y Stripe para las suscripciones.
 
 ## Funcionalidades
@@ -29,13 +29,15 @@ Construido con Next.js 16 (App Router), Prisma + SQLite, Auth.js v5
 
 - Node.js 20.9+ (recomendado 22, usado en desarrollo)
 - npm
+- Una base de datos PostgreSQL (local, o gratis en [Neon](https://neon.tech),
+  [Vercel Postgres](https://vercel.com/storage/postgres) o [Supabase](https://supabase.com))
 
 ## Puesta en marcha
 
 ```bash
 npm install
 cp .env.example .env      # y rellena los valores (ver abajo)
-npm run db:migrate        # crea prisma/dev.db y aplica el esquema
+npm run db:push           # crea las tablas en tu base de datos Postgres
 npm run db:seed           # siembra los 8 pilares, niveles, clases y una cuenta demo
 npm run dev
 ```
@@ -51,9 +53,10 @@ Ver `.env.example`. Resumen:
 
 | Variable | Para qué sirve |
 | --- | --- |
-| `DATABASE_URL` | Conexión de Prisma. SQLite en desarrollo (`file:./dev.db`); usa Postgres/MySQL en producción. |
+| `DATABASE_URL` | Cadena de conexión de PostgreSQL. Usa la misma en local y en Vercel, o una distinta por entorno. |
 | `AUTH_SECRET` | Clave de Auth.js. Genera una con `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_APP_URL` | URL pública del sitio (usada en los redirects de Stripe). |
+| `SEED_SECRET` | Contraseña para sembrar los datos de ejemplo visitando `/api/admin/seed?secret=...` una vez desplegado. Genera una con `openssl rand -hex 16`. |
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test mientras desarrollas). |
 | `STRIPE_WEBHOOK_SECRET` | Firma del webhook de Stripe (`stripe listen` en local). |
 | `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` | IDs de los precios (Price) creados en el Dashboard de Stripe para los dos planes definidos en `src/lib/plans.ts`. |
@@ -61,6 +64,32 @@ Ver `.env.example`. Resumen:
 Sin las claves de Stripe, todo el sitio funciona igual (incluida la vista
 previa de la biblioteca); solo el botón de "Elegir plan" queda deshabilitado
 hasta configurarlas.
+
+## Desplegar en Vercel
+
+1. En [vercel.com](https://vercel.com), **Add New → Project** e importa el
+   repositorio de GitHub (rama `claude/adagio-method-platform-w22qum`, que
+   es la rama por defecto del repo).
+2. En el propio flujo de importación, o después en **Storage → Create
+   Database → Postgres**, crea una base de datos. Vercel la conecta al
+   proyecto y añade sus propias variables (`POSTGRES_URL`, etc.).
+3. En **Settings → Environment Variables** del proyecto, añade (para los tres
+   entornos: Production, Preview y Development):
+   - `DATABASE_URL` → pega el valor de `POSTGRES_URL` (o `POSTGRES_PRISMA_URL`
+     si tu proveedor lo ofrece) que Vercel generó en el paso anterior.
+   - `AUTH_SECRET` → genera uno nuevo con `openssl rand -base64 32`.
+   - `AUTH_TRUST_HOST` → `true`.
+   - `NEXT_PUBLIC_APP_URL` → la URL que Vercel te asigna (algo como
+     `https://adagio-xxxx.vercel.app`); puedes ponerla después del primer
+     despliegue y volver a desplegar.
+   - `SEED_SECRET` → genera uno con `openssl rand -hex 16`.
+   - Las variables de Stripe, si ya las tienes (opcional para ver el diseño).
+4. Despliega. El propio build ejecuta `prisma generate && prisma db push`,
+   así que las tablas se crean solas en tu Postgres de Vercel.
+5. Visita una sola vez `https://tu-dominio.vercel.app/api/admin/seed?secret=TU_SEED_SECRET`
+   para sembrar los 8 pilares, sus clases y la cuenta de demostración. Verás
+   un JSON de confirmación.
+6. Abre la URL de tu proyecto — ya está lista para navegar.
 
 ## Configurar Stripe (modo test)
 
@@ -102,7 +131,9 @@ propio contenido:
 
 ```
 prisma/schema.prisma       Modelo de datos (usuarios, suscripciones, pilares, niveles, vídeos, favoritos)
-prisma/seed.ts             Datos de ejemplo: 8 pilares × 3 niveles × clases
+prisma/seed.ts             Script de siembra para CLI (usa src/lib/seed-data.ts)
+src/lib/seed-data.ts        Datos de ejemplo (8 pilares × 3 niveles × clases) + lógica de siembra reutilizable
+src/app/api/admin/seed      Ruta para sembrar la base de datos ya desplegada, protegida por SEED_SECRET
 src/auth.ts                Configuración de Auth.js (credenciales + JWT)
 src/lib/                   Prisma client, validaciones, acciones de servidor, Stripe
 src/components/            Navbar, footer, tarjetas de vídeo, formularios, iconos de pilares
@@ -114,18 +145,21 @@ src/app/                   Rutas de la app (marketing, pilares, biblioteca, perf
 | Script | Descripción |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo (Turbopack) |
-| `npm run build` | Build de producción |
+| `npm run build` | `prisma generate && prisma db push && next build` — build de producción |
 | `npm run start` | Sirve el build de producción |
 | `npm run lint` | ESLint |
-| `npm run db:migrate` | Aplica migraciones de Prisma |
-| `npm run db:seed` | Vuelve a sembrar los datos de ejemplo |
+| `npm run db:push` | Sincroniza el esquema de Prisma con la base de datos |
+| `npm run db:seed` | Vuelve a sembrar los datos de ejemplo (contra `DATABASE_URL`) |
 | `npm run db:studio` | Abre Prisma Studio para editar los datos |
 
 ## Notas de despliegue
 
-- Cambia `DATABASE_URL` a una base de datos gestionada (Postgres recomendado)
-  y actualiza `provider` en `prisma/schema.prisma` antes de desplegar.
+- El `build` ejecuta `prisma db push` automáticamente, así que cualquier
+  cambio de esquema se aplica en cada despliegue. Es la forma más simple de
+  iterar mientras el proyecto es nuevo; cuando haya usuarios y datos reales,
+  merece la pena pasar a migraciones (`prisma migrate deploy`) para
+  cambios de esquema más controlados.
 - Configura todas las variables de `.env.example` en tu plataforma de
-  hosting (Vercel, etc.), incluido `AUTH_TRUST_HOST=true` si el despliegue
-  queda detrás de un proxy.
+  hosting, incluido `AUTH_TRUST_HOST=true` si el despliegue queda detrás de
+  un proxy.
 - Recuerda apuntar el webhook de Stripe a la URL de producción.
