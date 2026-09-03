@@ -33,7 +33,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "La técnica como lenguaje",
     icon: "ballet",
     description:
-      "Formación clásica que trabaja alineación, línea y musicalidad como la base sobre la que se construye todo lo demás.",
+      "El ballet clásico es la columna vertebral del método: un lenguaje técnico preciso que enseña alineación, línea, colocación y musicalidad. Aquí no se trabaja la técnica de forma aislada, sino conectada con el resto de pilares —cada ejercicio de barra se explica también desde la anatomía y la biomecánica que lo sostienen. El objetivo no es solo repetir pasos, sino entender por qué el cuerpo se coloca así, para poder corregir, adaptar y progresar con criterio propio, desde los fundamentos hasta el repertorio más exigente.",
     levels: [
       {
         slug: "fundamentos",
@@ -89,7 +89,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "Prevención antes que cura",
     icon: "physio",
     description:
-      "Herramientas de fisioterapia aplicadas a la danza para prevenir lesiones, identificar compensaciones y optimizar la recuperación.",
+      "La fisioterapia aplicada a la danza es el pilar que enseña a cuidar el instrumento con el que se trabaja: el propio cuerpo. Aquí aprenderás a identificar compensaciones y desequilibrios antes de que se conviertan en lesión, a fortalecer las zonas más exigidas por la técnica —pie, tobillo, cadera, rodilla, columna— y a entender las señales de sobrecarga que el cuerpo envía mucho antes del dolor. También se aborda la recuperación activa: qué hacer cuando llega la lesión, cómo volver a la técnica completa sin miedo y con progresiones seguras, y cómo sostener una carrera larga sin que el cuerpo pase factura.",
     levels: [
       {
         slug: "fundamentos",
@@ -130,7 +130,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "Fuerza con propósito",
     icon: "pilates",
     description:
-      "Pilates y Progressing Ballet Technique (PBT) para construir la fuerza funcional específica que sostiene la técnica de danza.",
+      "Pilates y Progressing Ballet Technique (PBT) construyen la fuerza funcional específica que la danza exige: no fuerza genérica de gimnasio, sino fuerza aplicada a extensiones, saltos, giros y equilibrios. El powerhouse, la activación consciente del pie y la estabilidad de cadera se trabajan aquí con un método pensado desde y para el vocabulario de ballet. Es el pilar que sostiene todo lo demás: sin esta base de fuerza, la técnica se vuelve frágil, se compensa con tensión donde no toca y las lesiones aparecen antes. Con ella, la técnica gana amplitud, control y resistencia a lo largo de toda una clase o función.",
     levels: [
       {
         slug: "fundamentos",
@@ -167,7 +167,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "Movilidad y respiración",
     icon: "yoga",
     description:
-      "Prácticas de yoga que amplían el rango de movimiento, liberan tensión acumulada y enseñan a habitar el cuerpo con calma.",
+      "El yoga aporta al método lo que la técnica de danza rara vez enseña: cómo respirar de verdad, cómo liberar la tensión que se acumula clase tras clase, y cómo ampliar el rango de movimiento sin forzarlo. Aquí se trabaja la movilidad activa de cadera, columna y hombros —zonas clave para el ballet— junto a secuencias dinámicas que devuelven fuerza y fluidez al mismo tiempo. También hay espacio para la práctica restaurativa: la que se necesita después de una función larga o una semana de mucho entrenamiento, cuando el cuerpo pide recuperarse sin dejar de moverse.",
     levels: [
       {
         slug: "fundamentos",
@@ -204,7 +204,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "La mente también se entrena",
     icon: "meditation",
     description:
-      "Meditación y trabajo mental para gestionar la presión escénica, sostener la disciplina y cuidar la salud emocional del bailarín.",
+      "Bailar exige tanto a la mente como al cuerpo, y este pilar entrena precisamente eso: la disciplina interior. Aquí se trabaja la atención plena para entrar presente a cada clase, la gestión del nervio escénico antes de una función o una audición, y el diálogo interno —esa voz autocrítica que tantas veces se instala frente al espejo. También se practican técnicas de visualización, usadas por bailarines de alto nivel para preparar el repertorio antes incluso de pisar el escenario, y herramientas para sostener la motivación y la salud mental a lo largo de una carrera larga, no solo de una temporada.",
     levels: [
       {
         slug: "fundamentos",
@@ -241,7 +241,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "Conocer para cuidar",
     icon: "anatomy",
     description:
-      "Comprensión profunda del cuerpo humano —huesos, músculos y articulaciones— al servicio de un movimiento más inteligente y seguro.",
+      "Entender el cuerpo desde dentro cambia por completo la forma de entrenar. Este pilar recorre el esqueleto, las articulaciones y las cadenas musculares que hacen posible cada paso de danza —qué músculos sostienen realmente un arabesque, de dónde viene la rotación externa de cadera que llamamos turnout, cómo se mueve la columna sin comprometer su salud. No es anatomía de manual: es anatomía aplicada, pensada para que puedas leer tu propio cuerpo en el espejo, detectar por qué un movimiento no sale, y corregirlo con conocimiento en lugar de a base de repetición ciega.",
     levels: [
       {
         slug: "fundamentos",
@@ -278,7 +278,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "La física del movimiento",
     icon: "biomechanics",
     description:
-      "Principios de biomecánica para entender por qué el cuerpo se mueve como se mueve —y encontrar formas más eficientes de moverlo.",
+      "Si la anatomía explica de qué está hecho el cuerpo, la biomecánica explica cómo se mueve: ejes, planos, palancas, transferencia de peso y momento angular aplicados directamente al vocabulario de ballet. Aquí se analiza, por ejemplo, por qué un grand jeté sigue una trayectoria parabólica y cómo aterrizarlo con seguridad, o qué hace que una pirouette se sostenga en lugar de perder el eje a medio giro. Es el pilar más técnico del método, pero también el más práctico: entender la física del movimiento propio es lo que permite mejorar un salto o un giro sin depender solo de repetirlo miles de veces.",
     levels: [
       {
         slug: "fundamentos",
@@ -315,7 +315,7 @@ export const PILLARS: PillarSeed[] = [
     tagline: "Sentir antes de ejecutar",
     icon: "awareness",
     description:
-      "Trabajo somático y propioceptivo para escuchar el cuerpo, afinar la percepción interna y tomar decisiones de movimiento más inteligentes.",
+      "La conciencia corporal es el pilar que cierra el círculo: después de tanta técnica, tanta anatomía y tanta exigencia, este espacio enseña a escuchar el cuerpo en lugar de solo dirigirlo. A través del trabajo somático y la propiocepción —sentir el movimiento sin depender del espejo— se afina la percepción interna hasta el punto de poder anticipar una compensación antes de que ocurra. También es el pilar donde la técnica más avanzada se vuelve arte: cuando la ejecución deja de ser solo precisa y empieza a nacer de una escucha real, tanto en clase como en la creación coreográfica.",
     levels: [
       {
         slug: "fundamentos",

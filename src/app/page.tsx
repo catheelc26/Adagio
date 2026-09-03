@@ -73,15 +73,17 @@ export default async function HomePage() {
             </ButtonLink>
           </div>
 
-          <Card className="relative aspect-4/5 overflow-hidden p-0">
-            <Image
-              src="/brand/adagio-method-logo-dark-bg.jpg"
-              alt="The Adagio Method"
-              fill
-              sizes="(min-width: 1024px) 40vw, 90vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-navy-950 via-navy-950/80 to-transparent p-10 pt-24">
+          <Card className="flex flex-col overflow-hidden p-0">
+            <div className="relative aspect-square bg-navy-950">
+              <Image
+                src="/brand/adagio-method-logo-dark-bg.jpg"
+                alt="The Adagio Method"
+                fill
+                sizes="(min-width: 1024px) 40vw, 90vw"
+                className="object-contain"
+              />
+            </div>
+            <div className="border-t border-cream/10 bg-navy-900/60 p-8">
               <p className="mx-auto max-w-[26ch] text-center text-sm text-cream-dim/85">
                 Del italiano, &ldquo;despacio&rdquo;: el tiempo musical del
                 movimiento sostenido, controlado y consciente. Así se
