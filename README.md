@@ -24,6 +24,10 @@ Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
   webhook para mantener el estado de la suscripción sincronizado. Las clases
   no marcadas como vista previa quedan bloqueadas hasta tener una
   suscripción activa.
+- **Panel de administración** (`/admin`, solo para usuarios con rol `ADMIN`):
+  crear, editar y eliminar clases desde un formulario, sin tocar código ni
+  base de datos. Ver "Gestionar las clases (panel de administración)" más
+  abajo.
 
 ## Requisitos
 
@@ -56,7 +60,7 @@ Ver `.env.example`. Resumen:
 | `DATABASE_URL` | Cadena de conexión de PostgreSQL. Usa la misma en local y en Vercel, o una distinta por entorno. |
 | `AUTH_SECRET` | Clave de Auth.js. Genera una con `openssl rand -base64 32`. |
 | `NEXT_PUBLIC_APP_URL` | URL pública del sitio (usada en los redirects de Stripe). |
-| `SEED_SECRET` | Contraseña para sembrar los datos de ejemplo visitando `/api/admin/seed?secret=...` una vez desplegado. Genera una con `openssl rand -hex 16`. |
+| `SEED_SECRET` | Contraseña compartida para `/api/admin/seed` (sembrar datos de ejemplo) y `/api/admin/promote` (convertir una cuenta en administradora). Genera una con `openssl rand -hex 16`. |
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test mientras desarrollas). |
 | `STRIPE_WEBHOOK_SECRET` | Firma del webhook de Stripe (`stripe listen` en local). |
 | `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` | IDs de los precios (Price) creados en el Dashboard de Stripe para los dos planes definidos en `src/lib/plans.ts`. |
@@ -113,19 +117,44 @@ hasta configurarlas.
 
 ## Contenido de vídeo
 
-El seed (`prisma/seed.ts`) crea clases de ejemplo usando vídeos públicos de
-muestra (bucket público de Google) solo para poder probar el reproductor y
-el flujo de favoritos/suscripción de principio a fin. Para publicar tu
-propio contenido:
+El seed (`prisma/seed.ts` / `src/lib/seed-data.ts`) crea clases de ejemplo
+usando vídeos públicos de muestra (bucket público de Google) solo para poder
+probar el reproductor y el flujo de favoritos/suscripción de principio a
+fin — no son contenido real.
 
-- Sube tus vídeos a un proveedor (Vimeo, Mux, Bunny Stream, S3 + CDN, etc.)
-  y guarda la URL reproducible en el campo `videoUrl` de cada `Video`
-  (puedes editarlo directamente en Prisma Studio: `npm run db:studio`).
-- Marca con `isPreview: true` las clases que quieras dejar abiertas como
-  muestra gratuita; el resto se bloquean para usuarios sin suscripción
-  activa.
-- Las miniaturas se generan automáticamente a partir del icono del pilar
-  (`src/components/video-thumbnail.tsx`); no dependen de imágenes externas.
+Para publicar vídeo real:
+
+1. Súbelo a un proveedor que lo aloje (YouTube como no listado, Vimeo, Bunny
+   Stream, Mux, etc.) — esta web solo guarda el enlace, no el archivo.
+2. Copia ese enlace y añade la clase desde `/admin` (ver siguiente sección).
+
+Las miniaturas se generan automáticamente a partir del icono del pilar
+(`src/components/video-thumbnail.tsx`); no dependen de imágenes externas ni
+de nada que tengas que subir.
+
+## Gestionar las clases (panel de administración)
+
+`/admin` es un panel privado, solo visible y accesible para usuarios con rol
+`ADMIN`, para crear, editar y eliminar clases sin tocar código:
+
+- **Crear cuenta de administradora**: regístrate normalmente en `/registro`
+  con tu email real, y luego visita una sola vez (sustituyendo tu email y tu
+  `SEED_SECRET`):
+
+  ```
+  https://tu-dominio.vercel.app/api/admin/promote?secret=TU_SEED_SECRET&email=tu@email.com
+  ```
+
+  A partir de ahí verás un enlace "Admin" en el menú de navegación.
+- **Añadir una clase**: `/admin` → "+ Nueva clase" → eliges pilar y nivel,
+  pegas el enlace del vídeo, título, descripción, duración y si es vista
+  previa gratuita.
+- **Editar o eliminar**: desde `/admin`, cada clase tiene sus propios enlaces
+  de "Editar" / "Eliminar".
+
+El rol de administradora es un campo (`role`) en la tabla `User`; también se
+puede cambiar directamente con Prisma Studio (`npm run db:studio`) si lo
+prefieres.
 
 ## Estructura del proyecto
 
@@ -134,6 +163,8 @@ prisma/schema.prisma       Modelo de datos (usuarios, suscripciones, pilares, ni
 prisma/seed.ts             Script de siembra para CLI (usa src/lib/seed-data.ts)
 src/lib/seed-data.ts        Datos de ejemplo (8 pilares × 3 niveles × clases) + lógica de siembra reutilizable
 src/app/api/admin/seed      Ruta para sembrar la base de datos ya desplegada, protegida por SEED_SECRET
+src/app/api/admin/promote   Ruta para convertir una cuenta en administradora, protegida por SEED_SECRET
+src/app/admin/              Panel de administración (crear/editar/eliminar clases), solo rol ADMIN
 src/auth.ts                Configuración de Auth.js (credenciales + JWT)
 src/lib/                   Prisma client, validaciones, acciones de servidor, Stripe
 src/components/            Navbar, footer, tarjetas de vídeo, formularios, iconos de pilares

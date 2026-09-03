@@ -28,6 +28,14 @@ export async function Navbar() {
         <div className="hidden items-center gap-5 md:flex">
           {session?.user ? (
             <>
+              {session.user.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="text-sm text-cream-dim/90 hover:text-gold"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/perfil"
                 className="flex items-center gap-2 text-sm text-cream hover:text-gold"
@@ -57,7 +65,11 @@ export async function Navbar() {
           )}
         </div>
 
-        <MobileMenu isAuthed={Boolean(session?.user)} profileHref="/perfil" />
+        <MobileMenu
+          isAuthed={Boolean(session?.user)}
+          isAdmin={session?.user?.role === "ADMIN"}
+          profileHref="/perfil"
+        />
       </div>
     </header>
   );

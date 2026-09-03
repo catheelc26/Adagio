@@ -6,9 +6,11 @@ import { NAV_LINKS } from "@/components/nav-links";
 
 export function MobileMenu({
   isAuthed,
+  isAdmin,
   profileHref,
 }: {
   isAuthed: boolean;
+  isAdmin?: boolean;
   profileHref: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -45,13 +47,24 @@ export function MobileMenu({
           ))}
           <div className="mt-4 h-px w-16 bg-gold/40" />
           {isAuthed ? (
-            <Link
-              href={profileHref}
-              onClick={() => setOpen(false)}
-              className="font-serif text-2xl text-gold"
-            >
-              Mi perfil
-            </Link>
+            <>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className="font-serif text-2xl text-cream hover:text-gold"
+                >
+                  Admin
+                </Link>
+              )}
+              <Link
+                href={profileHref}
+                onClick={() => setOpen(false)}
+                className="font-serif text-2xl text-gold"
+              >
+                Mi perfil
+              </Link>
+            </>
           ) : (
             <>
               <Link
