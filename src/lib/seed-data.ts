@@ -1,16 +1,9 @@
 import bcrypt from "bcryptjs";
 import type { PrismaClient } from "@prisma/client";
 
-const SAMPLE_CLIPS = [
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-];
+// Bundled locally (public/sample) so playback never depends on a third-party
+// host — swap for real class recordings via the admin panel whenever ready.
+const SAMPLE_CLIP = "/sample/clase-de-muestra.mp4";
 
 type PillarSeed = {
   slug: string;
@@ -349,13 +342,6 @@ export const PILLARS: PillarSeed[] = [
 ];
 
 export async function seedDatabase(prisma: PrismaClient) {
-  let clipCursor = 0;
-  const nextClip = () => {
-    const clip = SAMPLE_CLIPS[clipCursor % SAMPLE_CLIPS.length];
-    clipCursor += 1;
-    return clip;
-  };
-
   for (const [pillarIndex, pillar] of PILLARS.entries()) {
     const createdPillar = await prisma.pillar.upsert({
       where: { slug: pillar.slug },
@@ -403,6 +389,7 @@ export async function seedDatabase(prisma: PrismaClient) {
             data: {
               description: video.description,
               isPreview: Boolean(video.isPreview),
+              videoUrl: SAMPLE_CLIP,
             },
           });
           continue;
@@ -413,7 +400,7 @@ export async function seedDatabase(prisma: PrismaClient) {
             levelId: createdLevel.id,
             title: video.title,
             description: video.description,
-            videoUrl: nextClip(),
+            videoUrl: SAMPLE_CLIP,
             thumbnailUrl: `gradient:${pillar.icon}`,
             duration: 8 * 60 + videoIndex * 90,
             order: videoIndex,

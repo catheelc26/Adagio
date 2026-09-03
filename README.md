@@ -118,9 +118,11 @@ hasta configurarlas.
 ## Contenido de vídeo
 
 El seed (`prisma/seed.ts` / `src/lib/seed-data.ts`) crea clases de ejemplo
-usando vídeos públicos de muestra (bucket público de Google) solo para poder
-probar el reproductor y el flujo de favoritos/suscripción de principio a
-fin — no son contenido real.
+que apuntan todas a un único vídeo de muestra generado localmente
+(`public/sample/clase-de-muestra.mp4`, unos 90 KB) solo para poder probar el
+reproductor y el flujo de favoritos/suscripción de principio a fin — no es
+contenido real. Al servirse desde el propio dominio (no un host externo),
+funciona igual en cualquier red sin depender de terceros.
 
 Para publicar vídeo real:
 
