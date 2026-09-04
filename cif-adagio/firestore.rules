@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Reglas de Firestore para CIF Adagio.
+//
+// La app no usa Firebase Auth (por diseño: PIN de administración, PIN de
+// maestros y código de acceso por estudiante, igual que en la versión
+// original) así que estas reglas son intencionalmente abiertas — cualquiera
+// con la URL del sitio puede leer/escribir. Es el mismo modelo de seguridad
+// que ya tenía la app (sin cuentas reales), solo que ahora vive en una base
+// de datos real en vez de en el storage privado de un artefacto de Claude.
+//
+// Si más adelante quieres reforzar esto, la opción más simple es activar
+// Firebase App Check (bloquea tráfico que no venga de tu propio dominio) sin
+// tener que rediseñar el login. Migrar a Firebase Auth de verdad es el
+// siguiente nivel, pero no es necesario para que la escuela use la app hoy.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

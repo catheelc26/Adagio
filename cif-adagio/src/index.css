@@ -1,0 +1,251 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   CIF Adagio — design tokens
+   A warm, light, editorial palette (cream + ink + teal + bronze) built
+   from the school's real wordmark. Deliberately unrelated to any other
+   Adagio-branded product: different fonts, different mood (bright /
+   editorial vs. dark / moody), different accent hue.
+--------------------------------------------------------------------- */
+:root {
+  --color-cream: #faf6ec;
+  --color-cream-dim: #f1ead9;
+  --color-paper: #fffdf8;
+  --color-line: #e7ddc4;
+  --color-line-soft: #efe7d3;
+
+  --color-ink: #201c1c;
+  --color-ink-soft: #4a453f;
+  --color-muted: #7a7266;
+  --color-faint: #a89f8f;
+
+  --color-teal: #2f7f92;
+  --color-teal-dark: #235f6e;
+  --color-teal-light: #6fb4c3;
+
+  --color-bronze: #b8935b;
+  --color-bronze-dark: #93743f;
+  --color-bronze-light: #d9bd8c;
+
+  --color-blush: #e17da0;
+  --color-plum: #7c5cbf;
+  --color-cobalt: #3454d1;
+  --color-navy: #1b2a57;
+  --color-wine: #7b1e3a;
+
+  --shadow-soft: 0 1px 2px rgba(32, 28, 28, 0.04), 0 8px 24px -8px rgba(32, 28, 28, 0.10);
+  --shadow-lift: 0 2px 6px rgba(32, 28, 28, 0.06), 0 20px 40px -16px rgba(32, 28, 28, 0.18);
+}
+
+@theme inline {
+  --color-cream: var(--color-cream);
+  --color-cream-dim: var(--color-cream-dim);
+  --color-paper: var(--color-paper);
+  --color-line: var(--color-line);
+  --color-line-soft: var(--color-line-soft);
+
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-muted: var(--color-muted);
+  --color-faint: var(--color-faint);
+
+  --color-teal: var(--color-teal);
+  --color-teal-dark: var(--color-teal-dark);
+  --color-teal-light: var(--color-teal-light);
+
+  --color-bronze: var(--color-bronze);
+  --color-bronze-dark: var(--color-bronze-dark);
+  --color-bronze-light: var(--color-bronze-light);
+
+  --color-blush: var(--color-blush);
+  --color-plum: var(--color-plum);
+  --color-cobalt: var(--color-cobalt);
+  --color-navy: var(--color-navy);
+  --color-wine: var(--color-wine);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+
+  --font-display: "Fraunces", "Iowan Old Style", serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-bronze-light);
+  color: var(--color-ink);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ---------------------------------------------------------------------
+   Surfaces
+--------------------------------------------------------------------- */
+.card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-line-soft);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.glass-card {
+  background: rgba(255, 253, 248, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-lift);
+}
+
+.field-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-paper);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(47, 127, 146, 0.15);
+}
+.field-input::placeholder {
+  color: var(--color-faint);
+}
+
+.barre-line {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--color-bronze) 50%, transparent);
+}
+
+/* ---------------------------------------------------------------------
+   Buttons
+--------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, opacity 0.12s ease;
+  white-space: nowrap;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--color-ink);
+  color: var(--color-cream);
+  box-shadow: var(--shadow-soft);
+}
+.btn-primary:hover:not(:disabled) {
+  background: #34302d;
+}
+.btn-teal {
+  background: var(--color-teal);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+.btn-teal:hover:not(:disabled) {
+  background: var(--color-teal-dark);
+}
+.btn-bronze {
+  background: var(--color-bronze);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+.btn-bronze:hover:not(:disabled) {
+  background: var(--color-bronze-dark);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-cream-dim);
+}
+.btn-danger {
+  background: var(--color-wine);
+  color: white;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #611530;
+}
+
+/* ---------------------------------------------------------------------
+   Motion
+--------------------------------------------------------------------- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-up-1 { animation-delay: 0.08s; }
+.animate-fade-up-2 { animation-delay: 0.16s; }
+.animate-fade-up-3 { animation-delay: 0.24s; }
+.animate-fade-up-4 { animation-delay: 0.32s; }
+
+@keyframes draw-path {
+  to { stroke-dashoffset: 0; }
+}
+.draw-path {
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  animation: draw-path 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+.animate-shimmer { animation: shimmer 2.6s ease-in-out infinite; }
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float { animation: float-y 4.5s ease-in-out infinite; }
+
+/* ---------------------------------------------------------------------
+   Print (receipts)
+--------------------------------------------------------------------- */
+@media print {
+  body * { visibility: hidden; }
+  .printable-receipt, .printable-receipt * { visibility: visible; }
+  .printable-receipt { position: absolute; inset: 0; }
+  .no-print { display: none !important; }
+}
+
+/* Small text scale, matches the density used across the app's data tables/lists */
+.t10 { font-size: 0.625rem; line-height: 0.875rem; }
+.t11 { font-size: 0.6875rem; line-height: 0.9375rem; }
+.t12 { font-size: 0.75rem; line-height: 1.1rem; }
+.t13 { font-size: 0.8125rem; line-height: 1.2rem; }
