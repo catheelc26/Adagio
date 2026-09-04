@@ -1,7 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import { ShieldAlert, UserCog, GraduationCap, ArrowRight } from "lucide-react";
+import { ShieldAlert, UserCog, GraduationCap, ArrowRight, Sparkles } from "lucide-react";
 import { useAppData } from "../lib/AppDataContext";
+
+const STUDIO_STRIP = [
+  { src: "/photos-web/portrait-barre.jpg", alt: "Estudiante en la barra" },
+  { src: "/photos-web/shoe-detail.jpg", alt: "Detalle de zapatillas" },
+  { src: "/photos-web/solo-reach.jpg", alt: "Estudiante en clase" },
+];
 
 const EASE_OUT = [0.23, 1, 0.32, 1];
 
@@ -69,16 +75,31 @@ export function Landing() {
           ))}
         </motion.div>
 
-        <motion.div variants={item}>
-          <Link to="/prueba" className="card flex items-center justify-between px-4 py-3.5">
+        <motion.div variants={item} className="relative mb-4 h-32 overflow-hidden rounded-[24px] shadow-lift">
+          <img src="/photos-web/turn-motion.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: "50% 25%" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(100deg, rgba(43,50,56,0.82) 30%, rgba(43,50,56,0.25) 100%)" }} />
+          <Link to="/prueba" className="relative flex h-full items-center justify-between px-5">
             <span>
-              <span className="t11 block text-faint">Clase de prueba</span>
-              <span className="font-display text-sm font-semibold text-ink">Agendar una visita</span>
+              <span className="t11 flex items-center gap-1.5 font-medium text-white/80">
+                <Sparkles size={12} /> Primera clase gratis
+              </span>
+              <span className="font-display mt-1 block text-lg font-semibold leading-tight text-white">Agenda tu clase de prueba</span>
             </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cream">
-              <ArrowRight size={15} className="text-teal" />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: "var(--color-bronze-light)" }}>
+              <ArrowRight size={18} className="text-bronze-dark" />
             </span>
           </Link>
+        </motion.div>
+
+        <motion.div variants={item}>
+          <p className="t11 mb-2 px-1 font-semibold uppercase tracking-wide text-faint">Vida en el estudio</p>
+          <div className="grid grid-cols-3 gap-2.5">
+            {STUDIO_STRIP.map((photo) => (
+              <div key={photo.src} className="aspect-square overflow-hidden rounded-2xl shadow-soft">
+                <img src={photo.src} alt={photo.alt} className="h-full w-full object-cover" />
+              </div>
+            ))}
+          </div>
         </motion.div>
       </motion.div>
     </div>

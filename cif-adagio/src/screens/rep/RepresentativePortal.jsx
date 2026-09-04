@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
-  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon,
+  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { groupById, requiresInscription, WEEKDAYS } from "../../lib/constants";
+import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
 import { owesMonthlyFee } from "../../lib/business";
 import { currentMonthKey, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
@@ -39,16 +39,16 @@ export function RepresentativePortal({ student, onLogout }) {
   );
 
   let statusLabel = "Al día";
-  let statusColor = "#2F7F92";
+  let statusColor = "var(--color-teal)";
   if (student.pendingReview) {
     statusLabel = "En revisión";
-    statusColor = "#B8935B";
+    statusColor = "var(--color-bronze)";
   } else if (student.scholarshipType === "full") {
     statusLabel = "Becado";
-    statusColor = "#7C5CBF";
+    statusColor = "var(--color-plum)";
   } else if (owesMonthlyFee(student) && !paidThisMonth) {
     statusLabel = "Pendiente";
-    statusColor = "#7B1E3A";
+    statusColor = "var(--color-wine)";
   }
 
   const currentYear = String(new Date().getFullYear());
@@ -63,6 +63,11 @@ export function RepresentativePortal({ student, onLogout }) {
   const groupSlots = schedule.items.filter((s) => s.group === student.group);
   const groupEvents = events.items.filter((e) => !e.group || e.group === student.group);
   const groupTasks = tasks.items.filter((t) => t.group === student.group).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const currentMonthPrefix = todayStr.slice(0, 7);
+  const upcomingEvents = groupEvents.filter((e) => e.date >= todayStr).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const monthHighlight = upcomingEvents.find((e) => e.type === "evento" && e.date.startsWith(currentMonthPrefix));
 
   const studentPayments = payments.items.filter((p) => p.studentId === student.id).sort((a, b) => (a.date < b.date ? 1 : -1));
   const transactionIds = Array.from(new Set(studentPayments.map((p) => p.transactionId || p.id)));
@@ -97,9 +102,18 @@ export function RepresentativePortal({ student, onLogout }) {
       <main className="mx-auto w-full max-w-lg flex-1 space-y-5 px-5 py-6 pb-24">
         {tab === "inicio" && (
           <>
+            <div className="relative h-32 overflow-hidden rounded-[24px] shadow-soft">
+              <img src="/photos-web/portrait-barre.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: "50% 20%" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(190deg, rgba(43,50,56,0.05) 40%, rgba(43,50,56,0.6) 100%)" }} />
+              <div className="absolute inset-x-4 bottom-3.5">
+                <p className="font-display text-lg font-semibold leading-tight text-white">Hola, {welcomeName}</p>
+                <p className="t12 text-white/85">{g?.name}</p>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <Chip color={statusColor}>{statusLabel}</Chip>
-              {!owesMonthlyFee(student) && student.scholarshipType !== "full" && <Chip color="#0EA5A5">Por clase</Chip>}
+              {!owesMonthlyFee(student) && student.scholarshipType !== "full" && <Chip color="var(--color-blue)">Por clase</Chip>}
             </div>
 
             {student.pendingReview && (
@@ -187,20 +201,50 @@ export function RepresentativePortal({ student, onLogout }) {
 
         {tab === "calendario" && (
           <>
-            <MonthCalendar weeklySlots={groupSlots} events={groupEvents} groupColor={g?.color || "#2F7F92"} />
+            <MonthCalendar weeklySlots={groupSlots} events={groupEvents} groupColor={g?.color || "var(--color-teal)"} />
+
+            {monthHighlight && (
+              <div className="relative overflow-hidden rounded-2xl p-4 shadow-soft" style={{ background: "linear-gradient(135deg, var(--color-bronze), var(--color-bronze-dark))" }}>
+                <p className="t11 flex items-center gap-1.5 font-semibold uppercase tracking-wide text-white/80">
+                  <Sparkles size={12} /> Enfoque del mes
+                </p>
+                <p className="font-display mt-1 text-base font-semibold text-white">{monthHighlight.title}</p>
+                <p className="t12 mt-0.5 text-white/85">
+                  {new Date(monthHighlight.date + "T00:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long" })} · {monthHighlight.startTime}
+                </p>
+              </div>
+            )}
+
+            {groupTasks.length > 0 && (
+              <div className="card p-4">
+                <p className="t11 mb-2.5 font-semibold uppercase tracking-wide text-bronze-dark">Tareas de {g?.name}</p>
+                <div className="space-y-2">
+                  {groupTasks.slice(0, 5).map((t) => (
+                    <div key={t.id} className="flex items-start gap-2">
+                      <SquareCheck size={15} className="mt-0.5 shrink-0 text-teal" />
+                      <p className="t13 text-ink">
+                        {t.description}
+                        {t.dueDate && <span className="t11 text-muted"> — para el {t.dueDate}</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <p className="t11 mb-2 font-semibold uppercase tracking-wide text-bronze-dark">Próximos eventos</p>
               <div className="space-y-2">
-                {groupEvents
-                  .filter((e) => e.date >= new Date().toISOString().slice(0, 10))
-                  .sort((a, b) => (a.date < b.date ? -1 : 1))
-                  .slice(0, 6)
-                  .map((e) => (
-                    <div key={e.id} className="card p-3">
+                {upcomingEvents.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-4 text-center text-muted">Sin eventos próximos.</p>}
+                {upcomingEvents.slice(0, 6).map((e) => (
+                  <div key={e.id} className="card flex items-center gap-3 p-3">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: eventTypeInfo(e.type).color }} />
+                    <div className="flex-1">
                       <p className="t13 text-ink">{e.title}</p>
                       <p className="t11 text-muted">{e.date} · {e.startTime}–{e.endTime}</p>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             </div>
           </>

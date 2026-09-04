@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { MONTH_NAMES, DAY_HEADERS, EVENT_TYPES, eventTypeInfo } from "../lib/constants";
+import { MONTH_NAMES, DAY_HEADERS, eventTypeInfo } from "../lib/constants";
 
-// Cuadrícula mensual: marca los días de clase del grupo (recurrentes cada semana)
-// y las actividades puntuales (ensayos, eventos) que caen ese día.
+// Calendario estilo "planner": cada celda muestra el número del día, una
+// franja de color si es día de clase, y el nombre del primer evento del día
+// (con un "+N" si hay más), en vez de solo puntitos.
 export function MonthCalendar({ weeklySlots, events, groupColor }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -30,7 +31,6 @@ export function MonthCalendar({ weeklySlots, events, groupColor }) {
   const cells = [];
   for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonthCount; d++) cells.push(d);
-  while (cells.length % 7 !== 0) cells.push(null);
 
   const isClassDay = (jsWeekday) => {
     const ourIdx = jsWeekday === 0 ? 6 : jsWeekday - 1;
@@ -39,59 +39,63 @@ export function MonthCalendar({ weeklySlots, events, groupColor }) {
   const eventsOnDay = (dateStr) => events.filter((e) => e.date === dateStr);
 
   return (
-    <div className="card p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <button onClick={goPrev} className="rounded-lg p-1.5 text-muted hover:bg-cream-dim hover:text-ink">
-          <ChevronLeft size={18} />
+    <div className="card p-3.5">
+      <div className="mb-3 flex items-center justify-between px-1">
+        <button onClick={goPrev} className="rounded-full p-1.5 text-muted hover:bg-cream-dim hover:text-ink">
+          <ChevronLeft size={17} />
         </button>
-        <h3 className="font-display text-lg capitalize text-ink">
+        <h3 className="font-display text-base font-semibold capitalize text-ink">
           {MONTH_NAMES[monthIndex]} {year}
         </h3>
-        <button onClick={goNext} className="rounded-lg p-1.5 text-muted hover:bg-cream-dim hover:text-ink">
-          <ChevronRight size={18} />
+        <button onClick={goNext} className="rounded-full p-1.5 text-muted hover:bg-cream-dim hover:text-ink">
+          <ChevronRight size={17} />
         </button>
       </div>
       <div className="mb-1 grid grid-cols-7 gap-1">
         {DAY_HEADERS.map((d) => (
-          <div key={d} className="t10 text-center font-medium uppercase text-faint">
+          <div key={d} className="t10 text-center font-semibold uppercase text-faint">
             {d}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
         {cells.map((d, i) => {
-          if (d === null) return <div key={i} />;
+          if (d === null) return <div key={i} className="aspect-square" />;
           const dateStr = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
           const jsWeekday = new Date(year, monthIndex, d).getDay();
           const classDay = isClassDay(jsWeekday);
           const dayEvents = eventsOnDay(dateStr);
           const isToday = dateStr === todayStr;
+          const firstEvent = dayEvents[0];
           return (
             <div
               key={i}
-              className="flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg"
-              style={isToday ? { backgroundColor: "rgba(184,147,91,0.16)", border: "1px solid #B8935B" } : classDay ? { backgroundColor: "var(--color-cream-dim)" } : {}}
+              className="flex aspect-square flex-col overflow-hidden rounded-lg p-1"
+              style={isToday ? { backgroundColor: "var(--color-bronze-light)", boxShadow: "inset 0 0 0 1.5px var(--color-bronze)" } : classDay ? { backgroundColor: "var(--color-cream-dim)" } : {}}
             >
-              <span className={`t11 ${isToday ? "font-semibold text-teal" : "text-ink"}`}>{d}</span>
-              <div className="flex h-1.5 gap-0.5">
-                {classDay && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: groupColor }} />}
-                {dayEvents.slice(0, 2).map((e, idx) => (
-                  <span key={idx} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: eventTypeInfo(e.type).color }} />
-                ))}
-              </div>
+              <span className={`t10 leading-none ${isToday ? "font-bold text-bronze-dark" : "font-medium text-ink"}`}>{d}</span>
+              {classDay && !firstEvent && (
+                <span className="mt-auto h-1 w-full rounded-full" style={{ backgroundColor: groupColor }} />
+              )}
+              {firstEvent && (
+                <span className="mt-auto space-y-0.5">
+                  <span
+                    className="block truncate rounded px-0.5 text-[7px] font-semibold leading-tight text-white"
+                    style={{ backgroundColor: eventTypeInfo(firstEvent.type).color }}
+                  >
+                    {firstEvent.title}
+                  </span>
+                  {dayEvents.length > 1 && <span className="block text-[7px] font-medium leading-none text-faint">+{dayEvents.length - 1}</span>}
+                </span>
+              )}
             </div>
           );
         })}
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-line-soft pt-3">
+      <div className="mt-3.5 flex flex-wrap items-center gap-3 border-t border-line-soft pt-3">
         <span className="t11 flex items-center gap-1.5 text-muted">
           <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: groupColor }} /> Día de clase
         </span>
-        {EVENT_TYPES.map((t) => (
-          <span key={t.id} className="t11 flex items-center gap-1.5 text-muted">
-            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} /> {t.label}
-          </span>
-        ))}
       </div>
     </div>
   );

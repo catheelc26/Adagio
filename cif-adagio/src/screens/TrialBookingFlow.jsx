@@ -190,8 +190,13 @@ export function TrialBookingFlow() {
       )}
 
       {step === 3 && (
-        <motion.div key="step-3" {...stepMotion} className="flex flex-col items-center py-10 text-center">
-          <CheckCircle2 size={52} className="mb-4 text-teal" />
+        <motion.div key="step-3" {...stepMotion} className="flex flex-col items-center pt-4 text-center">
+          <div className="relative mb-5 h-40 w-full overflow-hidden rounded-[24px] shadow-lift">
+            <img src="/photos-web/group-smile.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(43,50,56,0.35)" }}>
+              <CheckCircle2 size={44} className="text-white" />
+            </div>
+          </div>
           <h1 className="font-display mb-2 text-2xl text-ink">¡Todo listo!</h1>
           <p className="t13 mb-2 max-w-xs text-muted">
             Tu clase de prueba de <strong className="text-ink">{group.name}</strong> quedó reservada para el{" "}

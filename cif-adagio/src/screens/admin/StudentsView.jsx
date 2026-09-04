@@ -89,7 +89,7 @@ export function StudentsView() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="t13 truncate font-medium text-ink">{s.fullName}</p>
-                    {s.pendingReview && <Chip color="#B8935B">Por revisar</Chip>}
+                    {s.pendingReview && <Chip color="var(--color-bronze)">Por revisar</Chip>}
                     {!isActive(s) && <Chip color="#9CA5BC">Inactivo</Chip>}
                   </div>
                   <p className="t11 text-muted">{g?.name}{s.level ? ` · ${s.level}` : ""} · {usd(effectivePrice(s))}</p>

@@ -5,7 +5,7 @@ import { waLink } from "../../lib/format";
 import { ActionMenu, Chip, MenuItem } from "../../components/ui";
 
 const STATUS_LABEL = { pendiente: "Pendiente", completado: "Completado", cancelado: "Cancelado" };
-const STATUS_COLOR = { pendiente: "#B8935B", completado: "#2F7F92", cancelado: "#9CA5BC" };
+const STATUS_COLOR = { pendiente: "var(--color-bronze)", completado: "var(--color-teal)", cancelado: "var(--color-faint)" };
 
 export function TrialBookingsView() {
   const { trialBookings, toast } = useAppData();
