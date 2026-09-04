@@ -1,5 +1,5 @@
 // Comprime una imagen (foto de estudiante o comprobante de pago) antes de subirla,
-// para que ocupe poco espacio en Firestore/Storage.
+// para que ocupe poco espacio en la base de datos.
 export function compressImage(file, maxWidth = 900, quality = 0.6) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

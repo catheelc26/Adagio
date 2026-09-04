@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef } from "react";
 import { useCollection, useSettings, COLLECTIONS } from "./db";
-import { firebaseReady } from "./firebase";
+import { supabaseReady } from "./supabase";
 
 const AppDataContext = createContext(null);
 
@@ -27,7 +27,7 @@ export function AppDataProvider({ children }) {
   }, []);
 
   const value = {
-    firebaseReady,
+    backendReady: supabaseReady,
     students,
     payments,
     reminders,

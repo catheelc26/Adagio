@@ -1,20 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import { supabase } from "./supabase";
 import { uid } from "./format";
 
 // ---------------------------------------------------------------------
-// Colecciones Firestore — reemplazan las 11 listas + 1 objeto que la
-// versión original guardaba bajo claves window.storage:"ballet:*".
+// "Colecciones" — todas viven como filas en una única tabla Postgres
+// llamada `documents` (columns: collection, id, data jsonb), para que el
+// resto de la app pueda seguir pensando en documentos/colecciones como en
+// la versión original, aunque por debajo sea una base de datos relacional.
+// Ver supabase/schema.sql para la definición de la tabla y sus políticas.
 // ---------------------------------------------------------------------
 export const COLLECTIONS = {
   students: "students",
@@ -32,7 +25,7 @@ export const COLLECTIONS = {
   paymentProofs: "paymentProofs",
 };
 
-const SETTINGS_DOC = ["config", "settings"];
+const SETTINGS_ID = "settings";
 const DEFAULT_SETTINGS = {
   officialRate: 0,
   rateDate: null,
@@ -49,32 +42,43 @@ export function useCollection(name) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!db) {
+  const reload = useCallback(async () => {
+    if (!supabase) {
       setLoading(false);
       return;
     }
-    setLoading(true);
-    const unsub = onSnapshot(
-      collection(db, name),
-      (snap) => {
-        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        setError(err.message || "No se pudo cargar la información.");
-        setLoading(false);
-      }
-    );
-    return unsub;
+    const { data, error: err } = await supabase.from("documents").select("id, data").eq("collection", name);
+    if (err) {
+      setError(err.message || "No se pudo cargar la información.");
+    } else {
+      setItems((data || []).map((row) => ({ ...row.data, id: row.id })));
+      setError(null);
+    }
+    setLoading(false);
   }, [name]);
+
+  useEffect(() => {
+    setLoading(true);
+    reload();
+    if (!supabase) return;
+    const channel = supabase
+      .channel(`documents:${name}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents", filter: `collection=eq.${name}` }, () => {
+        reload();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [name, reload]);
 
   const add = useCallback(
     async (data) => {
-      if (!db) throw new Error("Firebase no está configurado.");
+      if (!supabase) throw new Error("La base de datos no está configurada.");
       const id = data.id || uid();
-      await setDoc(doc(db, name, id), { ...data, id, createdAt: data.createdAt || new Date().toISOString() });
+      const payload = { ...data, id, createdAt: data.createdAt || new Date().toISOString() };
+      const { error: err } = await supabase.from("documents").upsert({ collection: name, id, data: payload });
+      if (err) throw err;
       return id;
     },
     [name]
@@ -82,16 +86,20 @@ export function useCollection(name) {
 
   const update = useCallback(
     async (id, patch) => {
-      if (!db) throw new Error("Firebase no está configurado.");
-      await updateDoc(doc(db, name, id), patch);
+      if (!supabase) throw new Error("La base de datos no está configurada.");
+      const current = items.find((it) => it.id === id) || {};
+      const merged = { ...current, ...patch, id };
+      const { error: err } = await supabase.from("documents").update({ data: merged }).eq("collection", name).eq("id", id);
+      if (err) throw err;
     },
-    [name]
+    [name, items]
   );
 
   const remove = useCallback(
     async (id) => {
-      if (!db) throw new Error("Firebase no está configurado.");
-      await deleteDoc(doc(db, name, id));
+      if (!supabase) throw new Error("La base de datos no está configurada.");
+      const { error: err } = await supabase.from("documents").delete().eq("collection", name).eq("id", id);
+      if (err) throw err;
     },
     [name]
   );
@@ -104,39 +112,58 @@ export function useSettings() {
   const [value, setValue] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!db) {
+  const reload = useCallback(async () => {
+    if (!supabase) {
       setLoading(false);
       return;
     }
-    const unsub = onSnapshot(doc(db, ...SETTINGS_DOC), (snap) => {
-      setValue(snap.exists() ? { ...DEFAULT_SETTINGS, ...snap.data() } : DEFAULT_SETTINGS);
-      setLoading(false);
-    });
-    return unsub;
+    const { data } = await supabase.from("documents").select("data").eq("collection", "config").eq("id", SETTINGS_ID).maybeSingle();
+    setValue(data ? { ...DEFAULT_SETTINGS, ...data.data } : DEFAULT_SETTINGS);
+    setLoading(false);
   }, []);
 
-  const save = useCallback(async (patch) => {
-    if (!db) throw new Error("Firebase no está configurado.");
-    await setDoc(doc(db, ...SETTINGS_DOC), patch, { merge: true });
-  }, []);
+  useEffect(() => {
+    reload();
+    if (!supabase) return;
+    const channel = supabase
+      .channel("documents:config:settings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents", filter: `collection=eq.config` }, () => {
+        reload();
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [reload]);
+
+  const save = useCallback(
+    async (patch) => {
+      if (!supabase) throw new Error("La base de datos no está configurada.");
+      const merged = { ...value, ...patch };
+      const { error: err } = await supabase.from("documents").upsert({ collection: "config", id: SETTINGS_ID, data: merged });
+      if (err) throw err;
+    },
+    [value]
+  );
 
   return { value, loading, save };
 }
 
-/** Foto de un estudiante o comprobante de pago, guardados como data URI en Firestore. */
+/** Foto de un estudiante o comprobante de pago, guardados como data URI. */
 export async function getImage(collectionName, id) {
-  if (!db || !id) return null;
-  const snap = await getDoc(doc(db, collectionName, id));
-  return snap.exists() ? snap.data().dataUrl : null;
+  if (!supabase || !id) return null;
+  const { data } = await supabase.from("documents").select("data").eq("collection", collectionName).eq("id", id).maybeSingle();
+  return data?.data?.dataUrl ?? null;
 }
 
 export async function setImage(collectionName, id, dataUrl) {
-  if (!db) throw new Error("Firebase no está configurado.");
-  await setDoc(doc(db, collectionName, id), { dataUrl, updatedAt: serverTimestamp() });
+  if (!supabase) throw new Error("La base de datos no está configurada.");
+  const { error: err } = await supabase.from("documents").upsert({ collection: collectionName, id, data: { dataUrl } });
+  if (err) throw err;
 }
 
 export async function deleteImage(collectionName, id) {
-  if (!db) throw new Error("Firebase no está configurado.");
-  await deleteDoc(doc(db, collectionName, id));
+  if (!supabase) throw new Error("La base de datos no está configurada.");
+  const { error: err } = await supabase.from("documents").delete().eq("collection", collectionName).eq("id", id);
+  if (err) throw err;
 }

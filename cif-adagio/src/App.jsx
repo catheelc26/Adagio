@@ -7,13 +7,13 @@ import { AdminRoute } from "./screens/AdminRoute";
 import { RepresentativeRoute } from "./screens/RepresentativeRoute";
 import { TeacherRoute } from "./screens/TeacherRoute";
 
-function FirebaseSetupBanner() {
-  const { firebaseReady } = useAppData();
-  if (firebaseReady) return null;
+function BackendSetupBanner() {
+  const { backendReady } = useAppData();
+  if (backendReady) return null;
   return (
     <div className="t12 no-print bg-wine px-4 py-2 text-center text-white">
-      Firebase no está configurado todavía — copia <code className="font-semibold">.env.example</code> a{" "}
-      <code className="font-semibold">.env</code> con las credenciales del proyecto para que los datos se guarden.
+      La base de datos no está configurada todavía — copia <code className="font-semibold">.env.example</code> a{" "}
+      <code className="font-semibold">.env</code> con las credenciales del proyecto de Supabase para que los datos se guarden.
     </div>
   );
 }
@@ -22,7 +22,7 @@ function AppShell() {
   const { toastMsg, clearToast } = useAppData();
   return (
     <div className="min-h-screen bg-cream text-ink">
-      <FirebaseSetupBanner />
+      <BackendSetupBanner />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/prueba" element={<TrialBookingFlow />} />
