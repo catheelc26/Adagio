@@ -21,8 +21,8 @@ export function ProofViewer({ transactionId, onClose }) {
   }, [transactionId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="modal-panel w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
         <div className="mb-2 flex justify-end">
           <button onClick={onClose} className="rounded-full bg-ink p-1.5 text-white">
             <X size={16} />

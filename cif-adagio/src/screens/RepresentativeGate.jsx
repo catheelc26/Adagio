@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, UserCog } from "lucide-react";
 import { useAppData } from "../lib/AppDataContext";
 import { useRepSession } from "../lib/session";
@@ -7,12 +8,15 @@ import { PremiumPattern } from "../components/Decor";
 import { inputCls } from "../components/ui";
 import { StudentForm } from "../components/StudentForm";
 
+const EASE_OUT = [0.23, 1, 0.32, 1];
+
 export function RepresentativeGate() {
   const { students } = useAppData();
   const [, setSession] = useRepSession();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [showSignup, setShowSignup] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const handleLogin = () => {
     const trimmed = code.trim().toUpperCase();
@@ -24,37 +28,44 @@ export function RepresentativeGate() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-ink px-6" style={{ background: "linear-gradient(160deg,#2a2130,#201c1c)" }}>
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6">
+      <div className="absolute inset-0 -z-10 bg-cream" />
+      <div className="absolute inset-0 -z-10" style={{ background: "radial-gradient(ellipse at top, rgba(190,155,63,0.16), transparent 55%)" }} />
       <PremiumPattern />
-      <Link to="/" className="absolute left-5 top-5 flex items-center gap-1.5 t13 text-cream/70 hover:text-cream">
+      <Link to="/" className="absolute left-5 top-5 flex items-center gap-1.5 t13 text-muted hover:text-ink">
         <ArrowLeft size={16} /> Inicio
       </Link>
-      <div className="glass-card animate-fade-up w-full max-w-sm rounded-3xl p-7" style={{ background: "rgba(250,246,236,0.08)", borderColor: "rgba(255,255,255,0.14)" }}>
+      <motion.div
+        initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="glass-card w-full max-w-sm rounded-3xl p-7"
+      >
         <div className="mb-5 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blush/20">
-            <UserCog size={22} className="text-blush" />
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "rgba(190,155,63,0.16)" }}>
+            <UserCog size={22} className="text-bronze-dark" />
           </div>
-          <h1 className="font-display text-xl text-cream">Portal de representantes</h1>
-          <p className="t12 mt-1 text-cream/60">Ingresa el código de acceso de 6 caracteres de tu estudiante.</p>
+          <h1 className="font-display text-xl text-ink">Portal de representantes</h1>
+          <p className="t12 mt-1 text-muted">Ingresa el código de acceso de 6 caracteres de tu estudiante.</p>
         </div>
         <div className="space-y-3">
           <input
-            className={`${inputCls} bg-cream/95 text-center tracking-[0.3em]`}
+            className={`${inputCls} text-center tracking-[0.3em]`}
             placeholder="XXXXXX"
             maxLength={6}
             value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
           />
-          {error && <p className="t12 text-blush">{error}</p>}
-          <button onClick={handleLogin} className="btn btn-primary w-full" style={{ background: "var(--color-blush)" }}>
+          {error && <p className="t12 text-wine">{error}</p>}
+          <button onClick={handleLogin} className="btn btn-bronze w-full">
             Entrar
           </button>
         </div>
-        <button onClick={() => setShowSignup(true)} className="t12 mt-5 w-full text-center text-cream/70 underline underline-offset-4 hover:text-cream">
+        <button onClick={() => setShowSignup(true)} className="t12 mt-5 w-full text-center text-muted underline underline-offset-4 hover:text-ink">
           Registrar a mi estudiante por primera vez
         </button>
-      </div>
+      </motion.div>
 
       {showSignup && (
         <StudentForm

@@ -3,8 +3,8 @@ import { REGLAMENTO, REGLAMENTO_CIERRE } from "../lib/constants";
 
 export function ReglamentoModal({ onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-lg sm:rounded-2xl">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
           <h3 className="font-display text-lg text-ink">Reglamento de CIF Adagio</h3>
           <button onClick={onClose} className="text-muted hover:text-ink">

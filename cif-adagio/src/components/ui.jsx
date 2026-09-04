@@ -39,8 +39,8 @@ export function ConfirmDialog({ title, message, confirmLabel = "Confirmar", dest
   const canConfirm = !requireTyping || typed.trim().toUpperCase() === requireTyping.toUpperCase();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-paper p-5 shadow-2xl">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+      <div className="modal-panel w-full max-w-sm rounded-2xl bg-paper p-5 shadow-2xl">
         <div className="mb-2 flex items-start gap-2">
           <AlertCircle size={20} className={destructive ? "shrink-0 text-wine" : "shrink-0 text-teal"} />
           <h3 className="font-display text-lg text-ink">{title}</h3>

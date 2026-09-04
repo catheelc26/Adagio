@@ -131,8 +131,8 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
 
   if (createdCode) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-        <div className="w-full max-w-sm rounded-2xl bg-paper p-6 text-center shadow-2xl">
+      <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+        <div className="modal-panel w-full max-w-sm rounded-2xl bg-paper p-6 text-center shadow-2xl">
           <CheckCircle2 size={44} className="mx-auto mb-3 text-teal" />
           <h3 className="font-display mb-1 text-xl text-ink">¡Registro guardado!</h3>
           <p className="t13 mb-4 text-muted">Este es el código de acceso al portal. Guárdalo, lo necesitarás para entrar.</p>
@@ -164,8 +164,8 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-      <div className="max-h-[94vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-xl sm:rounded-2xl">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[94vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
           <h3 className="font-display text-lg text-ink">{student ? "Editar estudiante" : "Nuevo estudiante"}</h3>
           <button onClick={onClose} className="text-muted hover:text-ink">

@@ -13,8 +13,8 @@ export function ReceiptModal({ transactionId, payments, students, onClose }) {
 
   if (!first) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-        <div className="w-full max-w-sm rounded-2xl bg-paper p-6 text-center" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+        <div className="modal-panel w-full max-w-sm rounded-2xl bg-paper p-6 text-center" onClick={(e) => e.stopPropagation()}>
           <p className="t13 text-muted">No se encontró información de este pago.</p>
           <button onClick={onClose} className="btn btn-ghost mt-4">Cerrar</button>
         </div>
@@ -23,8 +23,8 @@ export function ReceiptModal({ transactionId, payments, students, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-paper shadow-2xl sm:max-w-md sm:rounded-2xl">
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-paper shadow-2xl sm:max-w-md sm:rounded-2xl">
         <div className="no-print sticky top-0 flex items-center justify-between border-b border-line bg-paper px-5 pb-3 pt-5">
           <h3 className="font-display text-lg text-ink">Recibo de pago</h3>
           <button onClick={onClose} className="text-muted hover:text-ink">

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, CheckCircle2, ChevronRight } from "lucide-react";
 import { GROUPS, WEEKDAYS } from "../lib/constants";
 import { nextDatesForWeekday } from "../lib/business";
@@ -8,6 +9,13 @@ import { Field, inputCls } from "../components/ui";
 import { Barre } from "../components/Decor";
 
 const STEPS = ["Grupo", "Horario", "Datos", "Listo"];
+const EASE_OUT = [0.23, 1, 0.32, 1];
+const stepMotion = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.28, ease: EASE_OUT },
+};
 
 export function TrialBookingFlow() {
   const { schedule, trialBookings, toast } = useAppData();
@@ -90,8 +98,9 @@ export function TrialBookingFlow() {
         </div>
       )}
 
+      <AnimatePresence mode="wait">
       {step === 0 && (
-        <div className="animate-fade-up">
+        <motion.div key="step-0" {...stepMotion}>
           <h1 className="font-display mb-1 text-2xl text-ink">Elige un grupo</h1>
           <p className="t13 mb-6 text-muted">Selecciona la clase a la que te gustaría asistir de prueba.</p>
           <div className="grid grid-cols-2 gap-3">
@@ -102,11 +111,11 @@ export function TrialBookingFlow() {
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {step === 1 && group && (
-        <div className="animate-fade-up">
+        <motion.div key="step-1" {...stepMotion}>
           <h1 className="font-display mb-1 text-2xl text-ink">Horario de {group.name}</h1>
           {slotsForGroup.length === 0 ? (
             <p className="t13 mt-4 rounded-xl bg-cream-dim p-4 text-muted">
@@ -144,11 +153,11 @@ export function TrialBookingFlow() {
               </button>
             </>
           )}
-        </div>
+        </motion.div>
       )}
 
       {step === 2 && (
-        <div className="animate-fade-up">
+        <motion.div key="step-2" {...stepMotion}>
           <h1 className="font-display mb-1 text-2xl text-ink">Tus datos</h1>
           <p className="t13 mb-6 text-muted">
             {group.name} · {WEEKDAYS[slot.weekday]} {slot.startTime}–{slot.endTime} ·{" "}
@@ -177,11 +186,11 @@ export function TrialBookingFlow() {
           <button disabled={saving} onClick={submit} className="btn btn-primary mt-6 w-full">
             {saving ? "Enviando…" : "Confirmar clase de prueba"}
           </button>
-        </div>
+        </motion.div>
       )}
 
       {step === 3 && (
-        <div className="animate-fade-up flex flex-col items-center py-10 text-center">
+        <motion.div key="step-3" {...stepMotion} className="flex flex-col items-center py-10 text-center">
           <CheckCircle2 size={52} className="mb-4 text-teal" />
           <h1 className="font-display mb-2 text-2xl text-ink">¡Todo listo!</h1>
           <p className="t13 mb-2 max-w-xs text-muted">
@@ -193,8 +202,9 @@ export function TrialBookingFlow() {
           <Link to="/" className="btn btn-ghost">
             Volver al inicio
           </Link>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

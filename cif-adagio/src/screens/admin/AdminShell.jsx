@@ -88,8 +88,8 @@ export function AdminShell() {
       </nav>
 
       {showMore && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/40" onClick={() => setShowMore(false)}>
-          <div className="w-full max-w-lg rounded-t-2xl bg-paper p-3 pb-6" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop fixed inset-0 z-30 flex items-end justify-center bg-black/40" onClick={() => setShowMore(false)}>
+          <div className="modal-panel w-full max-w-lg rounded-t-2xl bg-paper p-3 pb-6" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between px-2 pt-2">
               <p className="t12 font-semibold uppercase tracking-wide text-muted">Más opciones</p>
               <button onClick={() => setShowMore(false)} className="text-muted hover:text-ink">

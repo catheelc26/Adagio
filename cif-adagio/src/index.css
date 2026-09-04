@@ -1,41 +1,53 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------
    CIF Adagio — design tokens
-   A warm, light, editorial palette (cream + ink + teal + bronze) built
-   from the school's real wordmark. Deliberately unrelated to any other
-   Adagio-branded product: different fonts, different mood (bright /
-   editorial vs. dark / moody), different accent hue.
+   Clean, editorial palette: deep blue + beige + turquoise + gold, built
+   from the school's real wordmark (Cormorant Garamond serif). Deliberately
+   unrelated to any other Adagio-branded product: different fonts,
+   different mood, different accent hues.
 --------------------------------------------------------------------- */
 :root {
-  --color-cream: #faf6ec;
-  --color-cream-dim: #f1ead9;
-  --color-paper: #fffdf8;
-  --color-line: #e7ddc4;
-  --color-line-soft: #efe7d3;
+  --color-cream: #f4eee1;
+  --color-cream-dim: #eae1cc;
+  --color-paper: #ffffff;
+  --color-line: #dccfb0;
+  --color-line-soft: #ebe2cb;
 
-  --color-ink: #201c1c;
-  --color-ink-soft: #4a453f;
-  --color-muted: #7a7266;
-  --color-faint: #a89f8f;
+  --color-ink: #17222e;
+  --color-ink-soft: #3c4a5a;
+  --color-muted: #6b7a88;
+  --color-faint: #9aa7b2;
 
-  --color-teal: #2f7f92;
-  --color-teal-dark: #235f6e;
-  --color-teal-light: #6fb4c3;
+  /* turquoise — primary accent */
+  --color-teal: #14a39a;
+  --color-teal-dark: #0e7d76;
+  --color-teal-light: #6bcfc7;
 
-  --color-bronze: #b8935b;
-  --color-bronze-dark: #93743f;
-  --color-bronze-light: #d9bd8c;
+  /* gold — secondary accent */
+  --color-bronze: #be9b3f;
+  --color-bronze-dark: #93762e;
+  --color-bronze-light: #e0c57a;
 
+  /* blue — tertiary accent (chrome, links, secondary CTAs) */
+  --color-blue: #2b5c8a;
+  --color-blue-dark: #1e4266;
+  --color-blue-light: #6f9cc2;
+
+  /* data / status accents (group colors, chips) */
   --color-blush: #e17da0;
   --color-plum: #7c5cbf;
   --color-cobalt: #3454d1;
   --color-navy: #1b2a57;
   --color-wine: #7b1e3a;
 
-  --shadow-soft: 0 1px 2px rgba(32, 28, 28, 0.04), 0 8px 24px -8px rgba(32, 28, 28, 0.10);
-  --shadow-lift: 0 2px 6px rgba(32, 28, 28, 0.06), 0 20px 40px -16px rgba(32, 28, 28, 0.18);
+  --shadow-soft: 0 1px 2px rgba(23, 34, 46, 0.05), 0 8px 24px -8px rgba(23, 34, 46, 0.12);
+  --shadow-lift: 0 2px 8px rgba(23, 34, 46, 0.06), 0 24px 48px -18px rgba(23, 34, 46, 0.22);
+
+  /* easing — stronger than the CSS built-ins, see emil-kowalski design-eng notes */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
@@ -58,6 +70,10 @@
   --color-bronze-dark: var(--color-bronze-dark);
   --color-bronze-light: var(--color-bronze-light);
 
+  --color-blue: var(--color-blue);
+  --color-blue-dark: var(--color-blue-dark);
+  --color-blue-light: var(--color-blue-light);
+
   --color-blush: var(--color-blush);
   --color-plum: var(--color-plum);
   --color-cobalt: var(--color-cobalt);
@@ -67,7 +83,7 @@
   --shadow-soft: var(--shadow-soft);
   --shadow-lift: var(--shadow-lift);
 
-  --font-display: "Fraunces", "Iowan Old Style", serif;
+  --font-display: "Cormorant Garamond", "Iowan Old Style", serif;
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -103,13 +119,14 @@ body {
   border: 1px solid var(--color-line-soft);
   border-radius: 1rem;
   box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.2s var(--ease-out), border-color 0.2s var(--ease-out);
 }
 
 .glass-card {
-  background: rgba(255, 253, 248, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: var(--shadow-lift);
 }
 
@@ -121,12 +138,12 @@ body {
   padding: 0.6rem 0.85rem;
   font-size: 0.875rem;
   color: var(--color-ink);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
 }
 .field-input:focus {
   outline: none;
   border-color: var(--color-teal);
-  box-shadow: 0 0 0 3px rgba(47, 127, 146, 0.15);
+  box-shadow: 0 0 0 3px rgba(20, 163, 154, 0.15);
 }
 .field-input::placeholder {
   color: var(--color-faint);
@@ -139,7 +156,7 @@ body {
 }
 
 /* ---------------------------------------------------------------------
-   Buttons
+   Buttons — tactile press feedback (scale, not just translate)
 --------------------------------------------------------------------- */
 .btn {
   display: inline-flex;
@@ -150,11 +167,11 @@ body {
   padding: 0.65rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 600;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, opacity 0.12s ease;
+  transition: transform 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out), background-color 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
   white-space: nowrap;
 }
-.btn:active {
-  transform: translateY(1px);
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .btn:disabled {
   opacity: 0.45;
@@ -166,7 +183,7 @@ body {
   box-shadow: var(--shadow-soft);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #34302d;
+  background: var(--color-ink-soft);
 }
 .btn-teal {
   background: var(--color-teal);
@@ -183,6 +200,14 @@ body {
 }
 .btn-bronze:hover:not(:disabled) {
   background: var(--color-bronze-dark);
+}
+.btn-blue {
+  background: var(--color-blue);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+.btn-blue:hover:not(:disabled) {
+  background: var(--color-blue-dark);
 }
 .btn-ghost {
   background: transparent;
@@ -207,7 +232,7 @@ body {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-up { animation: fade-up 0.6s var(--ease-out) both; }
 .animate-fade-up-1 { animation-delay: 0.08s; }
 .animate-fade-up-2 { animation-delay: 0.16s; }
 .animate-fade-up-3 { animation-delay: 0.24s; }
@@ -219,7 +244,7 @@ body {
 .draw-path {
   stroke-dasharray: 240;
   stroke-dashoffset: 240;
-  animation: draw-path 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: draw-path 1.6s var(--ease-out) forwards;
 }
 
 @keyframes shimmer {
@@ -233,6 +258,39 @@ body {
   50% { transform: translateY(-6px); }
 }
 .animate-float { animation: float-y 4.5s ease-in-out infinite; }
+
+/* Modals — entrance only (exit stays instant; these open a few times per
+   session at most, so a snappy close beats the complexity of wiring exit
+   choreography through every call site). Never scale from 0 - see
+   emil-kowalski notes: nothing in the real world pops in from nothing. */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-backdrop {
+  animation: modal-backdrop-in 0.18s var(--ease-out) both;
+}
+
+@keyframes modal-panel-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-panel {
+  animation: modal-panel-in 0.22s var(--ease-out) both;
+}
+
+/* Respect reduced-motion: keep opacity fades, drop movement/looping motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-fade-up-1, .animate-fade-up-2, .animate-fade-up-3, .animate-fade-up-4 {
+    animation: fade-up 0.3s ease both;
+    animation-delay: 0s !important;
+    transform: none !important;
+  }
+  .draw-path { animation: none; stroke-dashoffset: 0; }
+  .animate-shimmer, .animate-float { animation: none; }
+  .btn:active:not(:disabled) { transform: none; }
+  .modal-backdrop, .modal-panel { animation-duration: 0.01s; }
+}
 
 /* ---------------------------------------------------------------------
    Print (receipts)
