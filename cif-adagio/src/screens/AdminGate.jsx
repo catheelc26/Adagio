@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { useAppData } from "../lib/AppDataContext";
 import { useAdminSession } from "../lib/session";
-import { PremiumPattern } from "../components/Decor";
 import { inputCls } from "../components/ui";
 
 const EASE_OUT = [0.23, 1, 0.32, 1];
@@ -47,8 +46,7 @@ export function AdminGate() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6">
       <div className="absolute inset-0 -z-10 bg-cream" />
-      <div className="absolute inset-0 -z-10" style={{ background: "radial-gradient(ellipse at top, rgba(43,92,138,0.14), transparent 55%)" }} />
-      <PremiumPattern />
+      <div className="absolute inset-0 -z-10" style={{ background: "radial-gradient(ellipse at top, var(--color-blue-light), transparent 55%)" }} />
       <Link to="/" className="absolute left-5 top-5 flex items-center gap-1.5 t13 text-muted hover:text-ink">
         <ArrowLeft size={16} /> Inicio
       </Link>
@@ -56,10 +54,10 @@ export function AdminGate() {
         initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: EASE_OUT }}
-        className="glass-card relative w-full max-w-sm rounded-3xl p-7"
+        className="card relative w-full max-w-sm p-7"
       >
         <div className="mb-5 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "rgba(43,92,138,0.12)" }}>
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-blue-light)" }}>
             <ShieldAlert size={22} className="text-blue" />
           </div>
           <h1 className="font-display text-xl text-ink">{firstTime ? "Crea el PIN de administración" : "Administración"}</h1>
