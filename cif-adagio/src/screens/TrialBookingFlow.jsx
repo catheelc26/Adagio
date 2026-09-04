@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight } from "lucide-react";
 import { GROUPS, WEEKDAYS } from "../lib/constants";
 import { nextDatesForWeekday } from "../lib/business";
 import { useAppData } from "../lib/AppDataContext";
+import { notifyPush } from "../lib/push";
 import { Field, inputCls } from "../components/ui";
 import { Barre } from "../components/Decor";
 
@@ -69,6 +70,12 @@ export function TrialBookingFlow() {
         createdAt: new Date().toISOString(),
       });
       setStep(3);
+      notifyPush({
+        target: { role: "admin" },
+        title: "Nueva clase de prueba",
+        body: `${form.fullName.trim()} agendó ${group.name}, ${WEEKDAYS[slot.weekday]} ${slot.startTime}.`,
+        url: "/admin",
+      });
     } catch {
       toast("No se pudo enviar la solicitud. Intenta de nuevo.");
     } finally {

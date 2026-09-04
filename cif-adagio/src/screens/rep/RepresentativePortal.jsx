@@ -9,6 +9,7 @@ import { currentMonthKey, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
 import { Chip, StudentAvatar } from "../../components/ui";
+import { PushToggle } from "../../components/PushToggle";
 import { MonthCalendar } from "../../components/MonthCalendar";
 import { ReglamentoModal } from "../../components/ReglamentoModal";
 import { PaymentForm } from "../../components/PaymentForm";
@@ -94,6 +95,7 @@ export function RepresentativePortal({ student, onLogout }) {
           <p className="t13 font-medium text-ink">Hola, {welcomeName}</p>
           <p className="t11 text-muted">{g?.name}</p>
         </div>
+        <PushToggle role="representative" group={student.group} studentId={student.id} />
         <button onClick={onLogout} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
           <LogOut size={15} /> Salir
         </button>

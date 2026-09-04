@@ -4,6 +4,7 @@ import { useAppData } from "../../lib/AppDataContext";
 import { GROUPS, WEEKDAYS, groupById } from "../../lib/constants";
 import { isActive } from "../../lib/business";
 import { inputCls } from "../../components/ui";
+import { PushToggle } from "../../components/PushToggle";
 
 const TABS = [
   { id: "trials", label: "Pruebas", icon: CalendarCheck },
@@ -22,9 +23,12 @@ export function TeacherPortal({ teacherName, onLogout }) {
           <p className="font-display text-lg leading-none text-ink">Hola, {teacherName}</p>
           <p className="t10 uppercase tracking-widest text-faint">Portal de maestros</p>
         </div>
-        <button onClick={onLogout} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
-          <LogOut size={15} /> Salir
-        </button>
+        <div className="flex items-center gap-1">
+          <PushToggle role="teacher" />
+          <button onClick={onLogout} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
+            <LogOut size={15} /> Salir
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-lg flex-1 px-5 py-6 pb-24">

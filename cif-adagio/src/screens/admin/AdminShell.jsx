@@ -4,6 +4,7 @@ import {
   CalendarCheck, Calendar, Megaphone, Bell, BarChart3, Settings as SettingsIcon,
 } from "lucide-react";
 import { useAdminSession } from "../../lib/session";
+import { PushToggle } from "../../components/PushToggle";
 import { Dashboard } from "./Dashboard";
 import { StudentsView } from "./StudentsView";
 import { PaymentsView } from "./PaymentsView";
@@ -56,9 +57,12 @@ export function AdminShell() {
           <p className="font-display text-lg leading-none text-ink">CIF Adagio</p>
           <p className="t10 uppercase tracking-widest text-faint">Administración</p>
         </div>
-        <button onClick={() => setSession(null)} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
-          <LogOut size={15} /> Salir
-        </button>
+        <div className="flex items-center gap-1">
+          <PushToggle role="admin" />
+          <button onClick={() => setSession(null)} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
+            <LogOut size={15} /> Salir
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 pb-24">

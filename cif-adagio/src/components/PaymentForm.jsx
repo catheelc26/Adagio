@@ -6,6 +6,7 @@ import { currentMonthKey, monthLabel, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
+import { notifyPush } from "../lib/push";
 import { Field, inputCls } from "./ui";
 
 const newItem = (student) => ({
@@ -121,6 +122,14 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
       }
       if (proofPreview) await setImage(COLLECTIONS.paymentProofs, transactionId, proofPreview);
       toast(isAdmin ? "Pago registrado." : "Pago reportado, quedará confirmado por administración.");
+      if (!isAdmin) {
+        notifyPush({
+          target: { role: "admin" },
+          title: "Nuevo pago reportado",
+          body: `${student.fullName} reportó un pago de ${usd(total)} por confirmar.`,
+          url: "/admin",
+        });
+      }
       onClose();
     } catch (err) {
       setError(err.message || "No se pudo registrar el pago.");

@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { GROUPS } from "../../lib/constants";
 import { Field, inputCls } from "../../components/ui";
+import { notifyPush } from "../../lib/push";
 
 export function AnnouncementsView() {
   const { announcements, toast } = useAppData();
@@ -24,6 +25,12 @@ export function AnnouncementsView() {
     setGroup("");
     setExpiresAt("");
     toast("Aviso publicado.");
+    notifyPush({
+      target: { role: "representative", group: group || null },
+      title: "Nuevo aviso de CIF Adagio",
+      body: text.trim().slice(0, 120),
+      url: "/representante",
+    });
   };
 
   return (
