@@ -69,7 +69,17 @@ export function Footer() {
         </div>
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-cream/10 pt-8 text-xs text-cream-dim/50 md:flex-row">
-          <p>© {new Date().getFullYear()} The Adagio Method. Todos los derechos reservados.</p>
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+            <p>© {new Date().getFullYear()} The Adagio Method. Todos los derechos reservados.</p>
+            <span className="hidden sm:inline">·</span>
+            <Link href="/terminos" className="hover:text-gold">
+              Términos de servicio
+            </Link>
+            <span className="hidden sm:inline">·</span>
+            <Link href="/privacidad" className="hover:text-gold">
+              Privacidad
+            </Link>
+          </div>
           <p className="italic font-accent text-base text-gold/70">
             Ballet · Fisioterapia · Pilates/PBT · Yoga · Meditación · Anatomía · Biomecánica · Conciencia Corporal
           </p>

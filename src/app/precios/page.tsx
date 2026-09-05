@@ -101,7 +101,16 @@ export default async function PreciosPage({
 
       <p className="mx-auto mt-10 max-w-lg text-center text-xs text-cream-dim/50">
         Los precios incluyen impuestos aplicables. Puedes cancelar tu
-        suscripción en cualquier momento desde tu perfil.
+        suscripción en cualquier momento desde tu perfil. Al suscribirte
+        aceptas nuestros{" "}
+        <a href="/terminos" className="text-gold hover:underline">
+          Términos de servicio
+        </a>{" "}
+        y nuestra{" "}
+        <a href="/privacidad" className="text-gold hover:underline">
+          Política de privacidad
+        </a>
+        .
       </p>
     </div>
   );
