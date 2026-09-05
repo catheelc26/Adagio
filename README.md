@@ -6,7 +6,7 @@ Anatomía, Biomecánica y Conciencia Corporal** en una sola biblioteca de
 video-clases organizadas por pilar y nivel.
 
 Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
-(credenciales) y Stripe para las suscripciones.
+(credenciales) y PayPal para las suscripciones.
 
 ## Funcionalidades
 
@@ -22,10 +22,10 @@ Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
   `/restablecer-password`).
 - **Favoritos**: cualquier clase se puede guardar con el botón de corazón y
   aparece en el perfil del usuario.
-- **Suscripciones con Stripe**: `/precios`, checkout, portal de facturación y
-  webhook para mantener el estado de la suscripción sincronizado. Las clases
-  no marcadas como vista previa quedan bloqueadas hasta tener una
-  suscripción activa.
+- **Suscripciones con PayPal**: `/precios`, botón de suscripción y webhook
+  para mantener el estado de la suscripción sincronizado. Las clases no
+  marcadas como vista previa quedan bloqueadas hasta tener una suscripción
+  activa.
 - **Panel de administración** (`/admin`, solo para usuarios con rol `ADMIN`):
   crear, editar y eliminar clases desde un formulario, sin tocar código ni
   base de datos. Ver "Gestionar las clases (panel de administración)" más
@@ -61,15 +61,17 @@ Ver `.env.example`. Resumen:
 | --- | --- |
 | `DATABASE_URL` | Cadena de conexión de PostgreSQL. Usa la misma en local y en Vercel, o una distinta por entorno. |
 | `AUTH_SECRET` | Clave de Auth.js. Genera una con `openssl rand -base64 32`. |
-| `NEXT_PUBLIC_APP_URL` | URL pública del sitio (usada en los redirects de Stripe). |
-| `SEED_SECRET` | Contraseña compartida para `/api/admin/seed` (sembrar datos de ejemplo) y `/api/admin/promote` (convertir una cuenta en administradora). Genera una con `openssl rand -hex 16`. |
-| `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test mientras desarrollas). |
-| `STRIPE_WEBHOOK_SECRET` | Firma del webhook de Stripe (`stripe listen` en local). |
-| `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` | IDs de los precios (Price) creados en el Dashboard de Stripe para los dos planes definidos en `src/lib/plans.ts`. |
+| `NEXT_PUBLIC_APP_URL` | URL pública del sitio. |
+| `SEED_SECRET` | Contraseña compartida para `/api/admin/seed` (sembrar datos de ejemplo), `/api/admin/promote` (convertir una cuenta en administradora) y `/api/admin/paypal-setup` (crear el producto y los planes en PayPal). Genera una con `openssl rand -hex 16`. |
+| `PAYPAL_ENV` | `sandbox` (pruebas) o `live` (pagos reales). |
+| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | Credenciales de tu app de PayPal (Developer Dashboard → Apps & Credentials), para el entorno indicado en `PAYPAL_ENV`. |
+| `NEXT_PUBLIC_PAYPAL_CLIENT_ID` | El mismo Client ID, expuesto al navegador (lo necesita el botón de PayPal). No es secreto. |
+| `PAYPAL_WEBHOOK_ID` | ID del webhook de PayPal, para verificar que los eventos de renovación/cancelación vienen realmente de PayPal. |
+| `PAYPAL_PLAN_ID_MONTHLY` / `PAYPAL_PLAN_ID_ANNUAL` | IDs de los planes de facturación, generados visitando `/api/admin/paypal-setup?secret=...` (ver más abajo). |
 | `RESEND_API_KEY` | Clave de [Resend](https://resend.com) para enviar el email de "olvidé mi contraseña". Tiene capa gratuita. |
 | `EMAIL_FROM` | Remitente de esos correos, por ejemplo `The Adagio Method <hola@tudominio.com>`. Sin un dominio propio verificado en Resend, deja el valor por defecto de `.env.example` (`onboarding@resend.dev`), que funciona igual pero identifica el correo como enviado desde Resend. |
 
-Sin las claves de Stripe, todo el sitio funciona igual (incluida la vista
+Sin las claves de PayPal, todo el sitio funciona igual (incluida la vista
 previa de la biblioteca); solo el botón de "Elegir plan" queda deshabilitado
 hasta configurarlas. Sin `RESEND_API_KEY`, "olvidé mi contraseña" sigue
 funcionando en local (el enlace de recuperación se imprime en la consola del
@@ -94,7 +96,7 @@ correo hasta que la configures.
      `https://adagio-xxxx.vercel.app`); puedes ponerla después del primer
      despliegue y volver a desplegar.
    - `SEED_SECRET` → genera uno con `openssl rand -hex 16`.
-   - Las variables de Stripe, si ya las tienes (opcional para ver el diseño).
+   - Las variables de PayPal, si ya las tienes (opcional para ver el diseño).
 4. Despliega. El propio build ejecuta `prisma generate && prisma db push`,
    así que las tablas se crean solas en tu Postgres de Vercel.
 5. Visita una sola vez `https://tu-dominio.vercel.app/api/admin/seed?secret=TU_SEED_SECRET`
@@ -102,54 +104,55 @@ correo hasta que la configures.
    un JSON de confirmación.
 6. Abre la URL de tu proyecto — ya está lista para navegar.
 
-## Configurar Stripe (modo test)
+## Configurar PayPal (modo sandbox / pruebas)
 
-1. Crea una cuenta/proyecto en [Stripe](https://dashboard.stripe.com/) y
-   activa el modo test.
-2. Crea un producto con dos precios recurrentes (mensual y anual) y copia
-   sus `price_id` en `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL`.
-3. Copia tu clave secreta de test en `STRIPE_SECRET_KEY`.
-4. En local, usa la [Stripe CLI](https://docs.stripe.com/stripe-cli) para
-   reenviar eventos al webhook:
+The Adagio Method usa **suscripciones de PayPal** (no Stripe, que no está
+disponible para cuentas registradas en algunos países). El botón de pago
+funciona con o sin cuenta de PayPal del lado del comprador, pero para que
+alguien pueda pagar solo con tarjeta (sin iniciar sesión en PayPal) PayPal
+tiene que aprobar tu cuenta para "Advanced Credit and Debit Card Payments"
+— una aprobación que decide PayPal según tu cuenta y país, no algo que se
+configure desde aquí.
 
-   ```bash
-   stripe listen --forward-to localhost:3000/api/stripe/webhook
+1. Entra a [developer.paypal.com](https://developer.paypal.com) con tu
+   cuenta de PayPal Business y ve a **Apps & Credentials**.
+2. En la pestaña **Sandbox**, crea una app y copia su **Client ID** y
+   **Secret** en `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` y
+   `NEXT_PUBLIC_PAYPAL_CLIENT_ID` (mismo valor que `PAYPAL_CLIENT_ID`).
+   Deja `PAYPAL_ENV="sandbox"`.
+3. Con el proyecto desplegado (o corriendo en local), visita una sola vez:
+
+   ```
+   https://tu-dominio.vercel.app/api/admin/paypal-setup?secret=TU_SEED_SECRET
    ```
 
-   Copia el `whsec_...` que imprime en `STRIPE_WEBHOOK_SECRET`.
-5. En producción, crea un endpoint de webhook en el Dashboard de Stripe
-   apuntando a `https://tu-dominio.com/api/stripe/webhook`, escuchando
-   `checkout.session.completed`, `customer.subscription.updated` y
-   `customer.subscription.deleted`.
+   Esto crea el producto y los dos planes de facturación (mensual y anual)
+   directamente en PayPal, y te devuelve un JSON con sus IDs.
+4. Copia esos IDs en `PAYPAL_PLAN_ID_MONTHLY` y `PAYPAL_PLAN_ID_ANNUAL`.
+5. (Opcional pero recomendado) En **Developer Dashboard → Webhooks**, crea
+   un webhook apuntando a `https://tu-dominio.com/api/paypal/webhook`,
+   escuchando los eventos `BILLING.SUBSCRIPTION.ACTIVATED`,
+   `BILLING.SUBSCRIPTION.UPDATED`, `BILLING.SUBSCRIPTION.SUSPENDED`,
+   `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.EXPIRED` y
+   `PAYMENT.SALE.COMPLETED`. Copia el **Webhook ID** en `PAYPAL_WEBHOOK_ID`.
+6. Prueba el botón en `/precios` usando una [cuenta de comprador de
+   sandbox](https://developer.paypal.com/dashboard/accounts) (PayPal crea
+   una automáticamente al crear tu app).
 
-## Pasar Stripe a modo real (cobrar de verdad)
+## Pasar PayPal a modo real (cobrar de verdad)
 
-El código no cambia entre modo test y modo real — Stripe usa tus claves
-para decidir si un pago es de prueba o real. Los pasos son todos dentro de
-los Dashboards de Stripe y de Vercel:
-
-1. En el Dashboard de Stripe, activa tu cuenta para pagos reales
-   (**Activar tu cuenta** / **Activate your account**): te pedirá datos del
-   negocio, cuenta bancaria de destino y, según tu país, información fiscal.
-2. Con el interruptor "Modo test" apagado (arriba a la derecha en el
-   Dashboard), vuelve a crear el mismo producto con sus dos precios
-   (mensual y anual) que ya tenías en modo test — los productos y precios
-   de test no existen en modo real, hay que recrearlos una vez.
-3. Copia los nuevos `price_id` (modo real) y reemplaza en Vercel
-   (**Settings → Environment Variables**) los valores de
-   `STRIPE_PRICE_ID_MONTHLY` y `STRIPE_PRICE_ID_ANNUAL`.
-4. En el Dashboard de Stripe, copia tu clave secreta de modo real
-   (empieza con `sk_live_...`, en **Developers → API keys**) y reemplaza
-   `STRIPE_SECRET_KEY` en Vercel.
-5. Crea un nuevo endpoint de webhook en modo real (**Developers →
-   Webhooks**) apuntando a `https://tu-dominio.com/api/stripe/webhook`,
-   con los mismos tres eventos del paso anterior. Copia su firma
-   (`whsec_...`) y reemplaza `STRIPE_WEBHOOK_SECRET` en Vercel.
-6. Vuelve a desplegar el proyecto en Vercel para que recoja las nuevas
-   variables (un simple "Redeploy" desde el propio Dashboard de Vercel
-   basta, no hace falta ningún cambio de código).
-7. Haz una suscripción real de prueba con tu propia tarjeta para
-   confirmar que todo el flujo funciona antes de anunciar el lanzamiento.
+1. En [developer.paypal.com](https://developer.paypal.com), pestaña
+   **Live**, crea una app (o usa la que PayPal genera junto a tu cuenta) y
+   copia su Client ID/Secret.
+2. Reemplaza en Vercel: `PAYPAL_ENV="live"`, `PAYPAL_CLIENT_ID`,
+   `PAYPAL_CLIENT_SECRET`, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`.
+3. Visita de nuevo `https://tu-dominio.com/api/admin/paypal-setup?secret=...`
+   (esta vez creará el producto/planes en modo real) y actualiza
+   `PAYPAL_PLAN_ID_MONTHLY` / `PAYPAL_PLAN_ID_ANNUAL` con los nuevos IDs.
+4. Repite la creación del webhook en la pestaña **Live** apuntando a tu
+   dominio real, y actualiza `PAYPAL_WEBHOOK_ID`.
+5. Vuelve a desplegar y haz una suscripción real de prueba con tu propia
+   tarjeta o cuenta antes de anunciar el lanzamiento.
 
 Antes de este paso, revisa también `/terminos` y `/privacidad`: completa
 los datos entre corchetes (razón social, país, contacto, política de
@@ -205,13 +208,14 @@ prefieres.
 prisma/schema.prisma       Modelo de datos (usuarios, suscripciones, pilares, niveles, vídeos, favoritos)
 prisma/seed.ts             Script de siembra para CLI (usa src/lib/seed-data.ts)
 src/lib/seed-data.ts        Datos de ejemplo (8 pilares × 3 niveles × clases) + lógica de siembra reutilizable
-src/app/api/admin/seed      Ruta para sembrar la base de datos ya desplegada, protegida por SEED_SECRET
-src/app/api/admin/promote   Ruta para convertir una cuenta en administradora, protegida por SEED_SECRET
+src/app/api/admin/seed          Ruta para sembrar la base de datos ya desplegada, protegida por SEED_SECRET
+src/app/api/admin/promote       Ruta para convertir una cuenta en administradora, protegida por SEED_SECRET
+src/app/api/admin/paypal-setup  Ruta para crear el producto/planes de PayPal, protegida por SEED_SECRET
 src/app/admin/              Panel de administración (crear/editar/eliminar clases), solo rol ADMIN
 src/auth.ts                Configuración de Auth.js (credenciales + JWT)
-src/lib/                   Prisma client, validaciones, acciones de servidor, Stripe
+src/lib/                   Prisma client, validaciones, acciones de servidor, PayPal, email
 src/components/            Navbar, footer, tarjetas de vídeo, formularios, iconos de pilares
-src/app/                   Rutas de la app (marketing, pilares, biblioteca, perfil, precios, API de Stripe/Auth)
+src/app/                   Rutas de la app (marketing, pilares, biblioteca, perfil, precios, API de PayPal/Auth)
 ```
 
 ## Scripts
@@ -236,4 +240,4 @@ src/app/                   Rutas de la app (marketing, pilares, biblioteca, perf
 - Configura todas las variables de `.env.example` en tu plataforma de
   hosting, incluido `AUTH_TRUST_HOST=true` si el despliegue queda detrás de
   un proxy.
-- Recuerda apuntar el webhook de Stripe a la URL de producción.
+- Recuerda apuntar el webhook de PayPal a la URL de producción.

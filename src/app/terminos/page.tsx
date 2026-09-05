@@ -56,7 +56,7 @@ export default function TerminosPage() {
             <a href="/precios" className="text-gold hover:underline">
               /precios
             </a>
-            . Los pagos se procesan a través de Stripe; The Adagio Method
+            . Los pagos se procesan a través de PayPal; The Adagio Method
             no almacena los datos de tu tarjeta.
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-5">

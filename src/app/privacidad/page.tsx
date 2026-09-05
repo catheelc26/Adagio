@@ -42,7 +42,7 @@ export default function PrivacidadPage() {
               <strong>Datos de suscripción y pago</strong>: el estado de tu
               suscripción (activa, cancelada, etc.) y las fechas de tu
               periodo de facturación. Los datos de tu tarjeta y el pago en
-              sí los procesa directamente Stripe, nuestro proveedor de
+              sí los procesa directamente PayPal, nuestro proveedor de
               pagos — nunca los recibimos ni los almacenamos nosotros.
             </li>
           </ul>
@@ -52,7 +52,7 @@ export default function PrivacidadPage() {
           <h2 className="font-serif text-xl text-cream">2. Para qué usamos tus datos</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>Crear y mantener tu cuenta, y darte acceso a la biblioteca según tu suscripción.</li>
-            <li>Procesar tus pagos y gestionar renovaciones o cancelaciones a través de Stripe.</li>
+            <li>Procesar tus pagos y gestionar renovaciones o cancelaciones a través de PayPal.</li>
             <li>Guardar tus favoritos y tu progreso para que tu experiencia sea consistente entre sesiones.</li>
             <li>Comunicarnos contigo sobre tu cuenta, tu suscripción o cambios importantes en el Sitio.</li>
           </ul>
@@ -69,7 +69,7 @@ export default function PrivacidadPage() {
             proveedores que nos ayudan a operar el Sitio:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-5">
-            <li><strong>Stripe</strong>, para procesar pagos y suscripciones.</li>
+            <li><strong>PayPal</strong>, para procesar pagos y suscripciones.</li>
             <li>
               <strong>[Neon / tu proveedor de base de datos]</strong>, donde
               se aloja la base de datos con tu información de cuenta.

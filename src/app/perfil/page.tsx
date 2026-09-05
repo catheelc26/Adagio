@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/profile-form";
 import { VideoCard } from "@/components/video-card";
+import { CancelSubscriptionButton } from "@/components/cancel-subscription-button";
 import { ButtonLink, Card, Eyebrow } from "@/components/ui";
 
 export const metadata: Metadata = {
@@ -93,15 +94,8 @@ export default async function ProfilePage() {
           </div>
 
           <div className="mt-6">
-            {hasAccess && user.subscription?.stripeCustomerId ? (
-              <form action="/api/stripe/portal" method="POST">
-                <button
-                  type="submit"
-                  className="w-full rounded-full border border-gold/50 px-5 py-2.5 text-sm text-gold transition-colors hover:bg-gold hover:text-navy-950"
-                >
-                  Gestionar suscripción
-                </button>
-              </form>
+            {hasAccess && user.subscription?.paypalSubscriptionId ? (
+              <CancelSubscriptionButton />
             ) : (
               <ButtonLink href="/precios" className="w-full">
                 Ver planes de suscripción

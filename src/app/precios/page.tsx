@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { PLANS } from "@/lib/plans";
-import { isStripeConfigured } from "@/lib/stripe";
+import { isPaypalConfigured } from "@/lib/paypal";
 import { SectionHeading, ButtonLink } from "@/components/ui";
+import { PaypalSubscribeButton } from "@/components/paypal-subscribe-button";
 
 export const metadata: Metadata = {
   title: "Precios",
@@ -31,10 +32,10 @@ export default async function PreciosPage({
           Has cancelado el proceso de pago. Puedes intentarlo de nuevo cuando quieras.
         </p>
       )}
-      {error === "stripe-not-configured" && (
+      {error === "paypal-not-configured" && (
         <p className="mx-auto mt-8 max-w-md rounded-lg border border-gold/30 bg-gold/5 px-4 py-3 text-center text-sm text-cream-dim/80">
           Los pagos todavía no están configurados en este entorno. Añade tus
-          claves de Stripe en <code>.env</code> para activarlos.
+          claves de PayPal en <code>.env</code> para activarlos.
         </p>
       )}
 
@@ -71,20 +72,20 @@ export default async function PreciosPage({
 
             <div className="mt-8">
               {session?.user ? (
-                <form action="/api/stripe/checkout" method="POST">
-                  <input type="hidden" name="priceId" value={plan.priceId ?? ""} />
+                isPaypalConfigured && plan.planId ? (
+                  <PaypalSubscribeButton
+                    planId={plan.planId}
+                    clientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? ""}
+                  />
+                ) : (
                   <button
-                    type="submit"
-                    disabled={!isStripeConfigured || !plan.priceId}
-                    className={`w-full rounded-full px-6 py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                      plan.featured
-                        ? "bg-gold text-navy-950 hover:bg-gold-light"
-                        : "border border-gold/50 text-gold hover:bg-gold hover:text-navy-950"
-                    }`}
+                    type="button"
+                    disabled
+                    className="w-full cursor-not-allowed rounded-full px-6 py-3 text-sm font-medium opacity-50 border border-gold/50 text-gold"
                   >
                     Elegir {plan.name.toLowerCase()}
                   </button>
-                </form>
+                )
               ) : (
                 <ButtonLink
                   href="/registro"
