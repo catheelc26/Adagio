@@ -26,9 +26,14 @@ export function LoginForm() {
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm text-cream-dim/80">
-          Contraseña
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="block text-sm text-cream-dim/80">
+            Contraseña
+          </label>
+          <Link href="/olvide-password" className="text-xs text-gold hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
         <input
           id="password"
           name="password"

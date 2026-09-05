@@ -31,11 +31,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  favorites     Favorite[]
-  progress      Progress[]
-  subscription  Subscription?
+  accounts            Account[]
+  sessions            Session[]
+  favorites           Favorite[]
+  progress            Progress[]
+  subscription        Subscription?
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Account {
@@ -72,6 +73,17 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ---------------------------------------------------------------------------

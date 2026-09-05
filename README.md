@@ -17,7 +17,9 @@ Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
 - **Biblioteca completa**: `/biblioteca`, filtrable por pilar, con
   reproducción ilimitada de las clases desbloqueadas.
 - **Cuentas de usuario**: registro/login por email y contraseña
-  (`/registro`, `/iniciar-sesion`), perfil editable en `/perfil`.
+  (`/registro`, `/iniciar-sesion`), perfil editable en `/perfil`, y
+  recuperación de contraseña por email (`/olvide-password`,
+  `/restablecer-password`).
 - **Favoritos**: cualquier clase se puede guardar con el botón de corazón y
   aparece en el perfil del usuario.
 - **Suscripciones con Stripe**: `/precios`, checkout, portal de facturación y
@@ -64,10 +66,15 @@ Ver `.env.example`. Resumen:
 | `STRIPE_SECRET_KEY` | Clave secreta de Stripe (modo test mientras desarrollas). |
 | `STRIPE_WEBHOOK_SECRET` | Firma del webhook de Stripe (`stripe listen` en local). |
 | `STRIPE_PRICE_ID_MONTHLY` / `STRIPE_PRICE_ID_ANNUAL` | IDs de los precios (Price) creados en el Dashboard de Stripe para los dos planes definidos en `src/lib/plans.ts`. |
+| `RESEND_API_KEY` | Clave de [Resend](https://resend.com) para enviar el email de "olvidé mi contraseña". Tiene capa gratuita. |
+| `EMAIL_FROM` | Remitente de esos correos, por ejemplo `The Adagio Method <hola@tudominio.com>`. Sin un dominio propio verificado en Resend, deja el valor por defecto de `.env.example` (`onboarding@resend.dev`), que funciona igual pero identifica el correo como enviado desde Resend. |
 
 Sin las claves de Stripe, todo el sitio funciona igual (incluida la vista
 previa de la biblioteca); solo el botón de "Elegir plan" queda deshabilitado
-hasta configurarlas.
+hasta configurarlas. Sin `RESEND_API_KEY`, "olvidé mi contraseña" sigue
+funcionando en local (el enlace de recuperación se imprime en la consola del
+servidor en vez de enviarse por email), pero en producción nadie recibirá el
+correo hasta que la configures.
 
 ## Desplegar en Vercel
 
@@ -114,6 +121,40 @@ hasta configurarlas.
    apuntando a `https://tu-dominio.com/api/stripe/webhook`, escuchando
    `checkout.session.completed`, `customer.subscription.updated` y
    `customer.subscription.deleted`.
+
+## Pasar Stripe a modo real (cobrar de verdad)
+
+El código no cambia entre modo test y modo real — Stripe usa tus claves
+para decidir si un pago es de prueba o real. Los pasos son todos dentro de
+los Dashboards de Stripe y de Vercel:
+
+1. En el Dashboard de Stripe, activa tu cuenta para pagos reales
+   (**Activar tu cuenta** / **Activate your account**): te pedirá datos del
+   negocio, cuenta bancaria de destino y, según tu país, información fiscal.
+2. Con el interruptor "Modo test" apagado (arriba a la derecha en el
+   Dashboard), vuelve a crear el mismo producto con sus dos precios
+   (mensual y anual) que ya tenías en modo test — los productos y precios
+   de test no existen en modo real, hay que recrearlos una vez.
+3. Copia los nuevos `price_id` (modo real) y reemplaza en Vercel
+   (**Settings → Environment Variables**) los valores de
+   `STRIPE_PRICE_ID_MONTHLY` y `STRIPE_PRICE_ID_ANNUAL`.
+4. En el Dashboard de Stripe, copia tu clave secreta de modo real
+   (empieza con `sk_live_...`, en **Developers → API keys**) y reemplaza
+   `STRIPE_SECRET_KEY` en Vercel.
+5. Crea un nuevo endpoint de webhook en modo real (**Developers →
+   Webhooks**) apuntando a `https://tu-dominio.com/api/stripe/webhook`,
+   con los mismos tres eventos del paso anterior. Copia su firma
+   (`whsec_...`) y reemplaza `STRIPE_WEBHOOK_SECRET` en Vercel.
+6. Vuelve a desplegar el proyecto en Vercel para que recoja las nuevas
+   variables (un simple "Redeploy" desde el propio Dashboard de Vercel
+   basta, no hace falta ningún cambio de código).
+7. Haz una suscripción real de prueba con tu propia tarjeta para
+   confirmar que todo el flujo funciona antes de anunciar el lanzamiento.
+
+Antes de este paso, revisa también `/terminos` y `/privacidad`: completa
+los datos entre corchetes (razón social, país, contacto, política de
+reembolsos) — idealmente con ayuda de un abogado o gestor familiarizado con
+las leyes de tu país, ya que vas a empezar a cobrar de verdad.
 
 ## Contenido de vídeo
 

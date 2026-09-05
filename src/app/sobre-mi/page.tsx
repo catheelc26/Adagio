@@ -79,33 +79,6 @@ export default function SobreMiPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-20 lg:px-10">
-        <Eyebrow>En escena</Eyebrow>
-        <h2 className="mt-2 font-serif text-3xl text-cream text-balance sm:text-4xl">
-          Antes de enseñar el método, lo bailé
-        </h2>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2">
-          <Card className="relative aspect-3/4 overflow-hidden p-0">
-            <Image
-              src="/brand/catherine-pas-de-deux.jpg"
-              alt="Catherine en un pas de deux durante un ensayo"
-              fill
-              sizes="(min-width: 640px) 45vw, 90vw"
-              className="object-cover"
-            />
-          </Card>
-          <Card className="relative aspect-3/4 overflow-hidden p-0">
-            <Image
-              src="/brand/catherine-variacion-escenario.jpg"
-              alt="Catherine bailando una variación de repertorio en escenario"
-              fill
-              sizes="(min-width: 640px) 45vw, 90vw"
-              className="object-cover"
-            />
-          </Card>
-        </div>
-      </section>
-
       <section className="mx-auto max-w-4xl px-6 py-20 lg:px-10">
         <div className="flex flex-col items-center gap-6 rounded-2xl bg-cream px-8 py-10 text-center sm:flex-row sm:gap-10 sm:text-left">
           <Image
