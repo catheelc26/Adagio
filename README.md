@@ -179,9 +179,28 @@ Para publicar vídeo real:
    Stream, Mux, etc.) — esta web solo guarda el enlace, no el archivo.
 2. Copia ese enlace y añade la clase desde `/admin` (ver siguiente sección).
 
+Un enlace de YouTube o Vimeo se detecta automáticamente
+(`src/lib/video-embed.ts`) y se muestra como reproductor embebido; cualquier
+otro enlace (Bunny Stream, Mux, un `.mp4` directo) se reproduce con el
+reproductor de vídeo nativo.
+
 Las miniaturas se generan automáticamente a partir del icono del pilar
 (`src/components/video-thumbnail.tsx`); no dependen de imágenes externas ni
 de nada que tengas que subir.
+
+### Subtítulos
+
+Si alojas en **YouTube**, no hace falta hacer nada aparte: YouTube genera
+subtítulos automáticos gratis para cada vídeo que subas, y el reproductor
+embebido en tu sitio los muestra activados por defecto (el botón "CC" dentro
+del propio reproductor los enciende o apaga). Para revisarlos o corregirlos,
+entra a YouTube Studio → tu vídeo → Subtítulos.
+
+Si en cambio alojas un archivo directo (Bunny Stream, Mux, etc.), generar
+subtítulos automáticos requiere transcribir el audio con un servicio de
+voz a texto (por ejemplo la API de Whisper de OpenAI), lo cual tiene un
+costo pequeño por minuto y necesita tener el archivo de vídeo/audio
+disponible para procesarlo — no es algo que el sitio haga solo hoy.
 
 ## Gestionar las clases (panel de administración)
 

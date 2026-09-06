@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { hasActiveAccess } from "@/lib/subscription";
 import { formatDuration } from "@/lib/format";
+import { resolveVideoEmbed } from "@/lib/video-embed";
 import { PillarIcon } from "@/components/pillar-icon";
 import { FavoriteButton } from "@/components/favorite-button";
 import { VideoCard } from "@/components/video-card";
@@ -77,14 +78,30 @@ export default async function VideoPage({ params }: { params: Params }) {
         <div>
           <div className="relative overflow-hidden rounded-2xl border border-cream/10 bg-navy-900">
             {canWatch ? (
-              <video
-                key={video.id}
-                controls
-                preload="metadata"
-                className="aspect-video w-full bg-black"
-              >
-                <source src={video.videoUrl} type="video/mp4" />
-              </video>
+              (() => {
+                const embed = resolveVideoEmbed(video.videoUrl);
+                if (embed.type === "file") {
+                  return (
+                    <video
+                      key={video.id}
+                      controls
+                      preload="metadata"
+                      className="aspect-video w-full bg-black"
+                    >
+                      <source src={embed.url} type="video/mp4" />
+                    </video>
+                  );
+                }
+                return (
+                  <iframe
+                    key={video.id}
+                    src={embed.embedUrl}
+                    className="aspect-video w-full bg-black"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                );
+              })()
             ) : (
               <div className="flex aspect-video flex-col items-center justify-center gap-4 bg-linear-to-br from-navy-800 to-navy-950 p-10 text-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} className="h-10 w-10 text-gold">
