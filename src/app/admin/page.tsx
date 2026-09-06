@@ -30,7 +30,12 @@ export default async function AdminPage() {
           <p className="text-xs uppercase tracking-[0.25em] text-gold/70">Panel privado</p>
           <h1 className="mt-1 font-serif text-3xl text-cream">Gestionar clases</h1>
         </div>
-        <ButtonLink href="/admin/nueva">+ Nueva clase</ButtonLink>
+        <div className="flex gap-3">
+          <ButtonLink href="/admin/regalos" variant="secondary">
+            Códigos de regalo
+          </ButtonLink>
+          <ButtonLink href="/admin/nueva">+ Nueva clase</ButtonLink>
+        </div>
       </div>
 
       <div className="mt-12 space-y-14">

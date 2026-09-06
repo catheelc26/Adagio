@@ -3,14 +3,20 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "@/components/login-form";
 import { Eyebrow } from "@/components/ui";
+import { isSafeRedirect } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
   const session = await auth();
-  if (session?.user) redirect("/biblioteca");
+  if (session?.user) redirect(isSafeRedirect(callbackUrl) ? callbackUrl : "/biblioteca");
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center px-6 py-20">
@@ -24,7 +30,7 @@ export default async function LoginPage() {
       </p>
 
       <div className="mt-8 rounded-2xl border border-cream/10 bg-navy-900/60 p-8">
-        <LoginForm />
+        <LoginForm callbackUrl={callbackUrl} />
       </div>
     </div>
   );

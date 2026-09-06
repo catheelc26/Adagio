@@ -29,7 +29,12 @@ Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
 - **Panel de administración** (`/admin`, solo para usuarios con rol `ADMIN`):
   crear, editar y eliminar clases desde un formulario, sin tocar código ni
   base de datos. Ver "Gestionar las clases (panel de administración)" más
-  abajo.
+  abajo. Las cuentas con rol `ADMIN` tienen acceso completo a la biblioteca
+  sin necesidad de suscribirse.
+- **Códigos de regalo** (`/admin/regalos`, solo `ADMIN`): genera códigos de
+  un solo uso que dan acceso completo gratis por 30 días. Se comparten
+  manualmente (no aparecen en ningún lugar público del sitio); quien lo
+  recibe lo canjea en `/canjear`.
 
 ## Requisitos
 

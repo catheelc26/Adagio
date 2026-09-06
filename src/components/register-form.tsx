@@ -6,11 +6,12 @@ import { registerAction, type FormState } from "@/lib/actions/auth";
 
 const initialState: FormState = {};
 
-export function RegisterForm() {
+export function RegisterForm({ callbackUrl }: { callbackUrl?: string }) {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
 
   return (
     <form action={formAction} className="space-y-5">
+      {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
       <div>
         <label htmlFor="name" className="block text-sm text-cream-dim/80">
           Nombre completo

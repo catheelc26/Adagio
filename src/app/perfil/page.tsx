@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { hasActiveAccess } from "@/lib/subscription";
 import { ProfileForm } from "@/components/profile-form";
 import { VideoCard } from "@/components/video-card";
 import { CancelSubscriptionButton } from "@/components/cancel-subscription-button";
@@ -17,6 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
   PAST_DUE: "Pago pendiente",
   CANCELED: "Cancelada",
   INACTIVE: "Sin suscripción",
+  EXPIRED: "Vencida",
 };
 
 export default async function ProfilePage() {
@@ -39,8 +41,14 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/iniciar-sesion");
 
-  const status = user.subscription?.status ?? "INACTIVE";
-  const hasAccess = status === "ACTIVE" || status === "TRIALING" || user.role === "ADMIN";
+  const hasAccess = await hasActiveAccess(user.id, user.role);
+  const rawStatus = user.subscription?.status ?? "INACTIVE";
+  const isExpired =
+    (rawStatus === "ACTIVE" || rawStatus === "TRIALING") &&
+    Boolean(user.subscription?.currentPeriodEnd) &&
+    user.subscription!.currentPeriodEnd! < new Date();
+  const status = isExpired ? "EXPIRED" : rawStatus;
+  const isRecurring = Boolean(user.subscription?.paypalSubscriptionId);
   const favoriteIds = new Set(favorites.map((f) => f.videoId));
 
   return (
@@ -82,7 +90,9 @@ export default async function ProfilePage() {
             {user.subscription?.currentPeriodEnd && (
               <div className="flex items-center justify-between">
                 <span className="text-cream-dim/70">
-                  {user.subscription.cancelAtPeriodEnd ? "Finaliza el" : "Se renueva el"}
+                  {isRecurring && !user.subscription.cancelAtPeriodEnd
+                    ? "Se renueva el"
+                    : "Finaliza el"}
                 </span>
                 <span className="text-cream-dim/90">
                   {new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
@@ -91,10 +101,15 @@ export default async function ProfilePage() {
                 </span>
               </div>
             )}
+            {hasAccess && !isRecurring && user.role !== "ADMIN" && (
+              <p className="text-xs text-cream-dim/50">
+                Tienes acceso de regalo, sin cobros ni renovación automática.
+              </p>
+            )}
           </div>
 
           <div className="mt-6">
-            {hasAccess && user.subscription?.paypalSubscriptionId ? (
+            {hasAccess && isRecurring ? (
               <CancelSubscriptionButton />
             ) : (
               <ButtonLink href="/precios" className="w-full">

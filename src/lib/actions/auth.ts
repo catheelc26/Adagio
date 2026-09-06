@@ -13,6 +13,7 @@ import {
 } from "@/lib/validation";
 import { signIn } from "@/auth";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { isSafeRedirect } from "@/lib/safe-redirect";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
 
@@ -58,11 +59,17 @@ export async function registerAction(
     },
   });
 
+  const registerCallbackUrl = formData.get("callbackUrl");
+  const registerRedirectTo =
+    typeof registerCallbackUrl === "string" && isSafeRedirect(registerCallbackUrl)
+      ? registerCallbackUrl
+      : "/biblioteca";
+
   try {
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/biblioteca",
+      redirectTo: registerRedirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -87,10 +94,14 @@ export async function loginAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  const callbackUrl = formData.get("callbackUrl");
+  const redirectTo =
+    typeof callbackUrl === "string" && isSafeRedirect(callbackUrl) ? callbackUrl : "/biblioteca";
+
   try {
     await signIn("credentials", {
       ...parsed.data,
-      redirectTo: "/biblioteca",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
