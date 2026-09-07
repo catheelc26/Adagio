@@ -22,10 +22,19 @@ Construido con Next.js 16 (App Router), Prisma + PostgreSQL, Auth.js v5
   `/restablecer-password`).
 - **Favoritos**: cualquier clase se puede guardar con el botón de corazón y
   aparece en el perfil del usuario.
-- **Suscripciones con PayPal**: `/precios`, botón de suscripción y webhook
-  para mantener el estado de la suscripción sincronizado. Las clases no
-  marcadas como vista previa quedan bloqueadas hasta tener una suscripción
-  activa.
+- **Pagos con PayPal**: `/precios` ofrece dos formas de pagar por plan:
+  - **Suscripción** (se renueva sola cada mes/año) — requiere que quien paga
+    tenga o cree una cuenta de PayPal; es una regla del propio producto
+    "Subscriptions" de PayPal, no algo configurable.
+  - **Pago único** (mismo precio, sin renovación automática) — permite pagar
+    con tarjeta sin cuenta de PayPal, si la cuenta de PayPal de destino está
+    habilitada para "Advanced Credit and Debit Card Payments" (lo decide
+    PayPal, no el código). Quien paga así vuelve a `/precios` a pagar de
+    nuevo cuando se le acabe el periodo.
+  Un webhook mantiene sincronizado el estado de las suscripciones
+  recurrentes. Las clases no marcadas como vista previa quedan bloqueadas
+  hasta tener acceso activo (por cualquiera de las dos vías, o un código de
+  regalo — ver más abajo).
 - **Panel de administración** (`/admin`, solo para usuarios con rol `ADMIN`):
   crear, editar y eliminar clases desde un formulario, sin tocar código ni
   base de datos. Ver "Gestionar las clases (panel de administración)" más

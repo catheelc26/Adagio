@@ -49,6 +49,8 @@ export default async function ProfilePage() {
     user.subscription!.currentPeriodEnd! < new Date();
   const status = isExpired ? "EXPIRED" : rawStatus;
   const isRecurring = Boolean(user.subscription?.paypalSubscriptionId);
+  const isOneTimePaid = Boolean(user.subscription?.paypalOrderId);
+  const isGift = hasAccess && !isRecurring && !isOneTimePaid && user.role !== "ADMIN";
   const favoriteIds = new Set(favorites.map((f) => f.videoId));
 
   return (
@@ -101,9 +103,18 @@ export default async function ProfilePage() {
                 </span>
               </div>
             )}
-            {hasAccess && !isRecurring && user.role !== "ADMIN" && (
+            {isGift && (
               <p className="text-xs text-cream-dim/50">
                 Tienes acceso de regalo, sin cobros ni renovación automática.
+              </p>
+            )}
+            {isOneTimePaid && (
+              <p className="text-xs text-cream-dim/50">
+                Pago único, sin renovación automática — vuelve a{" "}
+                <a href="/precios" className="text-gold hover:underline">
+                  /precios
+                </a>{" "}
+                cuando quieras continuar.
               </p>
             )}
           </div>

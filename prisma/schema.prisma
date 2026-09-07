@@ -105,6 +105,7 @@ model Subscription {
   userId                String             @unique
   paypalSubscriptionId  String?            @unique
   paypalPlanId          String?
+  paypalOrderId         String?            @unique
   status                SubscriptionStatus @default(INACTIVE)
   currentPeriodEnd      DateTime?
   cancelAtPeriodEnd     Boolean            @default(false)

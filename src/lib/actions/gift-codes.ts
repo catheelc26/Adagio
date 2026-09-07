@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { computeExtendedPeriodEnd } from "@/lib/grant-access";
 
 // Sin caracteres ambiguos (0/O, 1/I/L) para que sea fácil de escribir a mano.
 const CODE_CHARSET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 8;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function generateCode() {
   let code = "";
@@ -68,17 +68,11 @@ export async function redeemGiftCodeAction(
     return { error: "Ese código ya fue usado." };
   }
 
-  const existing = await prisma.subscription.findUnique({ where: { userId: session.user.id } });
-  const now = new Date();
-  const base =
-    existing?.status === "ACTIVE" && existing.currentPeriodEnd && existing.currentPeriodEnd > now
-      ? existing.currentPeriodEnd
-      : now;
-  const currentPeriodEnd = new Date(base.getTime() + giftCode.durationDays * DAY_MS);
+  const currentPeriodEnd = await computeExtendedPeriodEnd(session.user.id, giftCode.durationDays);
 
   const result = await prisma.giftCode.updateMany({
     where: { id: giftCode.id, redeemedAt: null },
-    data: { redeemedAt: now, redeemedById: session.user.id },
+    data: { redeemedAt: new Date(), redeemedById: session.user.id },
   });
 
   if (result.count === 0) {
@@ -87,7 +81,13 @@ export async function redeemGiftCodeAction(
 
   await prisma.subscription.upsert({
     where: { userId: session.user.id },
-    update: { status: "ACTIVE", currentPeriodEnd },
+    update: {
+      status: "ACTIVE",
+      currentPeriodEnd,
+      paypalSubscriptionId: null,
+      paypalOrderId: null,
+      cancelAtPeriodEnd: false,
+    },
     create: { userId: session.user.id, status: "ACTIVE", currentPeriodEnd },
   });
 

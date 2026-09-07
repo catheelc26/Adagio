@@ -85,6 +85,31 @@ export function cancelPaypalSubscription(subscriptionId: string, reason: string)
   });
 }
 
+export type PaypalOrder = {
+  id: string;
+  status: "CREATED" | "SAVED" | "APPROVED" | "VOIDED" | "COMPLETED" | "PAYER_ACTION_REQUIRED";
+};
+
+export function createPaypalOrder(amountUsd: string) {
+  return paypalFetch<PaypalOrder>("/v2/checkout/orders", {
+    method: "POST",
+    body: JSON.stringify({
+      intent: "CAPTURE",
+      purchase_units: [{ amount: { currency_code: "USD", value: amountUsd } }],
+    }),
+  });
+}
+
+export function capturePaypalOrder(orderId: string) {
+  return paypalFetch<PaypalOrder>(`/v2/checkout/orders/${orderId}/capture`, {
+    method: "POST",
+  });
+}
+
+export function getPaypalOrder(orderId: string) {
+  return paypalFetch<PaypalOrder>(`/v2/checkout/orders/${orderId}`);
+}
+
 export async function verifyPaypalWebhookSignature(params: {
   transmissionId: string;
   transmissionTime: string;
