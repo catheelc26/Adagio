@@ -5,6 +5,8 @@ export type Plan = {
   cadence: string;
   description: string;
   planId: string | undefined;
+  hostedButtonId: string | undefined;
+  durationDays: number;
   featured?: boolean;
   features: string[];
 };
@@ -17,6 +19,8 @@ export const PLANS: Plan[] = [
     cadence: "/ mes",
     description: "Ideal para probar el ecosistema completo sin compromiso.",
     planId: process.env.PAYPAL_PLAN_ID_MONTHLY,
+    hostedButtonId: process.env.PAYPAL_HOSTED_BUTTON_ID_MONTHLY,
+    durationDays: 30,
     features: [
       "Acceso a los 8 pilares",
       "Biblioteca completa, sin límite de reproducciones",
@@ -31,6 +35,8 @@ export const PLANS: Plan[] = [
     cadence: "/ año",
     description: "Ahorra frente al plan mensual para quienes se comprometen con su proceso.",
     planId: process.env.PAYPAL_PLAN_ID_ANNUAL,
+    hostedButtonId: process.env.PAYPAL_HOSTED_BUTTON_ID_ANNUAL,
+    durationDays: 365,
     featured: true,
     features: [
       "Todo lo del plan mensual",

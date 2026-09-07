@@ -88,23 +88,9 @@ export function cancelPaypalSubscription(subscriptionId: string, reason: string)
 export type PaypalOrder = {
   id: string;
   status: "CREATED" | "SAVED" | "APPROVED" | "VOIDED" | "COMPLETED" | "PAYER_ACTION_REQUIRED";
+  payer?: { email_address?: string };
+  purchase_units?: { amount?: { value?: string; currency_code?: string } }[];
 };
-
-export function createPaypalOrder(amountUsd: string) {
-  return paypalFetch<PaypalOrder>("/v2/checkout/orders", {
-    method: "POST",
-    body: JSON.stringify({
-      intent: "CAPTURE",
-      purchase_units: [{ amount: { currency_code: "USD", value: amountUsd } }],
-    }),
-  });
-}
-
-export function capturePaypalOrder(orderId: string) {
-  return paypalFetch<PaypalOrder>(`/v2/checkout/orders/${orderId}/capture`, {
-    method: "POST",
-  });
-}
 
 export function getPaypalOrder(orderId: string) {
   return paypalFetch<PaypalOrder>(`/v2/checkout/orders/${orderId}`);

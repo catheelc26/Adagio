@@ -5,7 +5,7 @@ import { isPaypalConfigured } from "@/lib/paypal";
 import { hasActiveAccess } from "@/lib/subscription";
 import { SectionHeading, ButtonLink, Card } from "@/components/ui";
 import { PaypalSubscribeButton } from "@/components/paypal-subscribe-button";
-import { PaypalOneTimeButton } from "@/components/paypal-onetime-button";
+import { PaypalHostedButton } from "@/components/paypal-hosted-button";
 
 export const metadata: Metadata = {
   title: "Precios",
@@ -95,18 +95,22 @@ export default async function PreciosPage({
                           planId={plan.planId}
                           clientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? ""}
                         />
-                        <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-cream-dim/40">
-                          <span className="h-px flex-1 bg-cream/10" />
-                          o paga una vez
-                          <span className="h-px flex-1 bg-cream/10" />
-                        </div>
-                        <PaypalOneTimeButton
-                          planId={plan.id}
-                          clientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? ""}
-                        />
-                        <p className="text-center text-[11px] text-cream-dim/45">
-                          Pago único con tarjeta o PayPal, sin renovación automática.
-                        </p>
+                        {plan.hostedButtonId && (
+                          <>
+                            <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-cream-dim/40">
+                              <span className="h-px flex-1 bg-cream/10" />
+                              o paga una vez
+                              <span className="h-px flex-1 bg-cream/10" />
+                            </div>
+                            <PaypalHostedButton
+                              hostedButtonId={plan.hostedButtonId}
+                              clientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? ""}
+                            />
+                            <p className="text-center text-[11px] text-cream-dim/45">
+                              Pago único con tarjeta o PayPal, sin renovación automática.
+                            </p>
+                          </>
+                        )}
                       </>
                     ) : (
                       <button

@@ -120,13 +120,19 @@ correo hasta que la configures.
 
 ## Configurar PayPal (modo sandbox / pruebas)
 
-The Adagio Method usa **suscripciones de PayPal** (no Stripe, que no está
-disponible para cuentas registradas en algunos países). El botón de pago
-funciona con o sin cuenta de PayPal del lado del comprador, pero para que
-alguien pueda pagar solo con tarjeta (sin iniciar sesión en PayPal) PayPal
-tiene que aprobar tu cuenta para "Advanced Credit and Debit Card Payments"
-— una aprobación que decide PayPal según tu cuenta y país, no algo que se
-configure desde aquí.
+The Adagio Method usa **PayPal** (no Stripe, que no está disponible para
+cuentas registradas en algunos países) de dos formas en `/precios`:
+
+- **Suscripción** (se renueva sola): usa el botón de PayPal Subscriptions.
+  PayPal exige que quien paga tenga o cree una cuenta de PayPal — es una
+  regla del propio producto, no algo configurable.
+- **Pago único** (mismo precio, sin renovación automática): usa un "Hosted
+  Button", generado sin código desde el propio Dashboard de PayPal, que sí
+  puede mostrar la opción de pagar con tarjeta sin cuenta de PayPal — pero
+  solo si PayPal aprobó esa cuenta para eso ("Advanced Credit and Debit
+  Card Payments"), algo que decide PayPal según la cuenta y el país, no
+  algo que se active desde aquí ni desde el código. Ver "Configurar el pago
+  único con tarjeta" más abajo.
 
 1. Entra a [developer.paypal.com](https://developer.paypal.com) con tu
    cuenta de PayPal Business y ve a **Apps & Credentials**.
@@ -147,11 +153,50 @@ configure desde aquí.
    un webhook apuntando a `https://tu-dominio.com/api/paypal/webhook`,
    escuchando los eventos `BILLING.SUBSCRIPTION.ACTIVATED`,
    `BILLING.SUBSCRIPTION.UPDATED`, `BILLING.SUBSCRIPTION.SUSPENDED`,
-   `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.EXPIRED` y
-   `PAYMENT.SALE.COMPLETED`. Copia el **Webhook ID** en `PAYPAL_WEBHOOK_ID`.
+   `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.EXPIRED`,
+   `PAYMENT.SALE.COMPLETED` y `PAYMENT.CAPTURE.COMPLETED` (este último es
+   el que activa el acceso automáticamente para los pagos únicos con
+   Hosted Buttons). Copia el **Webhook ID** en `PAYPAL_WEBHOOK_ID`.
 6. Prueba el botón en `/precios` usando una [cuenta de comprador de
    sandbox](https://developer.paypal.com/dashboard/accounts) (PayPal crea
    una automáticamente al crear tu app).
+
+### Configurar el pago único con tarjeta (Hosted Buttons)
+
+Esto es independiente de todo lo anterior y se hace directamente desde
+**paypal.com** (no developer.paypal.com), con la cuenta ya en modo real:
+
+1. En paypal.com, busca **Pagos del sitio web → Botones de pago** (o
+   "Payment Buttons" / el generador de botones sin código).
+2. Elige **Botones de pago**, crea un producto con el nombre del plan (por
+   ejemplo "The Adagio Method — Mensual") y el precio exacto (`30` o `250`,
+   USD).
+3. Completa el asistente hasta la pantalla final ("Sus botones están
+   listos"), donde PayPal te da dos fragmentos de código.
+4. En el segundo fragmento vas a ver algo como:
+
+   ```html
+   <div id="paypal-container-XXXXXXXXXXXX"></div>
+   <script>
+     paypal.HostedButtons({
+       hostedButtonId: "XXXXXXXXXXXX",
+     }).render("#paypal-container-XXXXXXXXXXXX");
+   </script>
+   ```
+
+   Copia ese `hostedButtonId` en `PAYPAL_HOSTED_BUTTON_ID_MONTHLY` (o
+   `_ANNUAL` si repites el proceso para el plan anual).
+5. Vuelve a desplegar. La opción "o paga una vez" aparece automáticamente
+   en `/precios` en cuanto la variable correspondiente tiene un valor —
+   sin ella, esa opción simplemente no se muestra.
+
+Si PayPal ofrece tarjeta como método en ese botón (lo decide PayPal según
+tu cuenta, no el código), el acceso se activa solo: el webhook recibe el
+pago, busca una cuenta en el sitio con el mismo email que usó para pagar,
+y le da 30 o 365 días de acceso según el monto. Si nadie con ese email
+está registrado en el sitio, no pasa nada automáticamente — puedes darle
+acceso manualmente con un código de regalo (ver más abajo) una vez la
+persona se registre.
 
 ## Pasar PayPal a modo real (cobrar de verdad)
 
