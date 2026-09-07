@@ -156,36 +156,39 @@ cuentas registradas en algunos países) de dos formas en `/precios`:
    `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.EXPIRED`,
    `PAYMENT.SALE.COMPLETED` y `PAYMENT.CAPTURE.COMPLETED` (este último es
    el que activa el acceso automáticamente para los pagos únicos con
-   Hosted Buttons). Copia el **Webhook ID** en `PAYPAL_WEBHOOK_ID`.
+   botón de PayPal). Copia el **Webhook ID** en `PAYPAL_WEBHOOK_ID`.
 6. Prueba el botón en `/precios` usando una [cuenta de comprador de
    sandbox](https://developer.paypal.com/dashboard/accounts) (PayPal crea
    una automáticamente al crear tu app).
 
-### Configurar el pago único con tarjeta (Hosted Buttons)
+### Configurar el pago único con tarjeta (botón de PayPal sin código)
 
 Esto es independiente de todo lo anterior y se hace directamente desde
 **paypal.com** (no developer.paypal.com), con la cuenta ya en modo real:
 
 1. En paypal.com, busca **Pagos del sitio web → Botones de pago** (o
    "Payment Buttons" / el generador de botones sin código).
-2. Elige **Botones de pago**, crea un producto con el nombre del plan (por
-   ejemplo "The Adagio Method — Mensual") y el precio exacto (`30` o `250`,
-   USD).
-3. Completa el asistente hasta la pantalla final ("Sus botones están
-   listos"), donde PayPal te da dos fragmentos de código.
-4. En el segundo fragmento vas a ver algo como:
+2. Crea un producto con el nombre del plan (por ejemplo "The Adagio
+   Method — Mensual") y el precio exacto (`30` o `250`, USD).
+3. En la vista previa, elige el estilo **"Botón único"** (no "Botones
+   apilados" — ese muestra el botón de PayPal y el de tarjeta por
+   separado, lo cual se ve repetido junto al botón de suscripción que ya
+   existe en `/precios`).
+4. Completa el asistente hasta "Su botón está listo". El código que te da
+   es un simple formulario HTML como:
 
    ```html
-   <div id="paypal-container-XXXXXXXXXXXX"></div>
-   <script>
-     paypal.HostedButtons({
-       hostedButtonId: "XXXXXXXXXXXX",
-     }).render("#paypal-container-XXXXXXXXXXXX");
-   </script>
+   <form action="https://www.paypal.com/ncp/payment/XXXXXXXXXXXX" method="post" ...>
+     <input type="submit" value="Pagar ahora" />
+     ...
+   </form>
    ```
 
-   Copia ese `hostedButtonId` en `PAYPAL_HOSTED_BUTTON_ID_MONTHLY` (o
-   `_ANNUAL` si repites el proceso para el plan anual).
+   El único dato que necesitas de ahí es el ID al final de esa URL
+   (`XXXXXXXXXXXX`). Cópialo en `PAYPAL_HOSTED_BUTTON_ID_MONTHLY` (o
+   `_ANNUAL` si repites el proceso para el plan anual) — el sitio ya
+   construye su propio botón, con su propio estilo, apuntando a esa misma
+   URL.
 5. Vuelve a desplegar. La opción "o paga una vez" aparece automáticamente
    en `/precios` en cuanto la variable correspondiente tiene un valor —
    sin ella, esa opción simplemente no se muestra.
