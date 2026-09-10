@@ -19,21 +19,18 @@ export default async function EditVideoPage({ params }: { params: Params }) {
   const [pillars, video] = await Promise.all([
     prisma.pillar.findMany({
       orderBy: { order: "asc" },
-      select: {
-        id: true,
-        name: true,
-        levels: { orderBy: { order: "asc" }, select: { id: true, name: true } },
-      },
+      select: { id: true, name: true, isTheory: true },
     }),
     prisma.video.findUnique({
       where: { id },
       select: {
         id: true,
-        levelId: true,
+        pillarId: true,
         title: true,
         description: true,
         videoUrl: true,
         duration: true,
+        tag: true,
         isPreview: true,
       },
     }),

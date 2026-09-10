@@ -25,9 +25,9 @@ export default async function BibliotecaPage({
   const [pillars, videos, access, favorites] = await Promise.all([
     prisma.pillar.findMany({ orderBy: { order: "asc" } }),
     prisma.video.findMany({
-      where: pilar ? { level: { pillar: { slug: pilar } } } : undefined,
-      orderBy: [{ level: { pillar: { order: "asc" } } }, { level: { order: "asc" } }, { order: "asc" }],
-      include: { level: { include: { pillar: true } } },
+      where: pilar ? { pillar: { slug: pilar } } : undefined,
+      orderBy: [{ pillar: { order: "asc" } }, { order: "asc" }],
+      include: { pillar: true },
     }),
     hasActiveAccess(userId, session?.user?.role),
     userId
@@ -93,13 +93,11 @@ export default async function BibliotecaPage({
               title: video.title,
               duration: video.duration,
               isPreview: video.isPreview,
-              level: {
-                name: video.level.name,
-                pillar: {
-                  slug: video.level.pillar.slug,
-                  name: video.level.pillar.name,
-                  icon: video.level.pillar.icon,
-                },
+              tag: video.tag,
+              pillar: {
+                slug: video.pillar.slug,
+                name: video.pillar.name,
+                icon: video.pillar.icon,
               },
             }}
             locked={!video.isPreview && !access}

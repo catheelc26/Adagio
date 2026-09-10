@@ -14,11 +14,7 @@ export default async function NewVideoPage() {
 
   const pillars = await prisma.pillar.findMany({
     orderBy: { order: "asc" },
-    select: {
-      id: true,
-      name: true,
-      levels: { orderBy: { order: "asc" }, select: { id: true, name: true } },
-    },
+    select: { id: true, name: true, isTheory: true },
   });
 
   return (

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function PilaresPage() {
   const pillars = await prisma.pillar.findMany({
     orderBy: { order: "asc" },
-    include: { levels: { include: { _count: { select: { videos: true } } } } },
+    include: { _count: { select: { videos: true } } },
   });
 
   return (
@@ -26,10 +26,7 @@ export default async function PilaresPage() {
 
       <div className="mt-14 grid gap-6 sm:grid-cols-2">
         {pillars.map((pillar, index) => {
-          const videoCount = pillar.levels.reduce(
-            (sum, level) => sum + level._count.videos,
-            0
-          );
+          const videoCount = pillar._count.videos;
 
           return (
             <Link
@@ -55,9 +52,7 @@ export default async function PilaresPage() {
                 {pillar.description}
               </p>
               <div className="mt-5 flex items-center justify-between text-xs text-cream-dim/60">
-                <span>
-                  {pillar.levels.length} niveles · {videoCount} clases
-                </span>
+                <span>{videoCount} clases</span>
                 <span className="text-gold opacity-0 transition-opacity group-hover:opacity-100">
                   Explorar →
                 </span>

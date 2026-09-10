@@ -9,12 +9,13 @@ import type { FormState } from "@/lib/actions/auth";
 
 function parseVideoForm(formData: FormData) {
   return videoSchema.safeParse({
-    levelId: formData.get("levelId"),
+    pillarId: formData.get("pillarId"),
     title: formData.get("title"),
     description: formData.get("description"),
     videoUrl: formData.get("videoUrl"),
     durationMinutes: formData.get("durationMinutes") || "0",
     durationSeconds: formData.get("durationSeconds") || "0",
+    tag: formData.get("tag") || "",
     isPreview: formData.get("isPreview") === "on",
   });
 }
@@ -30,30 +31,31 @@ export async function createVideoAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const level = await prisma.level.findUnique({
-    where: { id: parsed.data.levelId },
-    include: { pillar: true, _count: { select: { videos: true } } },
+  const pillar = await prisma.pillar.findUnique({
+    where: { id: parsed.data.pillarId },
+    include: { _count: { select: { videos: true } } },
   });
-  if (!level) return { error: "Ese nivel ya no existe. Recarga la página." };
+  if (!pillar) return { error: "Ese pilar ya no existe. Recarga la página." };
 
-  const { durationMinutes, durationSeconds, ...rest } = parsed.data;
+  const { durationMinutes, durationSeconds, tag, ...rest } = parsed.data;
 
   await prisma.video.create({
     data: {
-      levelId: rest.levelId,
+      pillarId: rest.pillarId,
       title: rest.title,
       description: rest.description,
       videoUrl: rest.videoUrl,
-      thumbnailUrl: `gradient:${level.pillar.icon}`,
+      thumbnailUrl: `gradient:${pillar.icon}`,
       duration: durationMinutes * 60 + durationSeconds,
-      order: level._count.videos,
+      order: pillar._count.videos,
+      tag: tag || null,
       isPreview: rest.isPreview,
     },
   });
 
   revalidatePath("/admin");
   revalidatePath("/biblioteca");
-  revalidatePath(`/pilares/${level.pillar.slug}`);
+  revalidatePath(`/pilares/${pillar.slug}`);
   redirect("/admin");
 }
 
@@ -73,23 +75,23 @@ export async function updateVideoAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const level = await prisma.level.findUnique({
-    where: { id: parsed.data.levelId },
-    include: { pillar: true },
+  const pillar = await prisma.pillar.findUnique({
+    where: { id: parsed.data.pillarId },
   });
-  if (!level) return { error: "Ese nivel ya no existe. Recarga la página." };
+  if (!pillar) return { error: "Ese pilar ya no existe. Recarga la página." };
 
-  const { durationMinutes, durationSeconds, ...rest } = parsed.data;
+  const { durationMinutes, durationSeconds, tag, ...rest } = parsed.data;
 
   await prisma.video.update({
     where: { id: videoId },
     data: {
-      levelId: rest.levelId,
+      pillarId: rest.pillarId,
       title: rest.title,
       description: rest.description,
       videoUrl: rest.videoUrl,
-      thumbnailUrl: `gradient:${level.pillar.icon}`,
+      thumbnailUrl: `gradient:${pillar.icon}`,
       duration: durationMinutes * 60 + durationSeconds,
+      tag: tag || null,
       isPreview: rest.isPreview,
     },
   });
@@ -97,7 +99,7 @@ export async function updateVideoAction(
   revalidatePath("/admin");
   revalidatePath("/biblioteca");
   revalidatePath(`/video/${videoId}`);
-  revalidatePath(`/pilares/${level.pillar.slug}`);
+  revalidatePath(`/pilares/${pillar.slug}`);
   redirect("/admin");
 }
 

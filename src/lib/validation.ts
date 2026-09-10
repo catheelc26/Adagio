@@ -32,11 +32,12 @@ export const profileSchema = z.object({
 });
 
 export const videoSchema = z.object({
-  levelId: z.string().trim().min(1, "Elige un nivel"),
+  pillarId: z.string().trim().min(1, "Elige un pilar"),
   title: z.string().trim().min(3, "El título debe tener al menos 3 caracteres"),
   description: z.string().trim().min(3, "Añade una descripción breve"),
   videoUrl: z.string().trim().url("Introduce un enlace de vídeo válido"),
   durationMinutes: z.coerce.number().int().min(0).max(600).default(0),
   durationSeconds: z.coerce.number().int().min(0).max(59).default(0),
+  tag: z.enum(["INICIAR", "AVANZADO", ""]).default(""),
   isPreview: z.boolean().default(false),
 });

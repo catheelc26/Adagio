@@ -131,8 +131,17 @@ model GiftCode {
 }
 
 // ---------------------------------------------------------------------------
-// Content: pillars -> levels -> videos
+// Content: pillars -> videos
 // ---------------------------------------------------------------------------
+
+// Etiqueta opcional de nivel: Catherine la añade a mano solo cuando hace
+// falta aclarar que una clase es de iniciación o de nivel avanzado. Los
+// pilares teóricos (anatomía, biomecánica...) no la necesitan — solo un
+// orden de visualización.
+enum ClassTag {
+  INICIAR
+  AVANZADO
+}
 
 model Pillar {
   id          String   @id @default(cuid())
@@ -142,38 +151,26 @@ model Pillar {
   description String
   icon        String
   order       Int      @default(0)
+  isTheory    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  levels Level[]
-}
-
-model Level {
-  id          String   @id @default(cuid())
-  pillarId    String
-  slug        String
-  name        String
-  description String
-  order       Int      @default(0)
-
-  pillar Pillar  @relation(fields: [pillarId], references: [id], onDelete: Cascade)
   videos Video[]
-
-  @@unique([pillarId, slug])
 }
 
 model Video {
-  id           String   @id @default(cuid())
-  levelId      String
+  id           String    @id @default(cuid())
+  pillarId     String
   title        String
   description  String
   videoUrl     String
   thumbnailUrl String
   duration     Int // seconds
-  order        Int      @default(0)
-  isPreview    Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  order        Int       @default(0)
+  tag          ClassTag?
+  isPreview    Boolean   @default(false)
+  createdAt    DateTime  @default(now())
 
-  level     Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  pillar    Pillar     @relation(fields: [pillarId], references: [id], onDelete: Cascade)
   favorites Favorite[]
   progress  Progress[]
 }

@@ -35,7 +35,7 @@ export default async function ProfilePage() {
     prisma.favorite.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      include: { video: { include: { level: { include: { pillar: true } } } } },
+      include: { video: { include: { pillar: true } } },
     }),
   ]);
 
@@ -151,13 +151,11 @@ export default async function ProfilePage() {
                   title: video.title,
                   duration: video.duration,
                   isPreview: video.isPreview,
-                  level: {
-                    name: video.level.name,
-                    pillar: {
-                      slug: video.level.pillar.slug,
-                      name: video.level.pillar.name,
-                      icon: video.level.pillar.icon,
-                    },
+                  tag: video.tag,
+                  pillar: {
+                    slug: video.pillar.slug,
+                    name: video.pillar.name,
+                    icon: video.pillar.icon,
                   },
                 }}
                 locked={!video.isPreview && !hasAccess}

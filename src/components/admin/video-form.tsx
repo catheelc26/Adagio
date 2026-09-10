@@ -3,19 +3,20 @@
 import { useActionState, useState } from "react";
 import type { FormState } from "@/lib/actions/auth";
 
-type PillarWithLevels = {
+type PillarOption = {
   id: string;
   name: string;
-  levels: { id: string; name: string }[];
+  isTheory: boolean;
 };
 
 type ExistingVideo = {
   id: string;
-  levelId: string;
+  pillarId: string;
   title: string;
   description: string;
   videoUrl: string;
   duration: number;
+  tag: "INICIAR" | "AVANZADO" | null;
   isPreview: boolean;
 };
 
@@ -24,18 +25,14 @@ export function VideoForm({
   action,
   video,
 }: {
-  pillars: PillarWithLevels[];
+  pillars: PillarOption[];
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   video?: ExistingVideo;
 }) {
   const initialState: FormState = {};
   const [state, formAction, isPending] = useActionState(action, initialState);
 
-  const initialPillar = video
-    ? (pillars.find((p) => p.levels.some((l) => l.id === video.levelId))?.id ?? pillars[0]?.id)
-    : pillars[0]?.id;
-
-  const [pillarId, setPillarId] = useState(initialPillar ?? "");
+  const [pillarId, setPillarId] = useState(video?.pillarId ?? pillars[0]?.id ?? "");
   const selectedPillar = pillars.find((p) => p.id === pillarId);
 
   const inputClass =
@@ -47,8 +44,12 @@ export function VideoForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className="block text-sm text-cream-dim/80">Pilar</label>
+          <label htmlFor="pillarId" className="block text-sm text-cream-dim/80">
+            Pilar
+          </label>
           <select
+            id="pillarId"
+            name="pillarId"
             value={pillarId}
             onChange={(e) => setPillarId(e.target.value)}
             className={inputClass}
@@ -59,28 +60,28 @@ export function VideoForm({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label htmlFor="levelId" className="block text-sm text-cream-dim/80">
-            Nivel
-          </label>
-          <select
-            id="levelId"
-            name="levelId"
-            defaultValue={video?.levelId}
-            className={inputClass}
-          >
-            {selectedPillar?.levels.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-          {state.fieldErrors?.levelId && (
-            <p className="mt-1 text-xs text-red-400">{state.fieldErrors.levelId[0]}</p>
+          {state.fieldErrors?.pillarId && (
+            <p className="mt-1 text-xs text-red-400">{state.fieldErrors.pillarId[0]}</p>
           )}
         </div>
+
+        {!selectedPillar?.isTheory && (
+          <div>
+            <label htmlFor="tag" className="block text-sm text-cream-dim/80">
+              Etiqueta (opcional)
+            </label>
+            <select
+              id="tag"
+              name="tag"
+              defaultValue={video?.tag ?? ""}
+              className={inputClass}
+            >
+              <option value="">Sin etiqueta</option>
+              <option value="INICIAR">Para iniciar</option>
+              <option value="AVANZADO">Para avanzado</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div>

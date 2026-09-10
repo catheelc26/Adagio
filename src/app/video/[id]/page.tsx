@@ -16,7 +16,7 @@ type Params = Promise<{ id: string }>;
 async function getVideo(id: string) {
   return prisma.video.findUnique({
     where: { id },
-    include: { level: { include: { pillar: true } } },
+    include: { pillar: true },
   });
 }
 
@@ -44,9 +44,9 @@ export default async function VideoPage({ params }: { params: Params }) {
         })
       : Promise.resolve(null),
     prisma.video.findMany({
-      where: { levelId: video.levelId, id: { not: video.id } },
+      where: { pillarId: video.pillarId, id: { not: video.id } },
       orderBy: { order: "asc" },
-      include: { level: { include: { pillar: true } } },
+      include: { pillar: true },
       take: 3,
     }),
   ]);
@@ -67,11 +67,9 @@ export default async function VideoPage({ params }: { params: Params }) {
       <nav className="flex flex-wrap items-center gap-1.5 text-xs text-cream-dim/60">
         <Link href="/pilares" className="hover:text-gold">Pilares</Link>
         <span>/</span>
-        <Link href={`/pilares/${video.level.pillar.slug}`} className="hover:text-gold">
-          {video.level.pillar.name}
+        <Link href={`/pilares/${video.pillar.slug}`} className="hover:text-gold">
+          {video.pillar.name}
         </Link>
-        <span>/</span>
-        <span className="text-cream-dim/80">{video.level.name}</span>
       </nav>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_320px]">
@@ -110,7 +108,7 @@ export default async function VideoPage({ params }: { params: Params }) {
                 </svg>
                 <p className="max-w-sm text-sm text-cream-dim/75">
                   Esta clase forma parte de la biblioteca completa. Suscríbete
-                  para desbloquear todos los pilares y niveles.
+                  para desbloquear todos los pilares.
                 </p>
                 <ButtonLink href="/precios">Ver planes de suscripción</ButtonLink>
               </div>
@@ -120,8 +118,9 @@ export default async function VideoPage({ params }: { params: Params }) {
           <div className="mt-6 flex items-start justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gold/70">
-                <PillarIcon icon={video.level.pillar.icon} className="h-4 w-4" />
-                {video.level.pillar.name} · {video.level.name} · {formatDuration(video.duration)}
+                <PillarIcon icon={video.pillar.icon} className="h-4 w-4" />
+                {video.pillar.name} · {formatDuration(video.duration)}
+                {video.tag && (video.tag === "INICIAR" ? " · Para iniciar" : " · Para avanzado")}
               </p>
               <h1 className="mt-2 font-serif text-2xl text-cream sm:text-3xl">{video.title}</h1>
             </div>
@@ -138,7 +137,7 @@ export default async function VideoPage({ params }: { params: Params }) {
         </div>
 
         <aside>
-          <h2 className="font-serif text-lg text-cream">Más clases de {video.level.name}</h2>
+          <h2 className="font-serif text-lg text-cream">Más clases de {video.pillar.name}</h2>
           <div className="mt-4 space-y-4">
             {related.map((relatedVideo) => (
               <VideoCard
@@ -148,13 +147,11 @@ export default async function VideoPage({ params }: { params: Params }) {
                   title: relatedVideo.title,
                   duration: relatedVideo.duration,
                   isPreview: relatedVideo.isPreview,
-                  level: {
-                    name: relatedVideo.level.name,
-                    pillar: {
-                      slug: relatedVideo.level.pillar.slug,
-                      name: relatedVideo.level.pillar.name,
-                      icon: relatedVideo.level.pillar.icon,
-                    },
+                  tag: relatedVideo.tag,
+                  pillar: {
+                    slug: relatedVideo.pillar.slug,
+                    name: relatedVideo.pillar.name,
+                    icon: relatedVideo.pillar.icon,
                   },
                 }}
                 locked={!relatedVideo.isPreview && !access}
@@ -164,7 +161,7 @@ export default async function VideoPage({ params }: { params: Params }) {
             ))}
             {related.length === 0 && (
               <p className="text-sm text-cream-dim/60">
-                Esta es la única clase de este nivel, por ahora.
+                Esta es la única clase de este pilar, por ahora.
               </p>
             )}
           </div>

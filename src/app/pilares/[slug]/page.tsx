@@ -13,10 +13,7 @@ async function getPillar(slug: string) {
   return prisma.pillar.findUnique({
     where: { slug },
     include: {
-      levels: {
-        orderBy: { order: "asc" },
-        include: { videos: { orderBy: { order: "asc" } } },
-      },
+      videos: { orderBy: { order: "asc" } },
     },
   });
 }
@@ -44,6 +41,23 @@ export default async function PillarDetailPage({ params }: { params: Params }) {
       : Promise.resolve([]),
   ]);
   const favoriteIds = new Set(favorites.map((f) => f.videoId));
+
+  const toCardVideo = (video: (typeof pillar.videos)[number]) => (
+    <VideoCard
+      key={video.id}
+      video={{
+        id: video.id,
+        title: video.title,
+        duration: video.duration,
+        isPreview: video.isPreview,
+        tag: video.tag,
+        pillar: { slug: pillar.slug, name: pillar.name, icon: pillar.icon },
+      }}
+      locked={!video.isPreview && !access}
+      favorited={favoriteIds.has(video.id)}
+      isAuthed={Boolean(userId)}
+    />
+  );
 
   return (
     <div>
@@ -76,39 +90,22 @@ export default async function PillarDetailPage({ params }: { params: Params }) {
       </section>
 
       <div className="mx-auto max-w-6xl px-6 py-16 lg:px-10">
-        <div className="space-y-16">
-          {pillar.levels.map((level) => (
-            <section key={level.id}>
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 className="font-serif text-2xl text-cream">{level.name}</h2>
-                <span className="text-xs uppercase tracking-[0.2em] text-cream-dim/50">
-                  {level.videos.length} clases
-                </span>
-              </div>
-              <p className="mt-1.5 max-w-2xl text-sm text-cream-dim/65">
-                {level.description}
-              </p>
-
-              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {level.videos.map((video) => (
-                  <VideoCard
-                    key={video.id}
-                    video={{
-                      id: video.id,
-                      title: video.title,
-                      duration: video.duration,
-                      isPreview: video.isPreview,
-                      level: { name: level.name, pillar: { slug: pillar.slug, name: pillar.name, icon: pillar.icon } },
-                    }}
-                    locked={!video.isPreview && !access}
-                    favorited={favoriteIds.has(video.id)}
-                    isAuthed={Boolean(userId)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="font-serif text-2xl text-cream">Clases</h2>
+          <span className="text-xs uppercase tracking-[0.2em] text-cream-dim/50">
+            {pillar.videos.length} clases
+          </span>
         </div>
+
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {pillar.videos.map(toCardVideo)}
+        </div>
+
+        {pillar.videos.length === 0 && (
+          <p className="mt-6 text-sm text-cream-dim/60">
+            Todavía no hay clases en este pilar. Vuelve pronto.
+          </p>
+        )}
       </div>
     </div>
   );
