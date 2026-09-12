@@ -79,11 +79,15 @@ export default async function VideoPage({ params }: { params: Params }) {
               (() => {
                 const embed = resolveVideoEmbed(video.videoUrl);
                 if (embed.type === "file") {
+                  const poster = video.thumbnailUrl.startsWith("gradient:")
+                    ? undefined
+                    : video.thumbnailUrl;
                   return (
                     <video
                       key={video.id}
                       controls
                       preload="metadata"
+                      poster={poster}
                       className="aspect-video w-full bg-black"
                     >
                       <source src={embed.url} type="video/mp4" />
@@ -148,6 +152,7 @@ export default async function VideoPage({ params }: { params: Params }) {
                   duration: relatedVideo.duration,
                   isPreview: relatedVideo.isPreview,
                   tag: relatedVideo.tag,
+                  thumbnailUrl: relatedVideo.thumbnailUrl,
                   pillar: {
                     slug: relatedVideo.pillar.slug,
                     name: relatedVideo.pillar.name,

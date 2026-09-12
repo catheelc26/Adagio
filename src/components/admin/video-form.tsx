@@ -15,6 +15,7 @@ type ExistingVideo = {
   title: string;
   description: string;
   videoUrl: string;
+  thumbnailUrl: string;
   duration: number;
   tag: "INICIAR" | "AVANZADO" | null;
   isPreview: boolean;
@@ -34,6 +35,9 @@ export function VideoForm({
 
   const [pillarId, setPillarId] = useState(video?.pillarId ?? pillars[0]?.id ?? "");
   const selectedPillar = pillars.find((p) => p.id === pillarId);
+
+  const existingThumbnail = video?.thumbnailUrl?.startsWith("gradient:") ? "" : video?.thumbnailUrl ?? "";
+  const [thumbnailUrl, setThumbnailUrl] = useState(existingThumbnail);
 
   const inputClass =
     "mt-1.5 w-full rounded-lg border border-cream/15 bg-navy-950 px-4 py-2.5 text-cream outline-none focus:border-gold";
@@ -134,6 +138,45 @@ export function VideoForm({
         {state.fieldErrors?.videoUrl && (
           <p className="mt-1 text-xs text-red-400">{state.fieldErrors.videoUrl[0]}</p>
         )}
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-[1fr_120px]">
+        <div>
+          <label htmlFor="thumbnailUrl" className="block text-sm text-cream-dim/80">
+            Portada (opcional)
+          </label>
+          <input
+            id="thumbnailUrl"
+            name="thumbnailUrl"
+            type="url"
+            placeholder="https://... (imagen de portada)"
+            value={thumbnailUrl}
+            onChange={(e) => setThumbnailUrl(e.target.value)}
+            className={inputClass}
+          />
+          <p className="mt-1.5 text-xs text-cream-dim/50">
+            Pega el enlace de una imagen (por ejemplo, subida a tu repositorio
+            o a un servicio de imágenes). Si lo dejas vacío, se usa un fondo
+            de color automático con el ícono del pilar.
+          </p>
+          {state.fieldErrors?.thumbnailUrl && (
+            <p className="mt-1 text-xs text-red-400">{state.fieldErrors.thumbnailUrl[0]}</p>
+          )}
+        </div>
+        <div className="aspect-video overflow-hidden rounded-lg border border-cream/15 bg-navy-950">
+          {thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={thumbnailUrl}
+              alt="Vista previa de la portada"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-cream-dim/40">
+              Sin portada
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">

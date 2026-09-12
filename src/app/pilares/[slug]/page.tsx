@@ -51,6 +51,7 @@ export default async function PillarDetailPage({ params }: { params: Params }) {
         duration: video.duration,
         isPreview: video.isPreview,
         tag: video.tag,
+        thumbnailUrl: video.thumbnailUrl,
         pillar: { slug: pillar.slug, name: pillar.name, icon: pillar.icon },
       }}
       locked={!video.isPreview && !access}

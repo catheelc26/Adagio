@@ -29,6 +29,7 @@ export default async function EditVideoPage({ params }: { params: Params }) {
         title: true,
         description: true,
         videoUrl: true,
+        thumbnailUrl: true,
         duration: true,
         tag: true,
         isPreview: true,

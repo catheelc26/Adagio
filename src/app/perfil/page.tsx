@@ -152,6 +152,7 @@ export default async function ProfilePage() {
                   duration: video.duration,
                   isPreview: video.isPreview,
                   tag: video.tag,
+                  thumbnailUrl: video.thumbnailUrl,
                   pillar: {
                     slug: video.pillar.slug,
                     name: video.pillar.name,

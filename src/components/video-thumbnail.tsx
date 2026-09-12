@@ -14,12 +14,29 @@ const GRADIENTS: Record<string, string> = {
 export function VideoThumbnail({
   icon,
   title,
+  thumbnailUrl,
   compact = false,
 }: {
   icon: string;
   title: string;
+  thumbnailUrl?: string;
   compact?: boolean;
 }) {
+  const hasCustomImage = Boolean(thumbnailUrl) && !thumbnailUrl!.startsWith("gradient:");
+
+  if (hasCustomImage) {
+    return (
+      <div
+        className={`relative overflow-hidden rounded-xl bg-navy-950 ${
+          compact ? "aspect-video" : "aspect-video"
+        }`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={thumbnailUrl} alt={title} className="h-full w-full object-cover" />
+      </div>
+    );
+  }
+
   const gradient = GRADIENTS[icon] ?? GRADIENTS.ballet;
 
   return (

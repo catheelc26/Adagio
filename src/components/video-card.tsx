@@ -14,6 +14,7 @@ export type VideoCardData = {
   duration: number;
   isPreview: boolean;
   tag?: "INICIAR" | "AVANZADO" | null;
+  thumbnailUrl: string;
   pillar: { slug: string; name: string; icon: string };
 };
 
@@ -32,7 +33,11 @@ export function VideoCard({
     <div className="group relative overflow-hidden rounded-2xl border border-cream/10 bg-navy-900/50 transition-colors hover:border-gold/30">
       <Link href={`/video/${video.id}`} className="block">
         <div className="relative">
-          <VideoThumbnail icon={video.pillar.icon} title={video.title} />
+          <VideoThumbnail
+            icon={video.pillar.icon}
+            title={video.title}
+            thumbnailUrl={video.thumbnailUrl}
+          />
           {locked && (
             <div className="absolute inset-0 flex items-center justify-center bg-navy-950/55 backdrop-blur-[1px]">
               <svg

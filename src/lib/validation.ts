@@ -36,6 +36,9 @@ export const videoSchema = z.object({
   title: z.string().trim().min(3, "El título debe tener al menos 3 caracteres"),
   description: z.string().trim().min(3, "Añade una descripción breve"),
   videoUrl: z.string().trim().url("Introduce un enlace de vídeo válido"),
+  thumbnailUrl: z
+    .union([z.literal(""), z.string().trim().url("Introduce un enlace de imagen válido")])
+    .default(""),
   durationMinutes: z.coerce.number().int().min(0).max(600).default(0),
   durationSeconds: z.coerce.number().int().min(0).max(59).default(0),
   tag: z.enum(["INICIAR", "AVANZADO", ""]).default(""),

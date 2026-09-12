@@ -13,6 +13,7 @@ function parseVideoForm(formData: FormData) {
     title: formData.get("title"),
     description: formData.get("description"),
     videoUrl: formData.get("videoUrl"),
+    thumbnailUrl: formData.get("thumbnailUrl") || "",
     durationMinutes: formData.get("durationMinutes") || "0",
     durationSeconds: formData.get("durationSeconds") || "0",
     tag: formData.get("tag") || "",
@@ -37,7 +38,7 @@ export async function createVideoAction(
   });
   if (!pillar) return { error: "Ese pilar ya no existe. Recarga la página." };
 
-  const { durationMinutes, durationSeconds, tag, ...rest } = parsed.data;
+  const { durationMinutes, durationSeconds, tag, thumbnailUrl, ...rest } = parsed.data;
 
   await prisma.video.create({
     data: {
@@ -45,7 +46,7 @@ export async function createVideoAction(
       title: rest.title,
       description: rest.description,
       videoUrl: rest.videoUrl,
-      thumbnailUrl: `gradient:${pillar.icon}`,
+      thumbnailUrl: thumbnailUrl || `gradient:${pillar.icon}`,
       duration: durationMinutes * 60 + durationSeconds,
       order: pillar._count.videos,
       tag: tag || null,
@@ -80,7 +81,7 @@ export async function updateVideoAction(
   });
   if (!pillar) return { error: "Ese pilar ya no existe. Recarga la página." };
 
-  const { durationMinutes, durationSeconds, tag, ...rest } = parsed.data;
+  const { durationMinutes, durationSeconds, tag, thumbnailUrl, ...rest } = parsed.data;
 
   await prisma.video.update({
     where: { id: videoId },
@@ -89,7 +90,7 @@ export async function updateVideoAction(
       title: rest.title,
       description: rest.description,
       videoUrl: rest.videoUrl,
-      thumbnailUrl: `gradient:${pillar.icon}`,
+      thumbnailUrl: thumbnailUrl || `gradient:${pillar.icon}`,
       duration: durationMinutes * 60 + durationSeconds,
       tag: tag || null,
       isPreview: rest.isPreview,
