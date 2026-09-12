@@ -2,7 +2,7 @@ import { AlertCircle, Users, Wallet, GraduationCap, Clock } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
 import { effectivePrice, isActive, owesMonthlyFee } from "../../lib/business";
-import { currentMonthKey, usd } from "../../lib/format";
+import { currentMonthKey, studentDisplayName, usd } from "../../lib/format";
 import { StudentAvatar } from "../../components/ui";
 
 const TONES = ["bg-cream-dim", "bg-teal/10", "bg-bronze/10", "bg-blush/10"];
@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, tone = 0 }) {
 }
 
 export function Dashboard() {
-  const { students, payments } = useAppData();
+  const { students, payments, groups } = useAppData();
   const activeStudents = students.items.filter(isActive);
   const month = currentMonthKey();
 
@@ -69,15 +69,15 @@ export function Dashboard() {
         ) : (
           <div className="space-y-2">
             {pendingStudents.map((s) => {
-              const g = groupById(s.group);
+              const g = groupById(groups.items, s.group);
               return (
                 <div key={s.id} className="card flex items-center gap-3 p-3">
                   <StudentAvatar student={s} size={36} />
                   <div className="flex-1">
-                    <p className="t13 font-medium text-ink">{s.fullName}</p>
+                    <p className="t13 font-medium text-ink">{studentDisplayName(s)}</p>
                     <p className="t11 text-muted">{g?.name}</p>
                   </div>
-                  <span className="t13 font-medium text-wine">{usd(effectivePrice(s))}</span>
+                  <span className="t13 font-medium text-wine">{usd(effectivePrice(s, groups.items))}</span>
                 </div>
               );
             })}

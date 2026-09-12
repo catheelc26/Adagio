@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Camera, Copy, CheckCircle2 } from "lucide-react";
-import { GROUPS, WEEKDAYS, levelsForGroup } from "../lib/constants";
+import { WEEKDAYS, levelsForGroup } from "../lib/constants";
 import { genAccessCode, uid } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -8,10 +8,10 @@ import { useAppData } from "../lib/AppDataContext";
 import { Field, inputCls } from "./ui";
 import { ReglamentoModal } from "./ReglamentoModal";
 
-const emptyStudent = () => ({
+const emptyStudent = (defaultGroupId) => ({
   fullName: "",
   age: "",
-  group: GROUPS[0].id,
+  group: defaultGroupId || "",
   level: "",
   phone: "",
   email: "",
@@ -36,7 +36,8 @@ const emptyStudent = () => ({
   photoVideoConsent: "",
   termsAccepted: false,
   salsaModality: "individual",
-  salsaPartnerName: "",
+  partnerFullName: "",
+  partnerAge: "",
   billingMode: "mensual",
   status: "active",
   scholarshipType: "none",
@@ -52,8 +53,11 @@ const emptyStudent = () => ({
  * aceptar el reglamento y al guardar genera el código de acceso.
  */
 export function StudentForm({ student, isAdmin, onClose, onSaved }) {
-  const { students, schedule, toast } = useAppData();
-  const [f, setF] = useState(() => (student ? { ...emptyStudent(), ...student } : emptyStudent()));
+  const { students, schedule, groups, toast } = useAppData();
+  const [f, setF] = useState(() => {
+    const base = emptyStudent(groups.items[0]?.id);
+    return student ? { ...base, ...student } : base;
+  });
   const [errors, setErrors] = useState({});
   const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -64,6 +68,10 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
   const set = (patch) => setF((prev) => ({ ...prev, ...patch }));
   const slotsForGroup = schedule.items.filter((s) => s.group === f.group);
   const levels = levelsForGroup(f.group);
+  const isSalsaPareja = f.group === "salsa" && f.salsaModality === "pareja";
+  const groupScheduleText = slotsForGroup
+    .map((s) => `${WEEKDAYS[s.weekday]} ${s.startTime}–${s.endTime}`)
+    .join(" · ");
 
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0];
@@ -85,6 +93,10 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
     }
     if (f.photoVideoConsent !== "si" && f.photoVideoConsent !== "no") e.photoVideoConsent = "Elige una opción";
     if (!isAdmin && !f.termsAccepted) e.termsAccepted = "Debes aceptar el reglamento";
+    if (isSalsaPareja) {
+      if (!f.partnerFullName.trim()) e.partnerFullName = "Requerido";
+      if (!(Number(f.partnerAge) > 0)) e.partnerAge = "Requerido";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -98,7 +110,9 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
         ...f,
         age: Number(f.age),
         level,
+        partnerAge: isSalsaPareja ? Number(f.partnerAge) || 0 : 0,
         scholarshipDiscount: f.scholarshipType === "partial" ? Number(f.scholarshipDiscount) || 0 : 0,
+        scheduleFrequency: groupScheduleText,
       };
 
       let id = student?.id;
@@ -191,12 +205,12 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
             <h4 className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Datos básicos</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Field label="Nombre completo" required>
+                <Field label={isSalsaPareja ? "Nombre completo (persona 1)" : "Nombre completo"} required>
                   <input className={inputCls} value={f.fullName} onChange={(e) => set({ fullName: e.target.value })} />
                   {errors.fullName && <p className="t11 mt-1 text-wine">{errors.fullName}</p>}
                 </Field>
               </div>
-              <Field label="Edad" required>
+              <Field label={isSalsaPareja ? "Edad (persona 1)" : "Edad"} required>
                 <input type="number" className={inputCls} value={f.age} onChange={(e) => set({ age: e.target.value })} />
                 {errors.age && <p className="t11 mt-1 text-wine">{errors.age}</p>}
               </Field>
@@ -233,7 +247,7 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Grupo" required>
                 <select className={inputCls} value={f.group} onChange={(e) => set({ group: e.target.value, level: "" })}>
-                  {GROUPS.map((g) => (
+                  {groups.items.map((g) => (
                     <option key={g.id} value={g.id}>{g.name}</option>
                   ))}
                 </select>
@@ -256,10 +270,24 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
                       <option value="pareja">En pareja</option>
                     </select>
                   </Field>
-                  {f.salsaModality === "pareja" && (
-                    <Field label="Nombre de la pareja">
-                      <input className={inputCls} value={f.salsaPartnerName} onChange={(e) => set({ salsaPartnerName: e.target.value })} />
-                    </Field>
+                  {isSalsaPareja && (
+                    <div className="col-span-2 rounded-xl border border-dashed border-line p-3">
+                      <p className="t11 mb-3 font-medium text-muted">
+                        Un solo registro para las dos personas — pagan juntas, un solo pago cubre a ambas.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <Field label="Nombre completo (persona 2)" required>
+                            <input className={inputCls} value={f.partnerFullName} onChange={(e) => set({ partnerFullName: e.target.value })} />
+                            {errors.partnerFullName && <p className="t11 mt-1 text-wine">{errors.partnerFullName}</p>}
+                          </Field>
+                        </div>
+                        <Field label="Edad (persona 2)" required>
+                          <input type="number" className={inputCls} value={f.partnerAge} onChange={(e) => set({ partnerAge: e.target.value })} />
+                          {errors.partnerAge && <p className="t11 mt-1 text-wine">{errors.partnerAge}</p>}
+                        </Field>
+                      </div>
+                    </div>
                   )}
                 </>
               )}
@@ -272,17 +300,17 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
                 </Field>
               )}
               <div className="col-span-2">
-                <Field label="Horario acordado">
+                <Field label="Horario del grupo">
                   {slotsForGroup.length > 0 ? (
-                    <select className={inputCls} value={f.scheduleFrequency} onChange={(e) => set({ scheduleFrequency: e.target.value })}>
-                      <option value="">—</option>
-                      {slotsForGroup.map((s) => {
-                        const label = `${WEEKDAYS[s.weekday]} ${s.startTime}–${s.endTime}`;
-                        return <option key={s.id} value={label}>{label}</option>;
-                      })}
-                    </select>
+                    <div className="space-y-1 rounded-lg bg-cream-dim px-3 py-2.5">
+                      {slotsForGroup.map((s) => (
+                        <p key={s.id} className="t13 text-ink">{WEEKDAYS[s.weekday]} · {s.startTime}–{s.endTime}</p>
+                      ))}
+                    </div>
                   ) : (
-                    <input className={inputCls} value={f.scheduleFrequency} onChange={(e) => set({ scheduleFrequency: e.target.value })} placeholder="Ej. Lunes 16:00–17:00" />
+                    <p className="t13 rounded-lg bg-cream-dim px-3 py-2.5 text-muted">
+                      Aún no hay horario configurado para este grupo. Te contactaremos para coordinarlo.
+                    </p>
                   )}
                 </Field>
               </div>
@@ -381,6 +409,9 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
           {isAdmin && (
             <section className="space-y-4 rounded-xl border border-dashed border-line p-4">
               <h4 className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Solo administración</h4>
+              {student?.accessCode && (
+                <p className="t12 text-muted">Código de acceso al portal: <span className="font-display tracking-[0.15em] text-ink">{student.accessCode}</span></p>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Estado">
                   <select className={inputCls} value={f.status} onChange={(e) => set({ status: e.target.value })}>

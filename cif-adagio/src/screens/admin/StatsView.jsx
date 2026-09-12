@@ -1,4 +1,3 @@
-import { GROUPS } from "../../lib/constants";
 import { effectivePrice, isActive, owesMonthlyFee } from "../../lib/business";
 import { currentMonthKey, usd } from "../../lib/format";
 import { useAppData } from "../../lib/AppDataContext";
@@ -13,7 +12,7 @@ function Stat({ label, value }) {
 }
 
 export function StatsView() {
-  const { students, payments, attendance } = useAppData();
+  const { students, payments, attendance, groups } = useAppData();
   const month = currentMonthKey();
   const year = new Date().getFullYear();
 
@@ -38,9 +37,9 @@ export function StatsView() {
     full: active.filter((s) => s.scholarshipType === "full").length,
   };
 
-  const byGroup = GROUPS.map((g) => {
+  const byGroup = groups.items.map((g) => {
     const inGroup = active.filter((s) => s.group === g.id);
-    const revenue = inGroup.reduce((s, st) => s + effectivePrice(st), 0);
+    const revenue = inGroup.reduce((s, st) => s + effectivePrice(st, groups.items), 0);
     return { ...g, count: inGroup.length, revenue };
   });
 

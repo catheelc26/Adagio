@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck,
+  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
@@ -15,6 +15,7 @@ import { ReglamentoModal } from "../../components/ReglamentoModal";
 import { PaymentForm } from "../../components/PaymentForm";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
+import { ChangeAccessCodeModal } from "../../components/ChangeAccessCodeModal";
 
 const TABS = [
   { id: "inicio", label: "Inicio", icon: Home },
@@ -24,14 +25,15 @@ const TABS = [
 ];
 
 export function RepresentativePortal({ student, onLogout }) {
-  const { payments, schedule, events, tasks, announcements, toast } = useAppData();
+  const { payments, schedule, events, tasks, announcements, groups, toast } = useAppData();
   const [tab, setTab] = useState("inicio");
   const [showReglamento, setShowReglamento] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [receiptId, setReceiptId] = useState(null);
   const [proofId, setProofId] = useState(null);
+  const [showChangeCode, setShowChangeCode] = useState(false);
 
-  const g = groupById(student.group);
+  const g = groupById(groups.items, student.group);
   const month = currentMonthKey();
   const welcomeName = student.isMinor ? student.guardianName : student.fullName;
 
@@ -54,7 +56,7 @@ export function RepresentativePortal({ student, onLogout }) {
 
   const currentYear = String(new Date().getFullYear());
   const needsInscription =
-    requiresInscription(student.group) &&
+    requiresInscription(groups.items, student.group) &&
     !payments.items.some((p) => p.studentId === student.id && p.type === "inscripcion" && p.date?.startsWith(currentYear));
 
   const visibleAnnouncements = announcements.items.filter(
@@ -171,6 +173,9 @@ export function RepresentativePortal({ student, onLogout }) {
             </div>
 
             <button onClick={() => setShowReglamento(true)} className="btn btn-ghost w-full">Ver reglamento</button>
+            <button onClick={() => setShowChangeCode(true)} className="t12 flex w-full items-center justify-center gap-1.5 text-muted hover:text-ink">
+              <KeyRound size={14} /> Cambiar mi código de acceso
+            </button>
           </>
         )}
 
@@ -277,6 +282,7 @@ export function RepresentativePortal({ student, onLogout }) {
       </nav>
 
       {showReglamento && <ReglamentoModal onClose={() => setShowReglamento(false)} />}
+      {showChangeCode && <ChangeAccessCodeModal student={student} onClose={() => setShowChangeCode(false)} />}
       {showPaymentForm && <PaymentForm student={student} isAdmin={false} onClose={() => setShowPaymentForm(false)} />}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={studentPayments} students={[student]} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}

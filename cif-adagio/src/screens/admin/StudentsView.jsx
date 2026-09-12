@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { FileSpreadsheet, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { GROUPS, groupById } from "../../lib/constants";
+import { groupById } from "../../lib/constants";
 import { effectivePrice, isActive } from "../../lib/business";
-import { usd } from "../../lib/format";
+import { studentDisplayName, usd } from "../../lib/format";
 import { exportStudentsToExcel } from "../../lib/exportExcel";
 import { COLLECTIONS, deleteImage } from "../../lib/db";
 import { ActionMenu, Chip, ConfirmDialog, MenuItem, StudentAvatar } from "../../components/ui";
@@ -11,7 +11,7 @@ import { StudentForm } from "../../components/StudentForm";
 import { StudentAccountModal } from "../../components/StudentAccountModal";
 
 export function StudentsView() {
-  const { students, toast } = useAppData();
+  const { students, groups, toast } = useAppData();
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
@@ -52,7 +52,7 @@ export function StudentsView() {
           <p className="t13 text-muted">{filtered.length} de {students.items.length}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => exportStudentsToExcel(filtered)} className="btn btn-ghost">
+          <button onClick={() => exportStudentsToExcel(filtered, groups.items)} className="btn btn-ghost">
             <FileSpreadsheet size={15} /> Excel
           </button>
           <button onClick={() => setCreating(true)} className="btn btn-primary">
@@ -68,7 +68,7 @@ export function StudentsView() {
         </div>
         <select className="field-input sm:w-48" value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
           <option value="all">Todos los grupos</option>
-          {GROUPS.map((g) => (
+          {groups.items.map((g) => (
             <option key={g.id} value={g.id}>{g.name}</option>
           ))}
         </select>
@@ -81,18 +81,18 @@ export function StudentsView() {
 
       <div className="space-y-2">
         {filtered.map((s) => {
-          const g = groupById(s.group);
+          const g = groupById(groups.items, s.group);
           return (
             <div key={s.id} className="card flex items-center gap-3 p-3">
               <button className="flex flex-1 items-center gap-3 text-left" onClick={() => setViewing(s)}>
                 <StudentAvatar student={s} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="t13 truncate font-medium text-ink">{s.fullName}</p>
+                    <p className="t13 truncate font-medium text-ink">{studentDisplayName(s)}</p>
                     {s.pendingReview && <Chip color="var(--color-bronze)">Por revisar</Chip>}
                     {!isActive(s) && <Chip color="#9CA5BC">Inactivo</Chip>}
                   </div>
-                  <p className="t11 text-muted">{g?.name}{s.level ? ` · ${s.level}` : ""} · {usd(effectivePrice(s))}</p>
+                  <p className="t11 text-muted">{g?.name}{s.level ? ` · ${s.level}` : ""} · {usd(effectivePrice(s, groups.items))}</p>
                 </div>
               </button>
               <ActionMenu>

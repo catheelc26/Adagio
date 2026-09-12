@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { EVENT_TYPES, GROUPS, eventTypeInfo } from "../../lib/constants";
+import { EVENT_TYPES, eventTypeInfo } from "../../lib/constants";
 import { Field, inputCls } from "../../components/ui";
 
 const emptyEvent = () => ({
@@ -15,7 +15,7 @@ const emptyEvent = () => ({
 });
 
 export function CalendarEventsView() {
-  const { events, toast } = useAppData();
+  const { events, groups, toast } = useAppData();
   const [creating, setCreating] = useState(null);
 
   const sorted = events.items.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -33,7 +33,7 @@ export function CalendarEventsView() {
 
   const EventRow = ({ e }) => {
     const info = eventTypeInfo(e.type);
-    const g = e.group ? GROUPS.find((g) => g.id === e.group) : null;
+    const g = e.group ? groups.items.find((g) => g.id === e.group) : null;
     return (
       <div className="card flex items-center gap-3 p-3">
         <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: info.color }} />
@@ -96,7 +96,7 @@ export function CalendarEventsView() {
                 <Field label="Grupo">
                   <select className={inputCls} value={creating.group} onChange={(e) => setCreating({ ...creating, group: e.target.value })}>
                     <option value="">Todos</option>
-                    {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    {groups.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                   </select>
                 </Field>
                 <Field label="Fecha">

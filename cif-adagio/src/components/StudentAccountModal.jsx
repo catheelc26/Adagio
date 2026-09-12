@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Copy, CheckCircle2, X } from "lucide-react";
 import { groupById, MONTH_NAMES } from "../lib/constants";
 import { effectivePrice, owesMonthlyFee } from "../lib/business";
-import { usd } from "../lib/format";
+import { studentDisplayName, usd } from "../lib/format";
 import { useAppData } from "../lib/AppDataContext";
 import { ReceiptModal } from "./ReceiptModal";
 
 export function StudentAccountModal({ student, onClose }) {
-  const { payments, attendance, students } = useAppData();
+  const { payments, attendance, students, groups } = useAppData();
   const [receiptId, setReceiptId] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const studentPayments = payments.items
     .filter((p) => p.studentId === student.id)
@@ -48,15 +49,15 @@ export function StudentAccountModal({ student, onClose }) {
     future: "bg-cream-dim text-faint",
   };
 
-  const g = groupById(student.group);
+  const g = groupById(groups.items, student.group);
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
       <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
           <div>
-            <h3 className="font-display text-lg text-ink">{student.fullName}</h3>
-            <p className="t12 text-muted">{g?.name} · {usd(effectivePrice(student))}/mes</p>
+            <h3 className="font-display text-lg text-ink">{studentDisplayName(student)}</h3>
+            <p className="t12 text-muted">{g?.name} · {usd(effectivePrice(student, groups.items))}/mes</p>
           </div>
           <button onClick={onClose} className="text-muted hover:text-ink">
             <X size={20} />
@@ -64,6 +65,24 @@ export function StudentAccountModal({ student, onClose }) {
         </div>
 
         <div className="space-y-6 p-5">
+          {student.accessCode && (
+            <div className="flex items-center justify-between rounded-xl bg-cream-dim px-4 py-3">
+              <div>
+                <p className="t10 uppercase tracking-wide text-faint">Código de acceso al portal</p>
+                <p className="font-display text-lg tracking-[0.2em] text-ink">{student.accessCode}</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(student.accessCode);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+                className="rounded-lg p-2 text-muted hover:bg-line hover:text-ink"
+              >
+                {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <div className="card p-3 text-center">
               <p className="t10 uppercase text-faint">Histórico</p>

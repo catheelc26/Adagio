@@ -10,6 +10,7 @@ import { uid } from "./format";
 // Ver supabase/schema.sql para la definición de la tabla y sus políticas.
 // ---------------------------------------------------------------------
 export const COLLECTIONS = {
+  groups: "groups",
   students: "students",
   payments: "payments",
   reminders: "reminders",

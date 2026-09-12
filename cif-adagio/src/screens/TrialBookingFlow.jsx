@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, CheckCircle2, ChevronRight } from "lucide-react";
-import { GROUPS, WEEKDAYS } from "../lib/constants";
+import { WEEKDAYS } from "../lib/constants";
 import { nextDatesForWeekday } from "../lib/business";
 import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
@@ -19,7 +19,7 @@ const stepMotion = {
 };
 
 export function TrialBookingFlow() {
-  const { schedule, trialBookings, toast } = useAppData();
+  const { schedule, trialBookings, groups, toast } = useAppData();
   const [step, setStep] = useState(0);
   const [group, setGroup] = useState(null);
   const [slot, setSlot] = useState(null);
@@ -111,7 +111,7 @@ export function TrialBookingFlow() {
           <h1 className="font-display mb-1 text-2xl text-ink">Elige un grupo</h1>
           <p className="t13 mb-6 text-muted">Selecciona la clase a la que te gustaría asistir de prueba.</p>
           <div className="grid grid-cols-2 gap-3">
-            {GROUPS.map((g) => (
+            {groups.items.map((g) => (
               <button key={g.id} onClick={() => chooseGroup(g)} className="card flex flex-col items-start gap-2 p-4 text-left transition hover:shadow-lift">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
                 <span className="t13 font-semibold text-ink">{g.name}</span>

@@ -8,7 +8,7 @@ const STATUS_LABEL = { pendiente: "Pendiente", completado: "Completado", cancela
 const STATUS_COLOR = { pendiente: "var(--color-bronze)", completado: "var(--color-teal)", cancelado: "var(--color-faint)" };
 
 export function TrialBookingsView() {
-  const { trialBookings, toast } = useAppData();
+  const { trialBookings, groups, toast } = useAppData();
   const sorted = trialBookings.items.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
 
   const setStatus = async (b, status) => {
@@ -17,7 +17,7 @@ export function TrialBookingsView() {
   };
 
   const notifyText = (b) => {
-    const g = groupById(b.group);
+    const g = groupById(groups.items, b.group);
     return `Hola ${b.fullName}, te escribimos de CIF Adagio sobre tu clase de prueba de ${g?.name} el ${b.date} (${b.startTime}). Hubo un pequeño cambio, ¿tienes un momento para coordinar?`;
   };
 
@@ -30,7 +30,7 @@ export function TrialBookingsView() {
 
       <div className="space-y-2">
         {sorted.map((b) => {
-          const g = groupById(b.group);
+          const g = groupById(groups.items, b.group);
           return (
             <div key={b.id} className="card flex items-center gap-3 p-3">
               <div className="flex-1">

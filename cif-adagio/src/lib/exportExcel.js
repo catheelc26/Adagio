@@ -1,6 +1,6 @@
 import { groupById, levelLabel, paymentMethodInfo, PAYMENT_SCHEDULE_LABELS } from "./constants";
 import { effectivePrice, isActive } from "./business";
-import { monthLabel } from "./format";
+import { monthLabel, studentDisplayName } from "./format";
 
 // xlsx (SheetJS) es pesado y solo lo usan estas dos exportaciones admin —
 // se carga en el momento en que realmente se hace clic en "Excel".
@@ -8,25 +8,28 @@ async function loadXLSX() {
   return await import("xlsx");
 }
 
-export async function exportStudentsToExcel(students) {
+export async function exportStudentsToExcel(students, groups) {
   const XLSX = await loadXLSX();
   const rows = students.map((s) => ({
     "Nombre completo": s.fullName,
+    "Pareja (Salsa)": s.group === "salsa" && s.salsaModality === "pareja" ? s.partnerFullName || "" : "",
+    "Edad pareja (Salsa)": s.group === "salsa" && s.salsaModality === "pareja" ? s.partnerAge || "" : "",
     "Estado": isActive(s) ? "Activo" : "Inactivo",
     "Cédula": s.cedula || "",
     "Sexo": s.sex === "F" ? "Femenino" : s.sex === "M" ? "Masculino" : "",
     "Fecha de nacimiento": s.birthDate || "",
     "Edad": s.age,
-    "Grupo": groupById(s.group)?.name || s.group,
+    "Grupo": groupById(groups, s.group)?.name || s.group,
     "Nivel": s.level ? levelLabel(s.group, s.level) : "",
-    "Mensualidad estándar ($)": groupById(s.group)?.price || "",
+    "Mensualidad estándar ($)": groupById(groups, s.group)?.price || "",
     "Beca": s.scholarshipType === "full" ? "Completa" : s.scholarshipType === "partial" ? "Parcial" : "Sin beca",
     "Descuento de beca ($)": s.scholarshipType === "partial" ? Number(s.scholarshipDiscount) || 0 : "",
-    "Mensualidad efectiva ($)": effectivePrice(s),
+    "Mensualidad efectiva ($)": effectivePrice(s, groups),
     "Modalidad de pago acordada": PAYMENT_SCHEDULE_LABELS[s.paymentSchedule] || "Mensual",
     "Modalidad de facturación (Adultos)": s.group === "adultos" ? (s.billingMode === "por_clase" ? "Por clase" : "Mensual") : "",
-    "Modalidad Salsa": s.group === "salsa" ? (s.salsaModality === "pareja" ? `Pareja (${s.salsaPartnerName || "sin nombre"})` : "Individual") : "",
+    "Modalidad Salsa": s.group === "salsa" ? (s.salsaModality === "pareja" ? "Pareja" : "Individual") : "",
     "Frecuencia de horario acordada": s.scheduleFrequency || "",
+    "Código de acceso": s.accessCode || "",
     "Teléfono": s.phone,
     "Correo": s.email || "",
     "Dirección": s.address || "",
@@ -44,7 +47,6 @@ export async function exportStudentsToExcel(students) {
     "Teléfono de emergencia (2)": s.emergencyPhone2 || "",
     "Autoriza fotos/videos": s.photoVideoConsent === "si" ? "Sí" : s.photoVideoConsent === "no" ? "No" : "",
     "Reglamento aceptado": s.termsAccepted ? "Sí" : "No",
-    "Código de acceso": s.accessCode,
     "Origen del registro": s.source === "representante" ? "Autorregistro" : "Administración",
     "Pendiente de revisión": s.pendingReview ? "Sí" : "No",
     "Notas internas": s.adminNotes || "",
@@ -56,7 +58,7 @@ export async function exportStudentsToExcel(students) {
   XLSX.writeFile(wb, `estudiantes-ballet-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-export async function exportPaymentsAnalysisToExcel(students, payments) {
+export async function exportPaymentsAnalysisToExcel(students, payments, groups) {
   const XLSX = await loadXLSX();
   const wb = XLSX.utils.book_new();
 
@@ -65,10 +67,10 @@ export async function exportPaymentsAnalysisToExcel(students, payments) {
     .sort((a, b) => (a.date < b.date ? -1 : 1))
     .map((p) => {
       const student = students.find((s) => s.id === p.studentId);
-      const g = student ? groupById(student.group) : null;
+      const g = student ? groupById(groups, student.group) : null;
       return {
         "Fecha": p.date,
-        "Estudiante": student?.fullName || "Estudiante eliminado",
+        "Estudiante": student ? studentDisplayName(student) : "Estudiante eliminado",
         "Grupo": g?.name || "",
         "Tipo": p.type === "mensualidad" ? "Mensualidad" : "Extra",
         "Concepto": p.concept,
@@ -92,8 +94,8 @@ export async function exportPaymentsAnalysisToExcel(students, payments) {
   ).sort();
 
   const analysisRows = students.map((s) => {
-    const g = groupById(s.group);
-    const row = { "Estudiante": s.fullName, "Grupo": g?.name || "" };
+    const g = groupById(groups, s.group);
+    const row = { "Estudiante": studentDisplayName(s), "Grupo": g?.name || "" };
     let total = 0;
     months.forEach((m) => {
       const sum = payments

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileSpreadsheet, Image as ImageIcon, Plus, Receipt, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { paymentMethodInfo } from "../../lib/constants";
-import { currentMonthKey, monthLabel, usd } from "../../lib/format";
+import { currentMonthKey, monthLabel, studentDisplayName, usd } from "../../lib/format";
 import { exportPaymentsAnalysisToExcel } from "../../lib/exportExcel";
 import { ActionMenu, ConfirmDialog, MenuItem } from "../../components/ui";
 import { PaymentForm } from "../../components/PaymentForm";
@@ -10,7 +10,7 @@ import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 
 export function PaymentsView() {
-  const { payments, students, toast } = useAppData();
+  const { payments, students, groups, toast } = useAppData();
   const [month, setMonth] = useState(currentMonthKey());
   const [creating, setCreating] = useState(false);
   const [receiptId, setReceiptId] = useState(null);
@@ -49,7 +49,7 @@ export function PaymentsView() {
           <p className="t13 text-muted">Total confirmado: {usd(total)}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => exportPaymentsAnalysisToExcel(students.items, payments.items)} className="btn btn-ghost">
+          <button onClick={() => exportPaymentsAnalysisToExcel(students.items, payments.items, groups.items)} className="btn btn-ghost">
             <FileSpreadsheet size={15} /> Excel
           </button>
           <button onClick={() => setCreating(true)} className="btn btn-primary">
@@ -72,7 +72,7 @@ export function PaymentsView() {
             <div key={p.id} className="card flex items-center gap-3 p-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="t13 font-medium text-ink">{student?.fullName || "Estudiante eliminado"}</p>
+                  <p className="t13 font-medium text-ink">{student ? studentDisplayName(student) : "Estudiante eliminado"}</p>
                   {p.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}
                 </div>
                 <p className="t11 text-muted">

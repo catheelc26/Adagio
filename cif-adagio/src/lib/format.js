@@ -32,10 +32,15 @@ export const reminderContactName = (student) => (student.isMinor ? student.guard
 export const reminderContactPhone = (student) => (student.isMinor ? student.guardianPhone : student.phone) || "";
 export const reminderContactEmail = (student) => (student.isMinor ? student.guardianEmail : student.email) || "";
 
-export const buildReminderText = (student, group, mKey) => {
+export const buildReminderText = (student, group, mKey, groups) => {
   const name = reminderContactName(student);
-  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(effectivePrice(student))}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
+  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(effectivePrice(student, groups))}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
 };
+
+export const studentDisplayName = (student) =>
+  student.group === "salsa" && student.salsaModality === "pareja" && student.partnerFullName
+    ? `${student.fullName} & ${student.partnerFullName}`
+    : student.fullName;
 
 export const waLink = (phone, text) => `https://wa.me/${digitsOnly(phone)}?text=${encodeURIComponent(text)}`;
 export const mailtoLink = (email, subject, body) =>

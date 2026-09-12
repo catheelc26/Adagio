@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, MoreHorizontal, X } from "lucide-react";
 import { groupById } from "../lib/constants";
 import { getImage, COLLECTIONS } from "../lib/db";
+import { useAppData } from "../lib/AppDataContext";
 
 export const Field = ({ label, required, children }) => (
   <label className="block">
@@ -95,6 +96,7 @@ export const MenuItem = ({ icon, label, onClick, danger = false }) => (
 );
 
 export function StudentAvatar({ student, size = 40 }) {
+  const { groups } = useAppData();
   const [src, setSrc] = useState(null);
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +117,7 @@ export function StudentAvatar({ student, size = 40 }) {
     .map((w) => w[0])
     .join("")
     .toUpperCase();
-  const g = groupById(student.group);
+  const g = groupById(groups.items, student.group);
 
   if (src) {
     return (

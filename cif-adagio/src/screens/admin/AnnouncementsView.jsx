@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { GROUPS } from "../../lib/constants";
 import { Field, inputCls } from "../../components/ui";
 import { notifyPush } from "../../lib/push";
 
 export function AnnouncementsView() {
-  const { announcements, toast } = useAppData();
+  const { announcements, groups, toast } = useAppData();
   const [text, setText] = useState("");
   const [group, setGroup] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -45,7 +44,7 @@ export function AnnouncementsView() {
           <Field label="Grupo (opcional)">
             <select className={inputCls} value={group} onChange={(e) => setGroup(e.target.value)}>
               <option value="">Todos los grupos</option>
-              {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              {groups.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </Field>
           <Field label="Expira (opcional)">
@@ -59,7 +58,7 @@ export function AnnouncementsView() {
 
       <div className="space-y-2">
         {sorted.map((a) => {
-          const g = a.group ? GROUPS.find((g) => g.id === a.group) : null;
+          const g = a.group ? groups.items.find((g) => g.id === a.group) : null;
           return (
             <div key={a.id} className="card flex items-start gap-3 p-3">
               <div className="flex-1">

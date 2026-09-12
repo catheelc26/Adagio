@@ -4,12 +4,12 @@ import { groupById } from "../../lib/constants";
 import { effectivePrice, isActive, owesMonthlyFee } from "../../lib/business";
 import {
   buildReminderText, currentMonthKey, mailtoLink, monthLabel, reminderContactEmail,
-  reminderContactName, reminderContactPhone, usd, waLink,
+  reminderContactName, reminderContactPhone, studentDisplayName, usd, waLink,
 } from "../../lib/format";
 import { StudentAvatar } from "../../components/ui";
 
 export function RemindersView() {
-  const { students, payments, reminders } = useAppData();
+  const { students, payments, reminders, groups } = useAppData();
   const month = currentMonthKey();
   const today = new Date();
   const overdue = today.getDate() > 5;
@@ -35,16 +35,16 @@ export function RemindersView() {
 
       <div className="space-y-2">
         {pending.map((s) => {
-          const g = groupById(s.group);
-          const text = buildReminderText(s, g, month);
+          const g = groupById(groups.items, s.group);
+          const text = buildReminderText(s, g, month, groups.items);
           const phone = reminderContactPhone(s);
           const email = reminderContactEmail(s);
           return (
             <div key={s.id} className="card flex items-center gap-3 p-3">
               <StudentAvatar student={s} size={36} />
               <div className="flex-1">
-                <p className="t13 font-medium text-ink">{s.fullName}</p>
-                <p className="t11 text-muted">{g?.name} · {usd(effectivePrice(s))} · para {reminderContactName(s)}</p>
+                <p className="t13 font-medium text-ink">{studentDisplayName(s)}</p>
+                <p className="t11 text-muted">{g?.name} · {usd(effectivePrice(s, groups.items))} · para {reminderContactName(s)}</p>
               </div>
               {phone && (
                 <a href={waLink(phone, text)} target="_blank" rel="noreferrer" onClick={() => logReminder(s.id, "whatsapp")} className="rounded-lg p-2 text-teal hover:bg-teal/10">

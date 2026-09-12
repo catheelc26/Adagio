@@ -1,19 +1,19 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
-import { GROUPS_NO_INSCRIPTION, groupById, PAYMENT_METHODS, paymentMethodInfo } from "../lib/constants";
+import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
 import { effectivePrice, proratedFirstMonth } from "../lib/business";
-import { currentMonthKey, monthLabel, uid, usd } from "../lib/format";
+import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
 import { Field, inputCls } from "./ui";
 
-const newItem = (student) => ({
+const newItem = (student, groups) => ({
   key: uid(),
   type: "mensualidad",
   concept: "Mensualidad",
-  amount: student ? String(effectivePrice(student)) : "",
+  amount: student ? String(effectivePrice(student, groups)) : "",
   month: currentMonthKey(),
 });
 
@@ -23,11 +23,11 @@ const newItem = (student) => ({
  * `isAdmin` = modo administración (confirmado de inmediato, elige estudiante).
  */
 export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
-  const { students, payments, settings, toast } = useAppData();
+  const { students, payments, settings, groups, toast } = useAppData();
   const [studentId, setStudentId] = useState(fixedStudent?.id || "");
   const student = fixedStudent || students.items.find((s) => s.id === studentId);
 
-  const [items, setItems] = useState([newItem(student)]);
+  const [items, setItems] = useState([newItem(student, groups.items)]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [method, setMethod] = useState(PAYMENT_METHODS[0].id);
   const [reference, setReference] = useState("");
@@ -37,7 +37,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
 
   const currency = paymentMethodInfo(method).currency;
   const rate = Number(settings.value.officialRate) || 0;
-  const group = student ? groupById(student.group) : null;
+  const group = student ? groupById(groups.items, student.group) : null;
 
   const updateItem = (key, patch) => setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...patch } : it)));
   const addItem = () => setItems((prev) => [...prev, { key: uid(), type: "extra", concept: "", amount: "" }]);
@@ -49,7 +49,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
     let month;
     if (type === "mensualidad") {
       concept = "Mensualidad";
-      amount = student ? String(effectivePrice(student)) : "";
+      amount = student ? String(effectivePrice(student, groups.items)) : "";
       month = currentMonthKey();
     } else if (type === "clase") {
       concept = "Clase individual";
@@ -63,7 +63,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
 
   const applyProration = (key) => {
     if (!student) return;
-    const { amount, monthKey, nextMonthKey, suggestNextMonth } = proratedFirstMonth(group.price, date);
+    const { amount, monthKey, nextMonthKey, suggestNextMonth } = proratedFirstMonth(effectivePrice(student, groups.items), date);
     updateItem(key, { amount: String(amount), month: suggestNextMonth ? nextMonthKey : monthKey });
   };
 
@@ -154,7 +154,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
               <select className={inputCls} value={studentId} onChange={(e) => setStudentId(e.target.value)}>
                 <option value="">Selecciona…</option>
                 {students.items.map((s) => (
-                  <option key={s.id} value={s.id}>{s.fullName}</option>
+                  <option key={s.id} value={s.id}>{studentDisplayName(s)}</option>
                 ))}
               </select>
             </Field>
@@ -167,7 +167,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                   <select className={inputCls} value={it.type} onChange={(e) => setItemType(it.key, e.target.value)}>
                     <option value="mensualidad">Mensualidad</option>
                     {group?.classPrice && <option value="clase">Clase</option>}
-                    {group && !GROUPS_NO_INSCRIPTION.includes(group.id) && <option value="inscripcion">Inscripción</option>}
+                    {group && requiresInscription(groups.items, group.id) && <option value="inscripcion">Inscripción</option>}
                     <option value="extra">Extra</option>
                   </select>
                   {items.length > 1 && (

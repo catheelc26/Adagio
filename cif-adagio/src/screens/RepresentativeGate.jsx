@@ -50,7 +50,7 @@ export function RepresentativeGate() {
           <input
             className={`${inputCls} text-center tracking-[0.3em]`}
             placeholder="XXXXXX"
-            maxLength={6}
+            maxLength={20}
             value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}

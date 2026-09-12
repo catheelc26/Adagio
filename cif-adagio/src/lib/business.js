@@ -3,12 +3,14 @@ import { groupById } from "./constants";
 export const isActive = (student) => student.status !== "inactive";
 
 // Mensualidad efectiva de un estudiante, aplicando modalidad de pareja (Salsa) y becas.
-export function effectivePrice(student) {
-  const g = groupById(student.group);
+// En modalidad "pareja" el registro representa a las DOS personas a la vez (un solo
+// registro, un solo pago que cubre a ambas), así que el precio es el de la pareja completa.
+export function effectivePrice(student, groups) {
+  const g = groupById(groups, student.group);
   if (!g) return 0;
   const basePrice =
     student.group === "salsa" && student.salsaModality === "pareja"
-      ? (g.pairPrice || g.price * 2) / 2
+      ? g.pairPrice || g.price * 2
       : g.price;
   if (student.scholarshipType === "full") return 0;
   if (student.scholarshipType === "partial") {

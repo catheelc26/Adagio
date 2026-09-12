@@ -1,19 +1,40 @@
 // Catálogo base de la escuela — grupos, niveles, métodos de pago, etc.
 // Ninguno de estos valores se persiste; son la configuración fija del negocio.
 
-export const GROUPS = [
-  { id: "adultos", name: "Adultos", price: 30, classPrice: 10, color: "#0EA5A5" },
-  { id: "sabatino", name: "Niñas Sabatino", price: 30, color: "#7C5CBF" },
-  { id: "preballet", name: "Preballet", price: 35, color: "#E17DA0" },
-  { id: "iniciacion", name: "Iniciación", price: 50, color: "#7C5CBF" },
-  { id: "intermedio", name: "Intermedio", price: 70, color: "#3454D1" },
-  { id: "avanzado", name: "Avanzado", price: 80, color: "#1B2A57" },
-  { id: "salsa", name: "Salsa (sábados)", price: 25, pairPrice: 40, color: "#B8935B" },
+// Grupos "de fábrica": solo se usan para poblar la colección editable
+// `groups` la primera vez que alguien abre la app (ver AppDataContext).
+// A partir de ahí, los grupos reales (los que administración puede agregar,
+// editar o quitar desde Ajustes) viven en la base de datos — usa siempre
+// `useAppData().groups.items`, nunca esta lista, en el resto del código.
+export const DEFAULT_GROUPS = [
+  { id: "adultos", name: "Adultos", price: 30, classPrice: 10, color: "#0EA5A5", requiresInscription: false },
+  { id: "sabatino", name: "Niñas Sabatino", price: 30, color: "#7C5CBF", requiresInscription: true },
+  { id: "preballet", name: "Preballet", price: 35, color: "#E17DA0", requiresInscription: true },
+  { id: "iniciacion", name: "Iniciación", price: 50, color: "#7C5CBF", requiresInscription: true },
+  { id: "intermedio", name: "Intermedio", price: 70, color: "#3454D1", requiresInscription: true },
+  { id: "avanzado", name: "Avanzado", price: 80, color: "#1B2A57", requiresInscription: true },
+  { id: "salsa", name: "Salsa (sábados)", price: 25, pairPrice: 40, color: "#B8935B", requiresInscription: false },
 ];
 
-export const GROUPS_NO_INSCRIPTION = ["adultos", "salsa"];
-export const requiresInscription = (groupId) => !GROUPS_NO_INSCRIPTION.includes(groupId);
-export const groupById = (id) => GROUPS.find((g) => g.id === id);
+/** Busca un grupo por id dentro de la lista dinámica (`groups.items` del contexto). */
+export const groupById = (groups, id) => (groups || []).find((g) => g.id === id) || null;
+
+/** Si un grupo cobra inscripción anual — false para Adultos/Salsa por defecto, configurable por grupo. */
+export const requiresInscription = (groups, groupId) => {
+  const g = groupById(groups, groupId);
+  return g ? g.requiresInscription !== false : true;
+};
+
+/** Genera un id legible y único a partir del nombre del grupo (ej. "Hip Hop" -> "hip_hop"). */
+export const slugifyGroupId = (name, existingIds) => {
+  const base = (name || "grupo")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "grupo";
+  let id = base;
+  let n = 2;
+  while (existingIds.includes(id)) id = `${base}_${n++}`;
+  return id;
+};
 
 // Niveles internos por grupo: es la misma mensualidad del grupo, solo marca el avance
 // para que los representantes vean progreso año con año.

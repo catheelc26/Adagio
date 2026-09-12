@@ -1,13 +1,15 @@
 import { Printer, X } from "lucide-react";
 import { groupById, paymentMethodInfo } from "../lib/constants";
-import { bs, monthLabel, usd } from "../lib/format";
+import { bs, monthLabel, studentDisplayName, usd } from "../lib/format";
+import { useAppData } from "../lib/AppDataContext";
 import { Barre } from "./Decor";
 
 export function ReceiptModal({ transactionId, payments, students, onClose }) {
+  const { groups } = useAppData();
   const items = payments.filter((p) => (p.transactionId || p.id) === transactionId);
   const first = items[0];
   const student = students.find((s) => s.id === first?.studentId);
-  const g = student ? groupById(student.group) : null;
+  const g = student ? groupById(groups.items, student.group) : null;
   const total = items.reduce((s, p) => s + p.amount, 0);
   const totalVES = items.reduce((s, p) => s + (p.amountVES || 0), 0);
 
@@ -39,7 +41,7 @@ export function ReceiptModal({ transactionId, payments, students, onClose }) {
           </div>
           <Barre className="mb-4" />
           <div className="t13 mb-4 space-y-1 text-ink">
-            <p><span className="text-muted">Estudiante:</span> {student?.fullName || "—"}</p>
+            <p><span className="text-muted">Estudiante:</span> {student ? studentDisplayName(student) : "—"}</p>
             <p><span className="text-muted">Grupo:</span> {g?.name || "—"}</p>
             <p><span className="text-muted">Fecha:</span> {first.date}</p>
             <p><span className="text-muted">Método:</span> {paymentMethodInfo(first.method).label}</p>

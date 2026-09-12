@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { CalendarCheck, CheckCircle2, ClipboardList, LogOut, StickyNote, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { GROUPS, WEEKDAYS, groupById } from "../../lib/constants";
+import { WEEKDAYS, groupById } from "../../lib/constants";
 import { isActive } from "../../lib/business";
+import { studentDisplayName } from "../../lib/format";
 import { inputCls } from "../../components/ui";
 import { PushToggle } from "../../components/PushToggle";
 
@@ -53,7 +54,7 @@ export function TeacherPortal({ teacherName, onLogout }) {
 }
 
 function TrialsTab() {
-  const { trialBookings } = useAppData();
+  const { trialBookings, groups } = useAppData();
   const upcoming = trialBookings.items
     .filter((b) => b.status === "pendiente")
     .sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -63,7 +64,7 @@ function TrialsTab() {
       <h2 className="font-display mb-2 text-xl text-ink">Próximas clases de prueba</h2>
       {upcoming.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-4 text-muted">Sin clases de prueba próximas.</p>}
       {upcoming.map((b) => {
-        const g = groupById(b.group);
+        const g = groupById(groups.items, b.group);
         return (
           <div key={b.id} className="card p-3">
             <p className="t13 font-medium text-ink">{b.fullName} · {g?.name}</p>
@@ -76,8 +77,8 @@ function TrialsTab() {
 }
 
 function AttendanceTab({ teacherName }) {
-  const { students, attendance } = useAppData();
-  const [group, setGroup] = useState(GROUPS[0].id);
+  const { students, attendance, groups } = useAppData();
+  const [group, setGroup] = useState(groups.items[0]?.id || "");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   const groupStudents = students.items.filter((s) => s.group === group && isActive(s));
@@ -102,7 +103,7 @@ function AttendanceTab({ teacherName }) {
       <h2 className="font-display text-xl text-ink">Asistencia</h2>
       <div className="grid grid-cols-2 gap-3">
         <select className={inputCls} value={group} onChange={(e) => setGroup(e.target.value)}>
-          {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          {groups.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
         <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
@@ -121,7 +122,7 @@ function AttendanceTab({ teacherName }) {
           const rec = existingForDay(s.id);
           return (
             <div key={s.id} className="card flex items-center gap-3 p-3">
-              <p className="t13 flex-1 text-ink">{s.fullName}</p>
+              <p className="t13 flex-1 text-ink">{studentDisplayName(s)}</p>
               <button onClick={() => mark(s.id, true)} className={`t12 rounded-lg px-3 py-1.5 font-medium ${rec?.present === true ? "bg-teal text-white" : "bg-cream-dim text-muted"}`}>
                 Presente
               </button>
@@ -138,8 +139,8 @@ function AttendanceTab({ teacherName }) {
 }
 
 function NotesTab({ teacherName }) {
-  const { teacherNotes } = useAppData();
-  const [group, setGroup] = useState(GROUPS[0].id);
+  const { teacherNotes, groups } = useAppData();
+  const [group, setGroup] = useState(groups.items[0]?.id || "");
   const [text, setText] = useState("");
 
   const notes = useMemo(
@@ -163,7 +164,7 @@ function NotesTab({ teacherName }) {
     <div className="space-y-4">
       <h2 className="font-display text-xl text-ink">Notas del día</h2>
       <select className={inputCls} value={group} onChange={(e) => setGroup(e.target.value)}>
-        {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+        {groups.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>
       <textarea rows={3} className={inputCls} value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe una nota…" />
       <button onClick={save} className="btn btn-primary w-full">Guardar nota</button>
@@ -183,8 +184,8 @@ function NotesTab({ teacherName }) {
 }
 
 function TasksTab({ teacherName }) {
-  const { tasks } = useAppData();
-  const [group, setGroup] = useState(GROUPS[0].id);
+  const { tasks, groups } = useAppData();
+  const [group, setGroup] = useState(groups.items[0]?.id || "");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
 
@@ -210,7 +211,7 @@ function TasksTab({ teacherName }) {
     <div className="space-y-4">
       <h2 className="font-display text-xl text-ink">Tareas</h2>
       <select className={inputCls} value={group} onChange={(e) => setGroup(e.target.value)}>
-        {GROUPS.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+        {groups.items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>
       <textarea rows={2} className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descripción de la tarea…" />
       <input type="date" className={inputCls} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />

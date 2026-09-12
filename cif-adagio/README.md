@@ -16,16 +16,19 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
 - **Landing** con selector de rol (Administración / Representante / Maestro)
   y reserva pública de clase de prueba (`/prueba`).
 - **Administración** (`/admin`, protegida por PIN — se crea la primera vez
-  que alguien entra): resumen, estudiantes (alta/edición/baja, becas,
-  exportación a Excel), pagos (mensualidad, clases sueltas, inscripción,
-  extras; confirmación de pagos reportados por representantes; recibos
-  imprimibles), clases de prueba, calendario, avisos, recordatorios de pago
-  por WhatsApp/correo, estadísticas y ajustes (tasa de cambio, cuota de
-  inscripción, horario semanal, PIN de maestros, datos bancarios por método
-  de pago).
-- **Portal de representantes** (`/representante`, acceso con el código de 6
-  caracteres de cada estudiante, o autorregistro): estado de cuenta, registro
-  de pagos, calendario del grupo, avisos y reglamento.
+  que alguien entra): resumen, estudiantes (alta/edición/baja — incluye
+  cambiar de grupo, becas, exportación a Excel), pagos (mensualidad, clases
+  sueltas, inscripción, extras; confirmación de pagos reportados por
+  representantes; recibos imprimibles), clases de prueba, calendario, avisos,
+  recordatorios de pago por WhatsApp/correo, estadísticas y ajustes (tasa de
+  cambio, cuota de inscripción, PIN de maestros, datos bancarios por método
+  de pago, **grupos y precios** — agregar/editar/eliminar grupos, y
+  **horario semanal** — agregar/quitar las clases de cada grupo).
+- **Portal de representantes** (`/representante`, acceso con un código que
+  genera la app o autorregistro): estado de cuenta, registro de pagos,
+  calendario del grupo, avisos, reglamento, y pueden cambiar su código de
+  acceso por uno propio (administración siempre puede ver el código actual
+  desde la ficha del estudiante).
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de
   prueba próximas, asistencia, notas del día y tareas por grupo.
 - Instalable en el celular como app (PWA) — "Agregar a pantalla de inicio".
