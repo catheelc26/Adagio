@@ -13,7 +13,7 @@ async function getPillar(slug: string) {
   return prisma.pillar.findUnique({
     where: { slug },
     include: {
-      videos: { orderBy: { order: "asc" } },
+      videos: { orderBy: [{ isPreview: "desc" }, { order: "asc" }] },
     },
   });
 }

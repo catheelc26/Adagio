@@ -16,7 +16,7 @@ export default async function AdminPage() {
   const pillars = await prisma.pillar.findMany({
     orderBy: { order: "asc" },
     include: {
-      videos: { orderBy: { order: "asc" } },
+      videos: { orderBy: [{ isPreview: "desc" }, { order: "asc" }] },
     },
   });
 

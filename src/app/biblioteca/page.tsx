@@ -26,7 +26,7 @@ export default async function BibliotecaPage({
     prisma.pillar.findMany({ orderBy: { order: "asc" } }),
     prisma.video.findMany({
       where: pilar ? { pillar: { slug: pilar } } : undefined,
-      orderBy: [{ pillar: { order: "asc" } }, { order: "asc" }],
+      orderBy: [{ pillar: { order: "asc" } }, { isPreview: "desc" }, { order: "asc" }],
       include: { pillar: true },
     }),
     hasActiveAccess(userId, session?.user?.role),

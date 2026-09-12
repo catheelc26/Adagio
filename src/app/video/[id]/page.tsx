@@ -45,7 +45,7 @@ export default async function VideoPage({ params }: { params: Params }) {
       : Promise.resolve(null),
     prisma.video.findMany({
       where: { pillarId: video.pillarId, id: { not: video.id } },
-      orderBy: { order: "asc" },
+      orderBy: [{ isPreview: "desc" }, { order: "asc" }],
       include: { pillar: true },
       take: 3,
     }),
