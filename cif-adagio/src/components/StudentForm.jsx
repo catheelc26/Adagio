@@ -52,7 +52,7 @@ const emptyStudent = (defaultGroupId) => ({
  * (beca, estado, notas). En modo autorregistro (representante) exige
  * aceptar el reglamento y al guardar genera el código de acceso.
  */
-export function StudentForm({ student, isAdmin, extraFields, onClose, onSaved }) {
+export function StudentForm({ student, isAdmin, extraFields, skipCodeScreen, onClose, onSaved }) {
   const { students, schedule, groups, toast } = useAppData();
   const [f, setF] = useState(() => {
     const base = emptyStudent(groups.items[0]?.id);
@@ -126,8 +126,10 @@ export function StudentForm({ student, isAdmin, extraFields, onClose, onSaved })
         const accessCode = genAccessCode();
         const extra = !isAdmin ? { pendingReview: true, source: "representante" } : {};
         await students.add({ ...payload, id, accessCode, hasPhoto: Boolean(photoPreview), ...extra, ...extraFields });
-        setCreatedCode(accessCode);
-        setCreatedId(id);
+        if (!skipCodeScreen) {
+          setCreatedCode(accessCode);
+          setCreatedId(id);
+        }
       }
 
       if (photoPreview) {
@@ -135,11 +137,12 @@ export function StudentForm({ student, isAdmin, extraFields, onClose, onSaved })
         if (student?.id) await students.update(id, { hasPhoto: true });
       }
 
-      if (student?.id) {
+      if (student?.id || skipCodeScreen) {
         onSaved?.(id);
         onClose();
       }
-      // si es un estudiante nuevo, se muestra la pantalla de código antes de cerrar
+      // si es un estudiante nuevo (y no se pidió saltar esa pantalla), se
+      // muestra el código de acceso antes de cerrar
     } catch (err) {
       toast(err.message || "No se pudo guardar el estudiante.");
     } finally {

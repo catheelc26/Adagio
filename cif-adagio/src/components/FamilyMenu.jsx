@@ -102,10 +102,11 @@ export function FamilyMenu({ student, onSwitchStudent }) {
         <StudentForm
           isAdmin={false}
           extraFields={{ familyId: pendingFamilyId }}
+          skipCodeScreen
           onClose={() => setShowNewMemberForm(false)}
           onSaved={() => {
             setShowNewMemberForm(false);
-            toast("Nuevo estudiante de la familia registrado.");
+            toast("Nuevo estudiante de la familia registrado — ya puedes verlo desde aquí, sin necesidad de código.");
           }}
         />,
         document.body
