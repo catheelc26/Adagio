@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, MoreHorizontal, X } from "lucide-react";
+import { AlertCircle, Check, Copy, MoreHorizontal, X } from "lucide-react";
 import { groupById } from "../lib/constants";
 import { getImage, COLLECTIONS } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
@@ -85,6 +85,41 @@ export function ActionMenu({ children }) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Botón chiquito para copiar un valor al portapapeles, con confirmación visual. */
+export function CopyButton({ value, className = "" }) {
+  const [copied, setCopied] = useState(false);
+  if (!value) return null;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.clipboard?.writeText(String(value));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className={`shrink-0 rounded-lg p-1.5 text-muted hover:bg-line hover:text-ink ${className}`}
+      title="Copiar"
+    >
+      {copied ? <Check size={15} /> : <Copy size={15} />}
+    </button>
+  );
+}
+
+/** Fila con etiqueta + valor + botón de copiar, para datos de pago. */
+export function CopyRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg bg-paper px-3 py-2">
+      <div className="min-w-0">
+        <p className="t10 uppercase tracking-wide text-faint">{label}</p>
+        <p className="t13 truncate font-medium text-ink">{value}</p>
+      </div>
+      <CopyButton value={value} />
     </div>
   );
 }

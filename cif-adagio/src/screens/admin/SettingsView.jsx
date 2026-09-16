@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Camera, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
+import { uid } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { Field, inputCls } from "../../components/ui";
 
 const emptyGroupForm = () => ({ name: "", price: "", classPrice: "", pairPrice: "", color: "#3D7A6E", requiresInscription: true });
+const emptyAccountForm = () => ({ label: "", bank: "", cedula: "", phone: "", groupIds: [] });
+const OTHER_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m.id !== "pago_movil");
 
 export function SettingsView() {
   const { settings, schedule, rateHistory, groups, students, toast } = useAppData();
@@ -17,6 +20,8 @@ export function SettingsView() {
   const [newSlot, setNewSlot] = useState({ group: groups.items[0]?.id || "", weekday: 0, startTime: "16:00", endTime: "17:00" });
   const [editingGroup, setEditingGroup] = useState(null); // grupo existente, o {} para uno nuevo
   const [groupForm, setGroupForm] = useState(emptyGroupForm());
+  const [editingAccount, setEditingAccount] = useState(null); // cuenta existente, o {} para una nueva
+  const [accountForm, setAccountForm] = useState(emptyAccountForm());
 
   const saveRate = async () => {
     const rate = Number(rateInput);
@@ -97,6 +102,44 @@ export function SettingsView() {
     toast("Grupo eliminado.");
   };
 
+  const openNewAccount = () => {
+    setAccountForm(emptyAccountForm());
+    setEditingAccount({});
+  };
+  const openEditAccount = (a) => {
+    setAccountForm({ label: a.label || "", bank: a.bank || "", cedula: a.cedula || "", phone: a.phone || "", groupIds: a.groupIds || [] });
+    setEditingAccount(a);
+  };
+  const toggleAccountGroup = (groupId) => {
+    setAccountForm((prev) => ({
+      ...prev,
+      groupIds: prev.groupIds.includes(groupId) ? prev.groupIds.filter((id) => id !== groupId) : [...prev.groupIds, groupId],
+    }));
+  };
+
+  const saveAccount = async () => {
+    if (!accountForm.bank.trim() || !accountForm.phone.trim()) return toast("Ingresa al menos el banco y el teléfono.");
+    const payload = {
+      label: accountForm.label.trim(),
+      bank: accountForm.bank.trim(),
+      cedula: accountForm.cedula.trim(),
+      phone: accountForm.phone.trim(),
+      groupIds: accountForm.groupIds,
+    };
+    const list = s.pagoMovilAccounts || [];
+    const next = editingAccount?.id
+      ? list.map((a) => (a.id === editingAccount.id ? { ...a, ...payload } : a))
+      : [...list, { id: uid(), ...payload }];
+    await settings.save({ pagoMovilAccounts: next });
+    toast(editingAccount?.id ? "Cuenta actualizada." : "Cuenta agregada.");
+    setEditingAccount(null);
+  };
+
+  const deleteAccount = async (a) => {
+    await settings.save({ pagoMovilAccounts: (s.pagoMovilAccounts || []).filter((x) => x.id !== a.id) });
+    toast("Cuenta eliminada.");
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-5 py-6">
       <h1 className="font-display text-2xl text-ink">Ajustes</h1>
@@ -141,8 +184,39 @@ export function SettingsView() {
       </section>
 
       <section className="card space-y-4 p-4">
-        <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Datos de pago por método</h2>
-        {PAYMENT_METHODS.map((m) => (
+        <div className="flex items-center justify-between">
+          <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Cuentas de Pago Móvil</h2>
+          <button onClick={openNewAccount} className="btn btn-ghost">
+            <Plus size={15} /> Nueva cuenta
+          </button>
+        </div>
+        <p className="t11 text-muted">
+          Puedes tener más de una cuenta (por ejemplo, una para los grupos de sábado y otra para el resto). Marca a
+          qué grupos aplica cada una — una cuenta sin grupos marcados se usa por defecto para los demás.
+        </p>
+        <div className="space-y-2">
+          {(s.pagoMovilAccounts || []).map((a) => (
+            <div key={a.id} className="flex items-center gap-3 rounded-lg bg-cream-dim p-2.5">
+              <div className="flex-1">
+                <p className="t13 text-ink">{a.label || "Cuenta de Pago Móvil"}</p>
+                <p className="t11 text-muted">{a.bank} · {a.cedula} · {a.phone}</p>
+                <p className="t11 text-faint">
+                  {a.groupIds?.length
+                    ? a.groupIds.map((id) => groups.items.find((g) => g.id === id)?.name || id).join(", ")
+                    : "Todos los demás grupos (por defecto)"}
+                </p>
+              </div>
+              <button onClick={() => openEditAccount(a)} className="rounded-lg p-1.5 text-muted hover:bg-line hover:text-ink"><Pencil size={15} /></button>
+              <button onClick={() => deleteAccount(a)} className="rounded-lg p-1.5 text-wine hover:bg-wine/10"><Trash2 size={15} /></button>
+            </div>
+          ))}
+          {(s.pagoMovilAccounts || []).length === 0 && <p className="t13 text-muted">Aún no hay cuentas de Pago Móvil configuradas.</p>}
+        </div>
+      </section>
+
+      <section className="card space-y-4 p-4">
+        <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Datos de pago — otros métodos</h2>
+        {OTHER_PAYMENT_METHODS.map((m) => (
           <Field key={m.id} label={m.label}>
             <textarea
               rows={2}
@@ -243,6 +317,49 @@ export function SettingsView() {
             <div className="mt-5 flex gap-3">
               <button onClick={() => setEditingGroup(null)} className="btn btn-ghost flex-1">Cancelar</button>
               <button onClick={saveGroup} className="btn btn-primary flex-1">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingAccount && (
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+          <div className="modal-panel w-full max-w-md rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg text-ink">{editingAccount.id ? "Editar cuenta" : "Nueva cuenta de Pago Móvil"}</h3>
+              <button onClick={() => setEditingAccount(null)} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <Field label="Nombre de la cuenta (opcional)">
+                <input className={inputCls} value={accountForm.label} onChange={(e) => setAccountForm({ ...accountForm, label: e.target.value })} placeholder="Ej. Cuenta de los sábados" />
+              </Field>
+              <Field label="Banco" required>
+                <input className={inputCls} value={accountForm.bank} onChange={(e) => setAccountForm({ ...accountForm, bank: e.target.value })} placeholder="Ej. Banesco" />
+              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Cédula">
+                  <input className={inputCls} value={accountForm.cedula} onChange={(e) => setAccountForm({ ...accountForm, cedula: e.target.value })} placeholder="V-00000000" />
+                </Field>
+                <Field label="Teléfono" required>
+                  <input className={inputCls} value={accountForm.phone} onChange={(e) => setAccountForm({ ...accountForm, phone: e.target.value })} placeholder="0412-0000000" />
+                </Field>
+              </div>
+              <div>
+                <p className="t11 mb-2 font-medium uppercase tracking-wide text-muted">Grupos que pagan a esta cuenta</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {groups.items.map((g) => (
+                    <label key={g.id} className="t13 flex items-center gap-2 text-ink">
+                      <input type="checkbox" checked={accountForm.groupIds.includes(g.id)} onChange={() => toggleAccountGroup(g.id)} />
+                      {g.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="t11 mt-2 text-muted">Deja todos sin marcar para que esta sea la cuenta por defecto de los demás grupos.</p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setEditingAccount(null)} className="btn btn-ghost flex-1">Cancelar</button>
+              <button onClick={saveAccount} className="btn btn-primary flex-1">Guardar</button>
             </div>
           </div>
         </div>

@@ -19,6 +19,17 @@ export function effectivePrice(student, groups) {
   return basePrice;
 }
 
+// Cuenta de Pago Móvil que corresponde a un grupo. Cada cuenta puede marcar a qué
+// grupos aplica (groupIds); la primera cuenta sin grupos marcados es la que se usa
+// por defecto para cualquier grupo que no esté asignado explícitamente a otra.
+export function pagoMovilAccountForGroup(accounts, groupId) {
+  const list = accounts || [];
+  if (list.length === 0) return null;
+  const specific = list.find((a) => (a.groupIds || []).includes(groupId));
+  if (specific) return specific;
+  return list.find((a) => (a.groupIds || []).length === 0) || list[0];
+}
+
 // Becados 100% y adultos facturados por clase nunca "deben" una mensualidad mensual.
 export const owesMonthlyFee = (student) =>
   student.scholarshipType !== "full" && student.billingMode !== "por_clase";

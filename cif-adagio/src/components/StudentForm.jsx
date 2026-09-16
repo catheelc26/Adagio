@@ -117,7 +117,9 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
 
       let id = student?.id;
       if (id) {
-        await students.update(id, payload);
+        // si un representante actualiza su propio registro, lo marcamos para que
+        // administración vea que hubo un cambio que vale la pena revisar.
+        await students.update(id, isAdmin ? payload : { ...payload, pendingReview: true });
       } else {
         id = uid();
         const accessCode = genAccessCode();
@@ -181,7 +183,9 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
       <div className="modal-panel max-h-[94vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
-          <h3 className="font-display text-lg text-ink">{student ? "Editar estudiante" : "Nuevo estudiante"}</h3>
+          <h3 className="font-display text-lg text-ink">
+            {student ? (isAdmin ? "Editar estudiante" : "Actualizar planilla de registro") : "Nuevo estudiante"}
+          </h3>
           <button onClick={onClose} className="text-muted hover:text-ink">
             <X size={20} />
           </button>
@@ -451,7 +455,7 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
         <div className="sticky bottom-0 flex gap-3 border-t border-line bg-cream p-4">
           <button onClick={onClose} className="btn btn-ghost flex-1">Cancelar</button>
           <button onClick={submit} disabled={saving} className="btn btn-primary flex-1">
-            {saving ? "Guardando…" : "Guardar"}
+            {saving ? "Guardando…" : student && !isAdmin ? "Actualizar" : "Guardar"}
           </button>
         </div>
       </div>

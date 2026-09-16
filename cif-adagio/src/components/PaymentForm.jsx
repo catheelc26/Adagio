@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Camera, Plus, Trash2, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
-import { effectivePrice, proratedFirstMonth } from "../lib/business";
+import { effectivePrice, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
-import { Field, inputCls } from "./ui";
+import { CopyButton, CopyRow, Field, inputCls } from "./ui";
 
 const newItem = (student, groups) => ({
   key: uid(),
@@ -40,6 +40,10 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
   const currency = paymentMethodInfo(method).currency;
   const rate = Number(settings.value.officialRate) || 0;
   const group = student ? groupById(groups.items, student.group) : null;
+  const pagoMovilAccount = method === "pago_movil" && group
+    ? pagoMovilAccountForGroup(settings.value.pagoMovilAccounts, group.id)
+    : null;
+  const methodNote = method !== "pago_movil" ? (settings.value.paymentDetails || {})[method] : null;
 
   const updateItem = (key, patch) => setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...patch } : it)));
   const addItem = () => setItems((prev) => [...prev, { key: uid(), type: "extra", concept: "", amount: "" }]);
@@ -224,6 +228,34 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                 ))}
               </select>
             </Field>
+            {method === "pago_movil" && (
+              <div className="sm:col-span-2 rounded-xl bg-cream-dim p-4">
+                <p className="t11 mb-2 font-semibold uppercase tracking-wide text-bronze-dark">Datos para Pago Móvil</p>
+                {!student ? (
+                  <p className="t13 text-muted">Selecciona el estudiante para ver a qué cuenta corresponde pagar.</p>
+                ) : pagoMovilAccount ? (
+                  <div className="space-y-1.5">
+                    {pagoMovilAccount.label && <p className="t12 mb-1 text-muted">{pagoMovilAccount.label}</p>}
+                    <CopyRow label="Banco" value={pagoMovilAccount.bank} />
+                    <CopyRow label="Cédula" value={pagoMovilAccount.cedula} />
+                    <CopyRow label="Teléfono" value={pagoMovilAccount.phone} />
+                  </div>
+                ) : (
+                  <p className="t13 text-muted">Administración aún no ha configurado los datos de Pago Móvil.</p>
+                )}
+              </div>
+            )}
+            {methodNote && (
+              <div className="sm:col-span-2 rounded-xl bg-cream-dim p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="t11 mb-1 font-semibold uppercase tracking-wide text-bronze-dark">Datos para {paymentMethodInfo(method).label}</p>
+                    <p className="t13 whitespace-pre-wrap text-ink">{methodNote}</p>
+                  </div>
+                  <CopyButton value={methodNote} />
+                </div>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <Field label="Referencia">
                 <input className={inputCls} value={reference} onChange={(e) => setReference(e.target.value)} />
@@ -232,7 +264,10 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
             {currency === "VES" && (
               <div className="sm:col-span-2 rounded-xl bg-teal/10 p-4">
                 <p className="t12 font-medium text-teal-dark">Tasa oficial: {rate > 0 ? `Bs. ${rate}` : "sin configurar"}</p>
-                <p className="mt-0.5 font-display text-2xl text-ink">{rate > 0 ? `Bs. ${(total * rate).toFixed(2)}` : "—"}</p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="font-display text-2xl text-ink">{rate > 0 ? `Bs. ${(total * rate).toFixed(2)}` : "—"}</p>
+                  {rate > 0 && <CopyButton value={(total * rate).toFixed(2)} />}
+                </div>
                 <p className="t11 text-muted">Equivalente en bolívares</p>
               </div>
             )}

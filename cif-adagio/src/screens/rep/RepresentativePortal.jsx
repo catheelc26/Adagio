@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound,
+  Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound, PencilLine,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
@@ -16,6 +16,7 @@ import { PaymentForm } from "../../components/PaymentForm";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 import { ChangeAccessCodeModal } from "../../components/ChangeAccessCodeModal";
+import { StudentForm } from "../../components/StudentForm";
 
 const TABS = [
   { id: "inicio", label: "Inicio", icon: Home },
@@ -32,6 +33,7 @@ export function RepresentativePortal({ student, onLogout }) {
   const [receiptId, setReceiptId] = useState(null);
   const [proofId, setProofId] = useState(null);
   const [showChangeCode, setShowChangeCode] = useState(false);
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
 
   const g = groupById(groups.items, student.group);
   const month = currentMonthKey();
@@ -173,6 +175,9 @@ export function RepresentativePortal({ student, onLogout }) {
             </div>
 
             <button onClick={() => setShowReglamento(true)} className="btn btn-ghost w-full">Ver reglamento</button>
+            <button onClick={() => setShowUpdateForm(true)} className="btn btn-ghost w-full">
+              <PencilLine size={15} /> Actualizar planilla de registro
+            </button>
             <button onClick={() => setShowChangeCode(true)} className="t12 flex w-full items-center justify-center gap-1.5 text-muted hover:text-ink">
               <KeyRound size={14} /> Cambiar mi código de acceso
             </button>
@@ -283,6 +288,9 @@ export function RepresentativePortal({ student, onLogout }) {
 
       {showReglamento && <ReglamentoModal onClose={() => setShowReglamento(false)} />}
       {showChangeCode && <ChangeAccessCodeModal student={student} onClose={() => setShowChangeCode(false)} />}
+      {showUpdateForm && (
+        <StudentForm student={student} isAdmin={false} onClose={() => setShowUpdateForm(false)} onSaved={() => setShowUpdateForm(false)} />
+      )}
       {showPaymentForm && <PaymentForm student={student} isAdmin={false} onClose={() => setShowPaymentForm(false)} />}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={studentPayments} students={[student]} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}

@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
   teacherPin: "",
   studioPhoto: null,
   paymentDetails: {},
+  pagoMovilAccounts: [],
 };
 
 /** Lista en tiempo real de una colección completa, con helpers add/update/remove. */
