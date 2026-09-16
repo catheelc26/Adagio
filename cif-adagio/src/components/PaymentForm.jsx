@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Camera, Plus, Trash2, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
 import { effectivePrice, proratedFirstMonth } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
@@ -32,6 +32,8 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
   const [method, setMethod] = useState(PAYMENT_METHODS[0].id);
   const [reference, setReference] = useState("");
   const [proofPreview, setProofPreview] = useState(null);
+  const [proofError, setProofError] = useState("");
+  const [compressingProof, setCompressingProof] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -70,8 +72,17 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
   const handleProof = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const compressed = await compressImage(file);
-    setProofPreview(compressed);
+    setProofError("");
+    setCompressingProof(true);
+    try {
+      const compressed = await compressImage(file);
+      setProofPreview(compressed);
+    } catch {
+      setProofError("No se pudo cargar esa foto. Prueba con otra, o guarda el pago sin comprobante — no es obligatorio.");
+    } finally {
+      setCompressingProof(false);
+      e.target.value = "";
+    }
   };
 
   const total = useMemo(() => items.reduce((sum, it) => sum + (Number(it.amount) || 0), 0), [items]);
@@ -201,7 +212,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Fecha" required>
               <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
@@ -212,20 +223,35 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                 ))}
               </select>
             </Field>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Field label="Referencia">
                 <input className={inputCls} value={reference} onChange={(e) => setReference(e.target.value)} />
               </Field>
             </div>
             {currency === "VES" && (
-              <div className="col-span-2 rounded-lg bg-cream-dim p-3 t12 text-muted">
-                Tasa oficial: {rate > 0 ? `Bs. ${rate}` : "sin configurar"} · Equivalente: {rate > 0 ? `Bs. ${(total * rate).toFixed(2)}` : "—"}
+              <div className="sm:col-span-2 rounded-xl bg-teal/10 p-4">
+                <p className="t12 font-medium text-teal-dark">Tasa oficial: {rate > 0 ? `Bs. ${rate}` : "sin configurar"}</p>
+                <p className="mt-0.5 font-display text-2xl text-ink">{rate > 0 ? `Bs. ${(total * rate).toFixed(2)}` : "—"}</p>
+                <p className="t11 text-muted">Equivalente en bolívares</p>
               </div>
             )}
-            <div className="col-span-2">
-              <Field label="Comprobante (foto)">
-                <input type="file" accept="image/*" onChange={handleProof} />
-                {proofPreview && <img src={proofPreview} alt="" className="mt-2 h-24 rounded-lg object-cover" />}
+            <div className="sm:col-span-2">
+              <Field label="Comprobante (foto) — opcional">
+                <label className="btn btn-ghost w-full cursor-pointer">
+                  <Camera size={16} />
+                  {compressingProof ? "Cargando…" : proofPreview ? "Cambiar foto" : "Adjuntar comprobante"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleProof} disabled={compressingProof} />
+                </label>
+                <p className="t11 mt-1.5 text-muted">No es obligatorio — puedes guardar el pago sin foto y adjuntarla después.</p>
+                {proofError && <p className="t11 mt-1 text-wine">{proofError}</p>}
+                {proofPreview && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={proofPreview} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                    <button type="button" onClick={() => setProofPreview(null)} className="t12 text-wine underline underline-offset-2">
+                      Quitar foto
+                    </button>
+                  </div>
+                )}
               </Field>
             </div>
           </div>
