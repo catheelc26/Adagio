@@ -32,7 +32,11 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   los datos de pago — incluyendo Pago Móvil según el grupo — visibles y
   copiables al reportar), calendario del grupo, avisos, reglamento, pueden
   actualizar la planilla de registro de su estudiante si hay algún error o
-  cambio (queda marcada para revisión de administración), y cambiar su
+  cambio (queda marcada para revisión de administración), vincular a otros
+  hijos/familiares inscritos (con su código de acceso) para ver y cambiar
+  entre ellos sin cerrar sesión — botón discreto junto a la campanita de
+  notificaciones, pensado para no confundir a quien no vincule a nadie — y
+  cambiar su
   código de acceso por uno propio (administración siempre puede ver el
   código actual desde la ficha del estudiante).
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de

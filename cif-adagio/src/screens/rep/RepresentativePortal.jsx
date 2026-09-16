@@ -17,6 +17,7 @@ import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 import { ChangeAccessCodeModal } from "../../components/ChangeAccessCodeModal";
 import { StudentForm } from "../../components/StudentForm";
+import { FamilyMenu } from "../../components/FamilyMenu";
 
 const TABS = [
   { id: "inicio", label: "Inicio", icon: Home },
@@ -25,7 +26,7 @@ const TABS = [
   { id: "avisos", label: "Avisos", icon: Megaphone },
 ];
 
-export function RepresentativePortal({ student, onLogout }) {
+export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const { payments, schedule, events, tasks, announcements, groups, toast } = useAppData();
   const [tab, setTab] = useState("inicio");
   const [showReglamento, setShowReglamento] = useState(false);
@@ -99,6 +100,7 @@ export function RepresentativePortal({ student, onLogout }) {
           <p className="t13 font-medium text-ink">Hola, {welcomeName}</p>
           <p className="t11 text-muted">{g?.name}</p>
         </div>
+        <FamilyMenu student={student} onSwitchStudent={onSwitchStudent} />
         <PushToggle role="representative" group={student.group} studentId={student.id} />
         <button onClick={onLogout} className="flex items-center gap-1.5 t12 text-muted hover:text-wine">
           <LogOut size={15} /> Salir

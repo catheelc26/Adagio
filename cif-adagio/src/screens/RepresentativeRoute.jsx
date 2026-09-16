@@ -13,5 +13,5 @@ export function RepresentativeRoute() {
   }
   if (students.loading) return null;
 
-  return <RepresentativePortal student={student} onLogout={() => setSession(null)} />;
+  return <RepresentativePortal student={student} onLogout={() => setSession(null)} onSwitchStudent={setSession} />;
 }
