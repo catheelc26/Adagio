@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { UserPlus, Users, X } from "lucide-react";
 import { useAppData } from "../lib/AppDataContext";
 import { studentDisplayName, uid } from "../lib/format";
@@ -55,7 +56,7 @@ export function FamilyMenu({ student, onSwitchStudent }) {
         <Users size={16} />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
           <div className="modal-panel max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
             <div className="mb-1 flex items-center justify-between">
@@ -93,10 +94,11 @@ export function FamilyMenu({ student, onSwitchStudent }) {
               <UserPlus size={15} /> Registrar otro estudiante de la familia
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showNewMemberForm && (
+      {showNewMemberForm && createPortal(
         <StudentForm
           isAdmin={false}
           extraFields={{ familyId: pendingFamilyId }}
@@ -105,7 +107,8 @@ export function FamilyMenu({ student, onSwitchStudent }) {
             setShowNewMemberForm(false);
             toast("Nuevo estudiante de la familia registrado.");
           }}
-        />
+        />,
+        document.body
       )}
     </>
   );
