@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
-import { owesMonthlyFee } from "../../lib/business";
+import { familyMembersOf, owesMonthlyFee } from "../../lib/business";
 import { currentMonthKey, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
@@ -13,6 +13,7 @@ import { PushToggle } from "../../components/PushToggle";
 import { MonthCalendar } from "../../components/MonthCalendar";
 import { ReglamentoModal } from "../../components/ReglamentoModal";
 import { PaymentForm } from "../../components/PaymentForm";
+import { FamilyPaymentForm } from "../../components/FamilyPaymentForm";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 import { ChangeAccessCodeModal } from "../../components/ChangeAccessCodeModal";
@@ -27,7 +28,8 @@ const TABS = [
 ];
 
 export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
-  const { payments, schedule, events, tasks, announcements, groups, toast } = useAppData();
+  const { payments, schedule, events, tasks, announcements, groups, students, toast } = useAppData();
+  const hasFamily = familyMembersOf(students.items, student).length > 1;
   const [tab, setTab] = useState("inicio");
   const [showReglamento, setShowReglamento] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -191,6 +193,9 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
             <button onClick={() => setShowPaymentForm(true)} className="btn btn-primary w-full">
               Registrar un pago
             </button>
+            {hasFamily && (
+              <p className="t11 -mt-3 text-center text-muted">Puedes incluir el pago de tus familiares vinculados en el mismo paso.</p>
+            )}
             <div className="space-y-2">
               {transactionIds.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-4 text-center text-muted">Aún no hay pagos registrados.</p>}
               {transactionIds.map((tid) => {
@@ -293,7 +298,11 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
       {showUpdateForm && (
         <StudentForm student={student} isAdmin={false} onClose={() => setShowUpdateForm(false)} onSaved={() => setShowUpdateForm(false)} />
       )}
-      {showPaymentForm && <PaymentForm student={student} isAdmin={false} onClose={() => setShowPaymentForm(false)} />}
+      {showPaymentForm && (
+        hasFamily
+          ? <FamilyPaymentForm student={student} onClose={() => setShowPaymentForm(false)} />
+          : <PaymentForm student={student} isAdmin={false} onClose={() => setShowPaymentForm(false)} />
+      )}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={studentPayments} students={[student]} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}
     </div>

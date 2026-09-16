@@ -35,8 +35,11 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   cambio (queda marcada para revisión de administración), vincular a otros
   hijos/familiares inscritos (con su código de acceso) para ver y cambiar
   entre ellos sin cerrar sesión — botón discreto junto a la campanita de
-  notificaciones, pensado para no confundir a quien no vincule a nadie — y
-  cambiar su
+  notificaciones, pensado para no confundir a quien no vincule a nadie —,
+  registrar en un solo paso el pago de todos los familiares vinculados
+  (cada quien queda guardado como una transacción independiente para
+  administración; si pagan a cuentas de Pago Móvil distintas, se piden
+  comprobantes por separado, uno por cuenta), y cambiar su
   código de acceso por uno propio (administración siempre puede ver el
   código actual desde la ficha del estudiante).
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de

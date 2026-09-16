@@ -30,6 +30,13 @@ export function pagoMovilAccountForGroup(accounts, groupId) {
   return list.find((a) => (a.groupIds || []).length === 0) || list[0];
 }
 
+// Estudiante actual + todos los vinculados a su misma familia (hermanos, etc.), en ese orden.
+export function familyMembersOf(students, student) {
+  if (!student.familyId) return [student];
+  const siblings = students.filter((s) => s.familyId === student.familyId && s.id !== student.id);
+  return [student, ...siblings];
+}
+
 // Becados 100% y adultos facturados por clase nunca "deben" una mensualidad mensual.
 export const owesMonthlyFee = (student) =>
   student.scholarshipType !== "full" && student.billingMode !== "por_clase";
