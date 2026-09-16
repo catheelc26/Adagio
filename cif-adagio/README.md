@@ -32,10 +32,11 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   los datos de pago — incluyendo Pago Móvil según el grupo — visibles y
   copiables al reportar), calendario del grupo, avisos, reglamento, pueden
   actualizar la planilla de registro de su estudiante si hay algún error o
-  cambio (queda marcada para revisión de administración), vincular a otros
-  hijos/familiares inscritos (con su código de acceso) para ver y cambiar
-  entre ellos sin cerrar sesión — botón discreto junto a la campanita de
-  notificaciones, pensado para no confundir a quien no vincule a nadie —,
+  cambio (queda marcada para revisión de administración), registrar a otro
+  hijo/familiar directamente desde ahí (queda vinculado automáticamente) y
+  cambiar entre ellos sin cerrar sesión — botón discreto junto a la
+  campanita de notificaciones, pensado para no confundir a quien no lo
+  necesite —,
   registrar en un solo paso el pago de todos los familiares vinculados
   (cada quien queda guardado como una transacción independiente para
   administración; si pagan a cuentas de Pago Móvil distintas, se piden

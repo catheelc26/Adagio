@@ -52,7 +52,7 @@ const emptyStudent = (defaultGroupId) => ({
  * (beca, estado, notas). En modo autorregistro (representante) exige
  * aceptar el reglamento y al guardar genera el código de acceso.
  */
-export function StudentForm({ student, isAdmin, onClose, onSaved }) {
+export function StudentForm({ student, isAdmin, extraFields, onClose, onSaved }) {
   const { students, schedule, groups, toast } = useAppData();
   const [f, setF] = useState(() => {
     const base = emptyStudent(groups.items[0]?.id);
@@ -63,6 +63,7 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [showReglamento, setShowReglamento] = useState(false);
   const [createdCode, setCreatedCode] = useState(null);
+  const [createdId, setCreatedId] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const set = (patch) => setF((prev) => ({ ...prev, ...patch }));
@@ -124,8 +125,9 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
         id = uid();
         const accessCode = genAccessCode();
         const extra = !isAdmin ? { pendingReview: true, source: "representante" } : {};
-        await students.add({ ...payload, id, accessCode, hasPhoto: Boolean(photoPreview), ...extra });
+        await students.add({ ...payload, id, accessCode, hasPhoto: Boolean(photoPreview), ...extra, ...extraFields });
         setCreatedCode(accessCode);
+        setCreatedId(id);
       }
 
       if (photoPreview) {
@@ -168,7 +170,7 @@ export function StudentForm({ student, isAdmin, onClose, onSaved }) {
           <button
             className="btn btn-primary w-full"
             onClick={() => {
-              onSaved?.(student?.id);
+              onSaved?.(createdId);
               onClose();
             }}
           >

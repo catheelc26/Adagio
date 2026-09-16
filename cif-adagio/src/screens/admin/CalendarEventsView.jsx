@@ -78,7 +78,7 @@ export function CalendarEventsView() {
 
       {creating && (
         <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-          <div className="modal-panel w-full max-w-md rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+          <div className="modal-panel max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-lg text-ink">Nuevo evento</h3>
               <button onClick={() => setCreating(null)} className="text-muted hover:text-ink"><X size={20} /></button>
