@@ -78,7 +78,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
       const compressed = await compressImage(file);
       setProofPreview(compressed);
     } catch {
-      setProofError("No se pudo cargar esa foto. Prueba con otra, o guarda el pago sin comprobante — no es obligatorio.");
+      setProofError(isAdmin ? "No se pudo cargar esa foto. Prueba con otra." : "No se pudo cargar esa foto. Prueba con otra — la necesitas para poder reportar el pago.");
     } finally {
       setCompressingProof(false);
       e.target.value = "";
@@ -96,6 +96,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
       if (!(Number(it.amount) > 0)) return setError("Cada ítem necesita un monto válido.");
     }
     if (currency === "VES" && !(rate > 0)) return setError("Configura la tasa oficial en Ajustes antes de registrar pagos en bolívares.");
+    if (!isAdmin && !proofPreview) return setError("Adjunta una foto del comprobante de pago para poder reportarlo.");
 
     // Guardia de mes duplicado
     for (const it of items) {
@@ -236,13 +237,15 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
               </div>
             )}
             <div className="sm:col-span-2">
-              <Field label="Comprobante (foto) — opcional">
+              <Field label="Comprobante (foto)" required={!isAdmin}>
                 <label className="btn btn-ghost w-full cursor-pointer">
                   <Camera size={16} />
                   {compressingProof ? "Cargando…" : proofPreview ? "Cambiar foto" : "Adjuntar comprobante"}
                   <input type="file" accept="image/*" className="hidden" onChange={handleProof} disabled={compressingProof} />
                 </label>
-                <p className="t11 mt-1.5 text-muted">No es obligatorio — puedes guardar el pago sin foto y adjuntarla después.</p>
+                {!isAdmin && (
+                  <p className="t11 mt-1.5 text-muted">Obligatorio para reportar el pago — adjunta la foto del comprobante.</p>
+                )}
                 {proofError && <p className="t11 mt-1 text-wine">{proofError}</p>}
                 {proofPreview && (
                   <div className="mt-2 flex items-center gap-2">
