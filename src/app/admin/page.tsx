@@ -36,6 +36,9 @@ export default async function AdminPage() {
           <ButtonLink href="/admin/regalos" variant="secondary">
             Códigos de regalo
           </ButtonLink>
+          <ButtonLink href="/admin/blog" variant="secondary">
+            Blog
+          </ButtonLink>
           <ButtonLink href="/admin/nueva">+ Nueva clase</ButtonLink>
         </div>
       </div>
