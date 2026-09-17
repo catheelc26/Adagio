@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { sanitizeBlogContent } from "@/lib/sanitize-blog-content";
 
 type Params = Promise<{ slug: string }>;
 
@@ -25,7 +26,7 @@ export default async function BlogPostPage({ params }: { params: Params }) {
 
   if (!post || (!post.published && !isAdmin)) notFound();
 
-  const paragraphs = post.content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const safeContent = sanitizeBlogContent(post.content);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 lg:px-10">
@@ -52,13 +53,11 @@ export default async function BlogPostPage({ params }: { params: Params }) {
         </p>
       )}
       <h1 className="mt-2 font-serif text-3xl text-cream sm:text-4xl">{post.title}</h1>
-      <p className="mt-3 text-lg leading-relaxed text-cream-dim/70">{post.excerpt}</p>
 
-      <div className="mt-8 space-y-5 text-base leading-relaxed text-cream-dim/85">
-        {paragraphs.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
-        ))}
-      </div>
+      <div
+        className="mt-8 text-base leading-relaxed text-cream-dim/85 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:font-serif [&_h2]:text-2xl [&_h2]:text-cream [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-serif [&_h3]:text-xl [&_h3]:text-cream [&_p]:my-4 [&_strong]:text-cream [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
+        dangerouslySetInnerHTML={{ __html: safeContent }}
+      />
     </div>
   );
 }

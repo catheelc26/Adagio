@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { FormState } from "@/lib/actions/auth";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 
 type ExistingPost = {
   id: string;
@@ -77,21 +78,14 @@ export function BlogForm({
       </div>
 
       <div>
-        <label htmlFor="content" className="block text-sm text-cream-dim/80">
-          Contenido
-        </label>
-        <textarea
-          id="content"
-          name="content"
-          rows={14}
-          required
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className={`${inputClass} resize-y`}
-        />
+        <label className="block text-sm text-cream-dim/80">Contenido</label>
+        <div className="mt-1.5">
+          <RichTextEditor initialContent={content} onChangeHtml={setContent} />
+        </div>
+        <input type="hidden" name="content" value={content} />
         <p className="mt-1.5 text-xs text-cream-dim/50">
-          Escribe con párrafos separados por una línea en blanco — se
-          formatean automáticamente al publicar.
+          Cada Enter crea un párrafo nuevo. Selecciona texto para ponerlo en
+          negrita, cursiva o convertirlo en título.
         </p>
         {state.fieldErrors?.content && (
           <p className="mt-1 text-xs text-red-400">{state.fieldErrors.content[0]}</p>
