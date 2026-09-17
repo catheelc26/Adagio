@@ -39,6 +39,19 @@ export function VideoForm({
   const existingThumbnail = video?.thumbnailUrl?.startsWith("gradient:") ? "" : video?.thumbnailUrl ?? "";
   const [thumbnailUrl, setThumbnailUrl] = useState(existingThumbnail);
 
+  // Campos controlados: React resetea los campos "no controlados" (los que
+  // solo usan defaultValue) apenas termina la acción del formulario, incluso
+  // cuando falla la validación — así que si no guardamos el valor aquí, se
+  // borra todo lo escrito justo cuando aparece el error. Con estado propio,
+  // el texto sobrevive.
+  const [tag, setTag] = useState(video?.tag ?? "");
+  const [title, setTitle] = useState(video?.title ?? "");
+  const [description, setDescription] = useState(video?.description ?? "");
+  const [videoUrl, setVideoUrl] = useState(video?.videoUrl ?? "");
+  const [durationMinutes, setDurationMinutes] = useState(video ? Math.floor(video.duration / 60) : 8);
+  const [durationSeconds, setDurationSeconds] = useState(video ? video.duration % 60 : 0);
+  const [isPreview, setIsPreview] = useState(video?.isPreview ?? false);
+
   const inputClass =
     "mt-1.5 w-full rounded-lg border border-cream/15 bg-navy-950 px-4 py-2.5 text-cream outline-none focus:border-gold";
 
@@ -77,7 +90,8 @@ export function VideoForm({
             <select
               id="tag"
               name="tag"
-              defaultValue={video?.tag ?? ""}
+              value={tag ?? ""}
+              onChange={(e) => setTag(e.target.value as "INICIAR" | "AVANZADO" | "")}
               className={inputClass}
             >
               <option value="">Sin etiqueta</option>
@@ -97,7 +111,8 @@ export function VideoForm({
           name="title"
           type="text"
           required
-          defaultValue={video?.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           className={inputClass}
         />
         {state.fieldErrors?.title && (
@@ -114,7 +129,8 @@ export function VideoForm({
           name="description"
           rows={3}
           required
-          defaultValue={video?.description}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className={`${inputClass} resize-none`}
         />
         {state.fieldErrors?.description && (
@@ -132,7 +148,8 @@ export function VideoForm({
           type="url"
           placeholder="https://..."
           required
-          defaultValue={video?.videoUrl}
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
           className={inputClass}
         />
         {state.fieldErrors?.videoUrl && (
@@ -191,7 +208,8 @@ export function VideoForm({
               type="number"
               min={0}
               max={600}
-              defaultValue={video ? Math.floor(video.duration / 60) : 8}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(Number(e.target.value))}
               className={inputClass}
             />
           </div>
@@ -205,7 +223,8 @@ export function VideoForm({
               type="number"
               min={0}
               max={59}
-              defaultValue={video ? video.duration % 60 : 0}
+              value={durationSeconds}
+              onChange={(e) => setDurationSeconds(Number(e.target.value))}
               className={inputClass}
             />
           </div>
@@ -216,7 +235,8 @@ export function VideoForm({
             <input
               type="checkbox"
               name="isPreview"
-              defaultChecked={video?.isPreview}
+              checked={isPreview}
+              onChange={(e) => setIsPreview(e.target.checked)}
               className="h-4 w-4 rounded border-cream/30 bg-navy-950 accent-gold"
             />
             Vista previa gratuita (visible sin suscripción)

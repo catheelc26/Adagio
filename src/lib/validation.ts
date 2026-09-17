@@ -33,7 +33,7 @@ export const profileSchema = z.object({
 
 export const blogPostSchema = z.object({
   title: z.string().trim().min(3, "El título debe tener al menos 3 caracteres"),
-  excerpt: z.string().trim().min(3, "Añade un resumen breve").max(300, "El resumen no puede superar los 300 caracteres"),
+  excerpt: z.string().trim().min(3, "Añade un resumen breve"),
   content: z.string().trim().min(10, "Añade el contenido de la entrada"),
   coverImageUrl: z
     .union([z.literal(""), z.string().trim().url("Introduce un enlace de imagen válido")])

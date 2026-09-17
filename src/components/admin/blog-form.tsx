@@ -22,7 +22,16 @@ export function BlogForm({
   const initialState: FormState = {};
   const [state, formAction, isPending] = useActionState(action, initialState);
 
+  // Campos controlados: React resetea los campos "no controlados" (los que
+  // solo usan defaultValue) apenas termina la acción del formulario, incluso
+  // cuando falla la validación — así que si no guardamos el valor aquí, se
+  // borra todo lo escrito justo cuando aparece el error. Con estado propio,
+  // el texto sobrevive.
+  const [title, setTitle] = useState(post?.title ?? "");
+  const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
+  const [content, setContent] = useState(post?.content ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState(post?.coverImageUrl ?? "");
+  const [published, setPublished] = useState(post?.published ?? false);
 
   const inputClass =
     "mt-1.5 w-full rounded-lg border border-cream/15 bg-navy-950 px-4 py-2.5 text-cream outline-none focus:border-gold";
@@ -40,7 +49,8 @@ export function BlogForm({
           name="title"
           type="text"
           required
-          defaultValue={post?.title}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           className={inputClass}
         />
         {state.fieldErrors?.title && (
@@ -57,7 +67,8 @@ export function BlogForm({
           name="excerpt"
           rows={2}
           required
-          defaultValue={post?.excerpt}
+          value={excerpt}
+          onChange={(e) => setExcerpt(e.target.value)}
           className={`${inputClass} resize-none`}
         />
         {state.fieldErrors?.excerpt && (
@@ -74,7 +85,8 @@ export function BlogForm({
           name="content"
           rows={14}
           required
-          defaultValue={post?.content}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           className={`${inputClass} resize-y`}
         />
         <p className="mt-1.5 text-xs text-cream-dim/50">
@@ -128,7 +140,8 @@ export function BlogForm({
         <input
           type="checkbox"
           name="published"
-          defaultChecked={post?.published}
+          checked={published}
+          onChange={(e) => setPublished(e.target.checked)}
           className="h-4 w-4 rounded border-cream/30 bg-navy-950 accent-gold"
         />
         Publicada (visible en /blog)
