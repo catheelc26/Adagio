@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileSpreadsheet, Image as ImageIcon, Plus, Receipt, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { paymentMethodInfo } from "../../lib/constants";
+import { groupById, paymentMethodInfo } from "../../lib/constants";
 import { currentMonthKey, monthLabel, studentDisplayName, usd } from "../../lib/format";
 import { exportPaymentsAnalysisToExcel } from "../../lib/exportExcel";
-import { ActionMenu, ConfirmDialog, MenuItem } from "../../components/ui";
+import { ActionMenu, ConfirmDialog, MenuItem, StudentAvatar } from "../../components/ui";
 import { PaymentForm } from "../../components/PaymentForm";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
@@ -68,15 +68,17 @@ export function PaymentsView() {
       <div className="space-y-2">
         {filtered.map((p) => {
           const student = students.items.find((s) => s.id === p.studentId);
+          const g = student ? groupById(groups.items, student.group) : null;
           return (
             <div key={p.id} className="card flex items-center gap-3 p-3">
+              {student && <StudentAvatar student={student} size={36} />}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="t13 font-medium text-ink">{student ? studentDisplayName(student) : "Estudiante eliminado"}</p>
                   {p.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}
                 </div>
                 <p className="t11 text-muted">
-                  {p.concept}{p.month ? ` · ${monthLabel(p.month)}` : ""} · {p.date} · {paymentMethodInfo(p.method).label}
+                  {g?.name ? `${g.name} · ` : ""}{p.concept}{p.month ? ` · ${monthLabel(p.month)}` : ""} · {p.date} · {paymentMethodInfo(p.method).label}
                 </p>
               </div>
               <span className="t13 font-medium text-ink">{usd(p.amount)}</span>

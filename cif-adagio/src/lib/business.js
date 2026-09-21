@@ -41,6 +41,36 @@ export function familyMembersOf(students, student) {
 export const owesMonthlyFee = (student) =>
   student.scholarshipType !== "full" && student.billingMode !== "por_clase";
 
+// Ordena estudiantes por el orden configurado de los grupos (Ajustes → Grupos y
+// precios) y, dentro de cada grupo, alfabéticamente por nombre.
+export function sortByGroupThenName(students, groups) {
+  const order = new Map(groups.map((g, i) => [g.id, i]));
+  return [...students].sort((a, b) => {
+    const ga = order.has(a.group) ? order.get(a.group) : groups.length;
+    const gb = order.has(b.group) ? order.get(b.group) : groups.length;
+    if (ga !== gb) return ga - gb;
+    return (a.fullName || "").localeCompare(b.fullName || "");
+  });
+}
+
+// Meses (más reciente al final) en los que un estudiante debe mensualidad sin pago
+// confirmado, mirando hacia atrás desde el mes actual — sin pasar de su fecha de
+// registro, para no marcar meses previos a su inscripción.
+export function owedMonths(student, payments, monthsBack = 60) {
+  const months = [];
+  const now = new Date();
+  const enrolled = student.createdAt ? new Date(student.createdAt) : null;
+  const enrolledFloor = enrolled ? new Date(enrolled.getFullYear(), enrolled.getMonth(), 1) : null;
+  for (let i = 0; i < monthsBack; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    if (enrolledFloor && d < enrolledFloor) break;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const paid = payments.some((p) => p.studentId === student.id && p.type === "mensualidad" && p.month === key && p.confirmed !== false);
+    if (!paid) months.push(key);
+  }
+  return months.reverse();
+}
+
 export function daysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }

@@ -23,6 +23,10 @@ export function StatsView() {
   );
   const collectionRate = owing.length ? Math.round((paidThisMonth.length / owing.length) * 100) : 100;
 
+  const collectedThisMonth = payments.items
+    .filter((p) => p.confirmed !== false && p.date?.startsWith(month))
+    .reduce((s, p) => s + p.amount, 0);
+
   const yearTotal = payments.items
     .filter((p) => p.confirmed !== false && p.date?.startsWith(String(year)))
     .reduce((s, p) => s + p.amount, 0);
@@ -47,7 +51,8 @@ export function StatsView() {
     <div className="mx-auto max-w-4xl space-y-6 px-5 py-6">
       <h1 className="font-display text-2xl text-ink">Estadísticas</h1>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Stat label="Cobrado este mes" value={usd(collectedThisMonth)} />
         <Stat label="Cobro del mes" value={`${collectionRate}%`} />
         <Stat label={`Ingresos ${year}`} value={usd(yearTotal)} />
         <Stat label="Asistencia" value={attendanceRate === null ? "—" : `${attendanceRate}%`} />

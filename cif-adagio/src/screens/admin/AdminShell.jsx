@@ -16,7 +16,7 @@ import { StatsView } from "./StatsView";
 import { SettingsView } from "./SettingsView";
 
 const PRIMARY_TABS = [
-  { id: "dashboard", label: "Resumen", icon: LayoutDashboard },
+  { id: "dashboard", label: "Inicio", icon: LayoutDashboard },
   { id: "students", label: "Estudiantes", icon: Users },
   { id: "payments", label: "Pagos", icon: Wallet },
 ];

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FileSpreadsheet, Pencil, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { effectivePrice, isActive } from "../../lib/business";
+import { effectivePrice, isActive, sortByGroupThenName } from "../../lib/business";
 import { studentDisplayName, usd } from "../../lib/format";
 import { exportStudentsToExcel } from "../../lib/exportExcel";
 import { COLLECTIONS, deleteImage } from "../../lib/db";
@@ -21,12 +21,12 @@ export function StudentsView() {
   const [deleting, setDeleting] = useState(null);
 
   const filtered = useMemo(() => {
-    return students.items
+    const result = students.items
       .filter((s) => (groupFilter === "all" ? true : s.group === groupFilter))
       .filter((s) => (statusFilter === "all" ? true : statusFilter === "active" ? isActive(s) : !isActive(s)))
-      .filter((s) => s.fullName?.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => a.fullName.localeCompare(b.fullName));
-  }, [students.items, search, groupFilter, statusFilter]);
+      .filter((s) => s.fullName?.toLowerCase().includes(search.toLowerCase()));
+    return sortByGroupThenName(result, groups.items);
+  }, [students.items, search, groupFilter, statusFilter, groups.items]);
 
   const confirmRegistration = async (s) => {
     await students.update(s.id, { pendingReview: false });
