@@ -26,9 +26,11 @@ export function StudentAccountModal({ student, onClose }) {
   const monthCells = Array.from({ length: 12 }, (_, i) => {
     const key = `${year}-${String(i + 1).padStart(2, "0")}`;
     const paid = confirmed.some((p) => p.type === "mensualidad" && p.month === key);
+    const exempted = confirmed.some((p) => p.type === "exoneracion" && p.month === key);
     let status = "future";
     if (!owes) status = "notOwed";
     else if (paid) status = "paid";
+    else if (exempted) status = "exempted";
     else if (i <= currentMonthIdx) status = "pending";
     return { key, label: MONTH_NAMES[i].slice(0, 3), status };
   });
@@ -45,6 +47,7 @@ export function StudentAccountModal({ student, onClose }) {
   const statusColor = {
     paid: "bg-teal text-white",
     pending: "bg-wine text-white",
+    exempted: "bg-plum text-white",
     notOwed: "bg-cream-dim text-faint",
     future: "bg-cream-dim text-faint",
   };

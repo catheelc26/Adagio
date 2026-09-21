@@ -1,9 +1,11 @@
-import { AlertCircle, Users, GraduationCap, Clock } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, HeartHandshake, Users, GraduationCap, Clock } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
 import { effectivePrice, isActive, owedMonths, owesMonthlyFee, sortByGroupThenName } from "../../lib/business";
 import { monthLabel, studentDisplayName, usd } from "../../lib/format";
-import { StudentAvatar } from "../../components/ui";
+import { ActionMenu, MenuItem, StudentAvatar } from "../../components/ui";
+import { ExemptMonthModal } from "../../components/ExemptMonthModal";
 
 const TONES = ["bg-cream-dim", "bg-teal/10", "bg-bronze/10", "bg-blush/10"];
 
@@ -24,6 +26,7 @@ function StatCard({ icon: Icon, label, value, tone = 0 }) {
 export function Dashboard() {
   const { students, payments, groups } = useAppData();
   const activeStudents = students.items.filter(isActive);
+  const [exemptingEntry, setExemptingEntry] = useState(null);
 
   const pendingEntries = sortByGroupThenName(activeStudents.filter(owesMonthlyFee), groups.items)
     .map((s) => ({ student: s, owed: owedMonths(s, payments.items) }))
@@ -60,7 +63,8 @@ export function Dashboard() {
           <p className="t13 rounded-xl bg-cream-dim p-4 text-muted">Todos los estudiantes están al día. 🎉</p>
         ) : (
           <div className="space-y-2">
-            {pendingEntries.map(({ student: s, owed }) => {
+            {pendingEntries.map((entry) => {
+              const { student: s, owed } = entry;
               const g = groupById(groups.items, s.group);
               return (
                 <div key={s.id} className="card flex items-center gap-3 p-3">
@@ -71,12 +75,23 @@ export function Dashboard() {
                     <p className="t11 text-wine">Debe: {owed.map(monthLabel).join(", ")}</p>
                   </div>
                   <span className="t13 font-medium text-wine">{usd(effectivePrice(s, groups.items) * owed.length)}</span>
+                  <ActionMenu>
+                    <MenuItem icon={<HeartHandshake size={15} />} label="Exonerar un mes" onClick={() => setExemptingEntry(entry)} />
+                  </ActionMenu>
                 </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {exemptingEntry && (
+        <ExemptMonthModal
+          student={exemptingEntry.student}
+          monthOptions={exemptingEntry.owed}
+          onClose={() => setExemptingEntry(null)}
+        />
+      )}
     </div>
   );
 }

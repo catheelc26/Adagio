@@ -72,7 +72,7 @@ export async function exportPaymentsAnalysisToExcel(students, payments, groups) 
         "Fecha": p.date,
         "Estudiante": student ? studentDisplayName(student) : "Estudiante eliminado",
         "Grupo": g?.name || "",
-        "Tipo": p.type === "mensualidad" ? "Mensualidad" : "Extra",
+        "Tipo": { mensualidad: "Mensualidad", clase: "Clase", inscripcion: "Inscripción", exoneracion: "Exoneración" }[p.type] || "Extra",
         "Concepto": p.concept,
         "Mes correspondiente": p.month ? monthLabel(p.month) : "",
         "Monto ($)": p.amount,
@@ -90,7 +90,7 @@ export async function exportPaymentsAnalysisToExcel(students, payments, groups) 
   XLSX.utils.book_append_sheet(wb, wsDetail, "Detalle de pagos");
 
   const months = Array.from(
-    new Set(payments.filter((p) => p.type === "mensualidad" && p.month).map((p) => p.month))
+    new Set(payments.filter((p) => ["mensualidad", "exoneracion"].includes(p.type) && p.month).map((p) => p.month))
   ).sort();
 
   const analysisRows = students.map((s) => {
@@ -101,7 +101,8 @@ export async function exportPaymentsAnalysisToExcel(students, payments, groups) 
       const sum = payments
         .filter((p) => p.studentId === s.id && p.type === "mensualidad" && p.month === m && p.confirmed !== false)
         .reduce((acc, p) => acc + p.amount, 0);
-      row[monthLabel(m)] = sum > 0 ? sum : "";
+      const exempted = payments.some((p) => p.studentId === s.id && p.type === "exoneracion" && p.month === m && p.confirmed !== false);
+      row[monthLabel(m)] = sum > 0 ? sum : exempted ? "Exonerado" : "";
       total += sum;
     });
     const extrasTotal = payments

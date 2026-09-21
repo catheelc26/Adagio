@@ -1,7 +1,7 @@
 import { Mail, MessageCircle } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { effectivePrice, isActive, owesMonthlyFee } from "../../lib/business";
+import { effectivePrice, isActive, monthIsSettled, owesMonthlyFee } from "../../lib/business";
 import {
   buildReminderText, currentMonthKey, mailtoLink, monthLabel, reminderContactEmail,
   reminderContactName, reminderContactPhone, studentDisplayName, usd, waLink,
@@ -16,7 +16,7 @@ export function RemindersView() {
 
   const pending = students.items.filter((s) => {
     if (!isActive(s) || !owesMonthlyFee(s)) return false;
-    return !payments.items.some((p) => p.studentId === s.id && p.type === "mensualidad" && p.month === month && p.confirmed !== false);
+    return !monthIsSettled(payments.items, s.id, month);
   });
 
   const logReminder = async (studentId, channel) => {

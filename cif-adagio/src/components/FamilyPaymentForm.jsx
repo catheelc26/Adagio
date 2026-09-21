@@ -147,6 +147,8 @@ export function FamilyPaymentForm({ student, onClose }) {
         if (it.type === "mensualidad") {
           const dup = payments.items.some((p) => p.studentId === entry.studentId && p.type === "mensualidad" && p.month === it.month);
           if (dup) return setError(`${name} ya tiene un pago de mensualidad para ${monthLabel(it.month)}. Elimínalo primero si es una corrección.`);
+          const exempted = payments.items.some((p) => p.studentId === entry.studentId && p.type === "exoneracion" && p.month === it.month && p.confirmed !== false);
+          if (exempted) return setError(`${monthLabel(it.month)} ya está exonerado para ${name}.`);
         }
       }
     }

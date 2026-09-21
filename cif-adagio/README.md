@@ -16,11 +16,17 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
 - **Landing** con selector de rol (Administración / Representante / Maestro)
   y reserva pública de clase de prueba (`/prueba`).
 - **Administración** (`/admin`, protegida por PIN — se crea la primera vez
-  que alguien entra): resumen, estudiantes (alta/edición/baja — incluye
-  cambiar de grupo, becas, exportación a Excel), pagos (mensualidad, clases
-  sueltas, inscripción, extras; confirmación de pagos reportados por
-  representantes; recibos imprimibles), clases de prueba, calendario, avisos,
-  recordatorios de pago por WhatsApp/correo, estadísticas y ajustes (tasa de
+  que alguien entra): Inicio (estudiantes activos, con beca, y pendientes
+  del mes — ordenados por grupo y luego alfabéticamente, mostrando todos
+  los meses que debe cada quien si son varios), estudiantes (alta/edición/
+  baja — incluye cambiar de grupo, becas, exportación a Excel, también
+  ordenados por grupo), pagos (mensualidad, clases sueltas, inscripción,
+  extras, **exoneración de un mes puntual** — para ayudas económicas, sin
+  registrar cobro — con foto y grupo del estudiante visibles en cada fila;
+  confirmación de pagos reportados por representantes; recibos imprimibles),
+  clases de prueba, calendario, avisos, recordatorios de pago por
+  WhatsApp/correo (ya no avisan de meses exonerados), estadísticas
+  (incluye lo cobrado en el mes) y ajustes (tasa de
   cambio, cuota de inscripción, PIN de maestros, **cuentas de Pago Móvil**
   — pueden ser varias, cada una asignada a los grupos que le correspondan,
   ej. una cuenta para los grupos de sábado y otra para el resto — datos

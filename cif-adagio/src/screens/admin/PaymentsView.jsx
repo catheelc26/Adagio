@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, FileSpreadsheet, Image as ImageIcon, Plus, Receipt, Trash2 } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, HeartHandshake, Image as ImageIcon, Plus, Receipt, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, paymentMethodInfo } from "../../lib/constants";
 import { currentMonthKey, monthLabel, studentDisplayName, usd } from "../../lib/format";
 import { exportPaymentsAnalysisToExcel } from "../../lib/exportExcel";
 import { ActionMenu, ConfirmDialog, MenuItem, StudentAvatar } from "../../components/ui";
 import { PaymentForm } from "../../components/PaymentForm";
+import { ExemptMonthModal } from "../../components/ExemptMonthModal";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 
@@ -13,6 +14,7 @@ export function PaymentsView() {
   const { payments, students, groups, toast } = useAppData();
   const [month, setMonth] = useState(currentMonthKey());
   const [creating, setCreating] = useState(false);
+  const [exempting, setExempting] = useState(false);
   const [receiptId, setReceiptId] = useState(null);
   const [proofId, setProofId] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -48,9 +50,12 @@ export function PaymentsView() {
           <h1 className="font-display text-2xl text-ink">Pagos</h1>
           <p className="t13 text-muted">Total confirmado: {usd(total)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => exportPaymentsAnalysisToExcel(students.items, payments.items, groups.items)} className="btn btn-ghost">
             <FileSpreadsheet size={15} /> Excel
+          </button>
+          <button onClick={() => setExempting(true)} className="btn btn-ghost">
+            <HeartHandshake size={15} /> Exonerar mes
           </button>
           <button onClick={() => setCreating(true)} className="btn btn-primary">
             <Plus size={15} /> Nuevo
@@ -76,12 +81,14 @@ export function PaymentsView() {
                 <div className="flex items-center gap-2">
                   <p className="t13 font-medium text-ink">{student ? studentDisplayName(student) : "Estudiante eliminado"}</p>
                   {p.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}
+                  {p.type === "exoneracion" && <span className="t10 rounded-full bg-plum/15 px-2 py-0.5 font-medium text-plum">Exonerado</span>}
                 </div>
                 <p className="t11 text-muted">
-                  {g?.name ? `${g.name} · ` : ""}{p.concept}{p.month ? ` · ${monthLabel(p.month)}` : ""} · {p.date} · {paymentMethodInfo(p.method).label}
+                  {g?.name ? `${g.name} · ` : ""}{p.concept}{p.month ? ` · ${monthLabel(p.month)}` : ""} · {p.date}
+                  {p.type !== "exoneracion" && ` · ${paymentMethodInfo(p.method).label}`}
                 </p>
               </div>
-              <span className="t13 font-medium text-ink">{usd(p.amount)}</span>
+              {p.type !== "exoneracion" && <span className="t13 font-medium text-ink">{usd(p.amount)}</span>}
               <ActionMenu>
                 {p.confirmed === false && <MenuItem icon={<CheckCircle2 size={15} />} label="Confirmar" onClick={() => confirmPayment(p)} />}
                 <MenuItem icon={<Receipt size={15} />} label="Ver recibo" onClick={() => setReceiptId(p.transactionId || p.id)} />
@@ -95,6 +102,7 @@ export function PaymentsView() {
       </div>
 
       {creating && <PaymentForm isAdmin onClose={() => setCreating(false)} />}
+      {exempting && <ExemptMonthModal onClose={() => setExempting(false)} />}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={payments.items} students={students.items} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}
       {deleting && (

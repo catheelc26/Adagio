@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
-import { familyMembersOf, owesMonthlyFee } from "../../lib/business";
+import { familyMembersOf, monthIsSettled, owesMonthlyFee } from "../../lib/business";
 import { currentMonthKey, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
@@ -42,9 +42,7 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const month = currentMonthKey();
   const welcomeName = student.isMinor ? student.guardianName : student.fullName;
 
-  const paidThisMonth = payments.items.some(
-    (p) => p.studentId === student.id && p.type === "mensualidad" && p.month === month && p.confirmed !== false
-  );
+  const paidThisMonth = monthIsSettled(payments.items, student.id, month);
 
   let statusLabel = "Al día";
   let statusColor = "var(--color-teal)";
@@ -205,7 +203,10 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
                   <div key={tid} className="card flex items-center gap-3 p-3">
                     <div className="flex-1">
                       <p className="t13 text-ink">{first.date} · {first.concept}</p>
-                      <p className="t11 text-muted">{first.confirmed === false ? "Por confirmar" : "Confirmado"} · {usd(sum)}</p>
+                      <p className="t11 text-muted">
+                        {first.type === "exoneracion" ? "Exonerado" : first.confirmed === false ? "Por confirmar" : "Confirmado"}
+                        {first.type !== "exoneracion" && ` · ${usd(sum)}`}
+                      </p>
                     </div>
                     <button onClick={() => setReceiptId(tid)} className="rounded-lg p-2 text-teal hover:bg-teal/10"><Receipt size={16} /></button>
                     {first.hasProof && (

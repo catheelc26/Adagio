@@ -53,9 +53,14 @@ export function sortByGroupThenName(students, groups) {
   });
 }
 
+// Un mes queda "resuelto" para un estudiante si hay una mensualidad confirmada
+// o una exoneración (ayuda puntual de administración) para ese mes.
+export const monthIsSettled = (payments, studentId, month) =>
+  payments.some((p) => p.studentId === studentId && ["mensualidad", "exoneracion"].includes(p.type) && p.month === month && p.confirmed !== false);
+
 // Meses (más reciente al final) en los que un estudiante debe mensualidad sin pago
-// confirmado, mirando hacia atrás desde el mes actual — sin pasar de su fecha de
-// registro, para no marcar meses previos a su inscripción.
+// confirmado ni exoneración, mirando hacia atrás desde el mes actual — sin pasar de
+// su fecha de registro, para no marcar meses previos a su inscripción.
 export function owedMonths(student, payments, monthsBack = 60) {
   const months = [];
   const now = new Date();
@@ -65,8 +70,7 @@ export function owedMonths(student, payments, monthsBack = 60) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     if (enrolledFloor && d < enrolledFloor) break;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const paid = payments.some((p) => p.studentId === student.id && p.type === "mensualidad" && p.month === key && p.confirmed !== false);
-    if (!paid) months.push(key);
+    if (!monthIsSettled(payments, student.id, key)) months.push(key);
   }
   return months.reverse();
 }
