@@ -27,8 +27,8 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   confirmación de pagos reportados por representantes; recibos imprimibles),
   clases de prueba, calendario, avisos, recordatorios de pago por
   WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
-  (crear funciones, mapa de butacas del teatro con precio por fila — $12
-  las filas centrales 8 a 14, $10 el resto —, ver y confirmar las entradas
+  (crear funciones, mapa de butacas del teatro con precio por asiento — $12
+  los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
   vendidas de cada función con su comprador y asiento, y **escanear el QR
   de cada entrada** desde la cámara del celular o buscarla manualmente para
   verificarla en la puerta el día de la función), estadísticas

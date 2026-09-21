@@ -94,7 +94,7 @@ export function ShowsView() {
 
   const activeShow = sortedShows.find((s) => s.id === activeShowId) || sortedShows[0] || null;
   const showTickets = activeShow
-    ? ticketsForShow(tickets.items, activeShow.id).sort((a, b) => (a.row === b.row ? a.seat.localeCompare(b.seat) : a.row - b.row))
+    ? ticketsForShow(tickets.items, activeShow.id).sort((a, b) => (a.row === b.row ? a.seat - b.seat : a.row.localeCompare(b.row)))
     : [];
   const confirmedRevenue = showTickets.filter((t) => t.confirmed !== false).reduce((s, t) => s + t.price, 0);
   const pendingCount = showTickets.filter((t) => t.confirmed === false).length;
@@ -203,7 +203,7 @@ export function ShowsView() {
                         {t.checkedIn && <span className="t10 flex items-center gap-1 rounded-full bg-teal/15 px-2 py-0.5 font-medium text-teal-dark"><ShieldCheck size={11} /> Escaneada</span>}
                       </div>
                       <p className="t11 text-muted">
-                        Fila {t.row} · Asiento {t.seat} · {seatSection(t.row)} · {t.buyerPhone}
+                        Fila {t.row} · Asiento {t.seat} · {seatSection(t.seat)} · {t.buyerPhone}
                       </p>
                     </div>
                     <span className="t13 font-medium text-ink">{usd(t.price)}</span>

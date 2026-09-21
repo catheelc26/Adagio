@@ -118,7 +118,7 @@ export function TicketScanner({ onClose }) {
                 <CheckCircle2 size={30} className="mx-auto mb-2 text-teal" />
               )}
               <p className="font-display text-xl text-ink">Fila {result.ticket.row} · Asiento {result.ticket.seat}</p>
-              <p className="t12 text-muted">{seatSection(result.ticket.row)} · ${result.ticket.price} · {show?.title || "Función"}</p>
+              <p className="t12 text-muted">{seatSection(result.ticket.seat)} · ${result.ticket.price} · {show?.title || "Función"}</p>
               <p className="t12 mt-1 text-ink">{result.ticket.buyerName}</p>
               {result.ticket.confirmed === false && <p className="t11 mt-2 text-wine">Pago aún sin confirmar por administración.</p>}
               {result.ticket.checkedIn ? (

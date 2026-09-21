@@ -43,7 +43,7 @@ export function TicketQR({ ticket, show }) {
         )}
         <div className="text-center">
           <p className="font-display text-xl text-ink">Fila {ticket.row} · Asiento {ticket.seat}</p>
-          <p className="t12 text-muted">{seatSection(ticket.row)} · ${ticket.price}</p>
+          <p className="t12 text-muted">{seatSection(ticket.seat)} · ${ticket.price}</p>
         </div>
         {ticket.checkedIn && (
           <span className="t11 rounded-full bg-teal/15 px-3 py-1 font-medium text-teal-dark">Ya fue escaneada</span>

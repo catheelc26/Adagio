@@ -87,7 +87,7 @@ export function TicketBookingFlow({ student, onClose }) {
   const rate = Number(settings.value.officialRate) || 0;
   const pagoMovilAccount = method === "pago_movil" ? pagoMovilAccountForGroup(settings.value.pagoMovilAccounts, null) : null;
   const methodNote = method !== "pago_movil" ? (settings.value.paymentDetails || {})[method] : null;
-  const total = useMemo(() => selected.reduce((sum, s) => sum + seatPrice(s.row), 0), [selected]);
+  const total = useMemo(() => selected.reduce((sum, s) => sum + seatPrice(s.seat), 0), [selected]);
 
   const toggleSeat = (row, seat) => {
     setSelected((prev) => {
@@ -158,7 +158,7 @@ export function TicketBookingFlow({ student, onClose }) {
           showId,
           row: seat.row,
           seat: seat.seat,
-          price: seatPrice(seat.row),
+          price: seatPrice(seat.seat),
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone.trim(),
           buyerEmail: buyerEmail.trim() || null,
