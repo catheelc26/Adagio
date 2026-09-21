@@ -18,6 +18,8 @@ export function AppDataProvider({ children }) {
   const attendance = useCollection(COLLECTIONS.attendance);
   const announcements = useCollection(COLLECTIONS.announcements);
   const events = useCollection(COLLECTIONS.events);
+  const shows = useCollection(COLLECTIONS.shows);
+  const tickets = useCollection(COLLECTIONS.tickets);
   const settings = useSettings();
 
   // La colección `groups` empieza vacía en cualquier proyecto de Supabase
@@ -59,6 +61,8 @@ export function AppDataProvider({ children }) {
     attendance,
     announcements,
     events,
+    shows,
+    tickets,
     settings,
     toast,
     toastMsg,

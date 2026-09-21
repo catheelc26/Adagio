@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import { ShieldAlert, UserCog, GraduationCap, ArrowRight, Sparkles } from "lucide-react";
+import { ShieldAlert, UserCog, GraduationCap, ArrowRight, Sparkles, Ticket } from "lucide-react";
 import { useAppData } from "../lib/AppDataContext";
 
 const STUDIO_STRIP = [
@@ -100,6 +100,19 @@ export function Landing() {
               </div>
             ))}
           </div>
+        </motion.div>
+
+        <motion.div variants={item} className="mt-4">
+          <Link to="/entradas" className="card flex items-center gap-3 p-4 transition hover:shadow-lift">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--color-plum-light, #EADFF0)" }}>
+              <Ticket size={19} style={{ color: "var(--color-plum)" }} />
+            </span>
+            <span className="flex-1">
+              <span className="t13 block font-semibold text-ink">Entradas para presentaciones</span>
+              <span className="t11 text-muted">Elige tu asiento y compra en línea</span>
+            </span>
+            <ArrowRight size={17} className="text-faint" />
+          </Link>
         </motion.div>
       </motion.div>
     </div>

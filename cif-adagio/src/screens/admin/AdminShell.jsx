@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Wallet, MoreHorizontal, LogOut, X,
-  CalendarCheck, Calendar, Megaphone, Bell, BarChart3, Settings as SettingsIcon,
+  CalendarCheck, Calendar, Megaphone, Bell, BarChart3, Settings as SettingsIcon, Ticket,
 } from "lucide-react";
 import { useAdminSession } from "../../lib/session";
 import { PushToggle } from "../../components/PushToggle";
@@ -14,6 +14,7 @@ import { AnnouncementsView } from "./AnnouncementsView";
 import { RemindersView } from "./RemindersView";
 import { StatsView } from "./StatsView";
 import { SettingsView } from "./SettingsView";
+import { ShowsView } from "./ShowsView";
 
 const PRIMARY_TABS = [
   { id: "dashboard", label: "Inicio", icon: LayoutDashboard },
@@ -26,6 +27,7 @@ const SECONDARY_TABS = [
   { id: "calendar", label: "Calendario", icon: Calendar },
   { id: "announcements", label: "Avisos", icon: Megaphone },
   { id: "reminders", label: "Recordatorios", icon: Bell },
+  { id: "shows", label: "Presentaciones", icon: Ticket },
   { id: "stats", label: "Estadísticas", icon: BarChart3 },
   { id: "settings", label: "Ajustes", icon: SettingsIcon },
 ];
@@ -38,6 +40,7 @@ const VIEWS = {
   calendar: CalendarEventsView,
   announcements: AnnouncementsView,
   reminders: RemindersView,
+  shows: ShowsView,
   stats: StatsView,
   settings: SettingsView,
 };

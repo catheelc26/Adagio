@@ -24,6 +24,9 @@ export const COLLECTIONS = {
   events: "events",
   studentPhotos: "studentPhotos",
   paymentProofs: "paymentProofs",
+  shows: "shows",
+  tickets: "tickets",
+  ticketProofs: "ticketProofs",
 };
 
 const SETTINGS_ID = "settings";

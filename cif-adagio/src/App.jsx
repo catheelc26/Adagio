@@ -3,6 +3,7 @@ import { AppDataProvider, useAppData } from "./lib/AppDataContext";
 import { Toast } from "./components/ui";
 import { Landing } from "./screens/Landing";
 import { TrialBookingFlow } from "./screens/TrialBookingFlow";
+import { TicketBookingFlow } from "./screens/TicketBookingFlow";
 import { AdminRoute } from "./screens/AdminRoute";
 import { RepresentativeRoute } from "./screens/RepresentativeRoute";
 import { TeacherRoute } from "./screens/TeacherRoute";
@@ -26,6 +27,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/prueba" element={<TrialBookingFlow />} />
+        <Route path="/entradas" element={<TicketBookingFlow />} />
         <Route path="/admin/*" element={<AdminRoute />} />
         <Route path="/representante/*" element={<RepresentativeRoute />} />
         <Route path="/maestro/*" element={<TeacherRoute />} />

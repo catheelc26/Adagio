@@ -1,10 +1,12 @@
 import { useState } from "react";
 import {
   Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound, PencilLine,
+  Ticket, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
 import { familyMembersOf, monthIsSettled, owesMonthlyFee } from "../../lib/business";
+import { showLabel } from "../../lib/tickets";
 import { currentMonthKey, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
@@ -19,6 +21,8 @@ import { ProofViewer } from "../../components/ProofViewer";
 import { ChangeAccessCodeModal } from "../../components/ChangeAccessCodeModal";
 import { StudentForm } from "../../components/StudentForm";
 import { FamilyMenu } from "../../components/FamilyMenu";
+import { TicketBookingFlow } from "../TicketBookingFlow";
+import { TicketQR } from "../../components/TicketQR";
 
 const TABS = [
   { id: "inicio", label: "Inicio", icon: Home },
@@ -27,8 +31,30 @@ const TABS = [
   { id: "avisos", label: "Avisos", icon: Megaphone },
 ];
 
+function TicketGroupModal({ transactionId, tickets, shows, onClose }) {
+  const items = tickets.filter((t) => (t.transactionId || t.id) === transactionId);
+  const show = shows.find((s) => s.id === items[0]?.showId);
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-md sm:rounded-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
+          <h3 className="font-display text-lg text-ink">Mis entradas</h3>
+          <button onClick={onClose} className="text-muted hover:text-ink">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="space-y-4 p-5">
+          {items.map((t) => (
+            <TicketQR key={t.id} ticket={t} show={show} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
-  const { payments, schedule, events, tasks, announcements, groups, students, toast } = useAppData();
+  const { payments, schedule, events, tasks, announcements, groups, students, shows, tickets, toast } = useAppData();
   const hasFamily = familyMembersOf(students.items, student).length > 1;
   const [tab, setTab] = useState("inicio");
   const [showReglamento, setShowReglamento] = useState(false);
@@ -37,6 +63,8 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const [proofId, setProofId] = useState(null);
   const [showChangeCode, setShowChangeCode] = useState(false);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [showTicketFlow, setShowTicketFlow] = useState(false);
+  const [ticketGroupId, setTicketGroupId] = useState(null);
 
   const g = groupById(groups.items, student.group);
   const month = currentMonthKey();
@@ -77,6 +105,9 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
 
   const studentPayments = payments.items.filter((p) => p.studentId === student.id).sort((a, b) => (a.date < b.date ? 1 : -1));
   const transactionIds = Array.from(new Set(studentPayments.map((p) => p.transactionId || p.id)));
+
+  const myTickets = tickets.items.filter((t) => t.studentId === student.id).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const myTicketTransactionIds = Array.from(new Set(myTickets.map((t) => t.transactionId || t.id)));
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -175,6 +206,38 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
               <p className="t13 text-ink">{student.emergencyName} ({student.emergencyRelationship || "—"})</p>
               <p className="t13 text-muted">{student.emergencyPhone}</p>
             </div>
+
+            <button onClick={() => setShowTicketFlow(true)} className="btn btn-ghost w-full">
+              <Ticket size={15} /> Comprar entradas para presentaciones
+            </button>
+
+            {myTicketTransactionIds.length > 0 && (
+              <div className="card p-4">
+                <p className="t11 mb-2 font-semibold uppercase tracking-wide text-bronze-dark">Mis entradas</p>
+                <div className="space-y-2">
+                  {myTicketTransactionIds.map((tid) => {
+                    const items = myTickets.filter((t) => (t.transactionId || t.id) === tid);
+                    const first = items[0];
+                    const g2 = shows.items.find((s) => s.id === first.showId);
+                    return (
+                      <button
+                        key={tid}
+                        onClick={() => setTicketGroupId(tid)}
+                        className="flex w-full items-center justify-between rounded-lg bg-cream-dim px-3 py-2 text-left"
+                      >
+                        <span>
+                          <span className="t13 block text-ink">{g2?.title || "Función"}</span>
+                          <span className="t11 text-muted">
+                            {items.length} asiento{items.length > 1 ? "s" : ""}{g2 ? ` · ${showLabel(g2)}` : ""}
+                          </span>
+                        </span>
+                        <Ticket size={16} className="shrink-0 text-bronze-dark" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <button onClick={() => setShowReglamento(true)} className="btn btn-ghost w-full">Ver reglamento</button>
             <button onClick={() => setShowUpdateForm(true)} className="btn btn-ghost w-full">
@@ -306,6 +369,10 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
       )}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={studentPayments} students={[student]} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}
+      {showTicketFlow && <TicketBookingFlow student={student} onClose={() => setShowTicketFlow(false)} />}
+      {ticketGroupId && (
+        <TicketGroupModal transactionId={ticketGroupId} tickets={myTickets} shows={shows.items} onClose={() => setTicketGroupId(null)} />
+      )}
     </div>
   );
 }

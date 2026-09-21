@@ -13,8 +13,9 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
 
 ## Qué incluye
 
-- **Landing** con selector de rol (Administración / Representante / Maestro)
-  y reserva pública de clase de prueba (`/prueba`).
+- **Landing** con selector de rol (Administración / Representante / Maestro),
+  reserva pública de clase de prueba (`/prueba`) y venta de entradas para
+  presentaciones (`/entradas`, debajo de las fotos de "Vida en el estudio").
 - **Administración** (`/admin`, protegida por PIN — se crea la primera vez
   que alguien entra): Inicio (estudiantes activos, con beca, y pendientes
   del mes — ordenados por grupo y luego alfabéticamente, mostrando todos
@@ -25,7 +26,12 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles),
   clases de prueba, calendario, avisos, recordatorios de pago por
-  WhatsApp/correo (ya no avisan de meses exonerados), estadísticas
+  WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
+  (crear funciones, mapa de butacas del teatro con precio por fila — $12
+  las filas centrales 8 a 14, $10 el resto —, ver y confirmar las entradas
+  vendidas de cada función con su comprador y asiento, y **escanear el QR
+  de cada entrada** desde la cámara del celular o buscarla manualmente para
+  verificarla en la puerta el día de la función), estadísticas
   (incluye lo cobrado en el mes) y ajustes (tasa de
   cambio, cuota de inscripción, PIN de maestros, **cuentas de Pago Móvil**
   — pueden ser varias, cada una asignada a los grupos que le correspondan,
@@ -48,7 +54,18 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   administración; si pagan a cuentas de Pago Móvil distintas, se piden
   comprobantes por separado, uno por cuenta), y cambiar su
   código de acceso por uno propio (administración siempre puede ver el
-  código actual desde la ficha del estudiante).
+  código actual desde la ficha del estudiante), y **comprar entradas para
+  presentaciones** eligiendo su asiento en el mapa del teatro, con sus
+  datos pre-llenados y viendo ahí mismo las entradas ya compradas ("Mis
+  entradas").
+- **Compra pública de entradas** (`/entradas`, sin necesidad de iniciar
+  sesión): elegir función, elegir asiento en el mapa del teatro (como
+  comprar entradas de cine — asientos ocupados se ven bloqueados en tiempo
+  real), reportar el pago con foto de comprobante (igual que cualquier otro
+  pago de la app) y recibir al instante un **código QR por cada asiento**
+  con la fila y el número — administración lo confirma después. Las
+  entradas quedan guardadas en el navegador de quien compra para poder
+  volver a verlas sin necesidad de una cuenta.
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de
   prueba próximas, asistencia, notas del día y tareas por grupo.
 - Instalable en el celular como app (PWA) — "Agregar a pantalla de inicio".
@@ -180,6 +197,7 @@ Apple, no de esta app. En Android/Chrome funciona directo desde el navegador.
 ```
 src/lib/constants.js       Catálogo del negocio: grupos, niveles, métodos de pago, reglamento
 src/lib/business.js        Precios, prorrateo, reglas de beca/facturación
+src/lib/tickets.js         Mapa de butacas del teatro, precio por fila, helpers de entradas
 src/lib/format.js          Formateo de moneda/fecha, generación de códigos, enlaces de recordatorio
 src/lib/supabase.js        Configuración de Supabase (lee variables de entorno)
 src/lib/db.js              Hooks de datos en tiempo real (colecciones + settings + fotos)
@@ -188,8 +206,8 @@ src/lib/session.js         Sesiones ligeras (sessionStorage) para los 3 tipos de
 src/lib/push.js            Suscripción y envío de notificaciones push (opcional)
 public/sw.js                Service worker que muestra las notificaciones push
 src/components/            Piezas reutilizables: formularios, modales, calendario, avatar
-src/screens/                Landing, flujo de clase de prueba, y las 3 puertas de acceso
-src/screens/admin/          Panel de administración (9 pestañas)
+src/screens/                Landing, flujo de clase de prueba, compra de entradas, y las 3 puertas de acceso
+src/screens/admin/          Panel de administración (10 pestañas)
 src/screens/rep/            Portal de representantes
 src/screens/teacher/        Portal de maestros
 supabase/schema.sql          Tabla + políticas de seguridad + tiempo real (léelo antes de correrlo)

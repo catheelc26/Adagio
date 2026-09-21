@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { COLLECTIONS, getImage } from "../lib/db";
 
-export function ProofViewer({ transactionId, onClose }) {
+export function ProofViewer({ transactionId, collection = COLLECTIONS.paymentProofs, onClose }) {
   const [src, setSrc] = useState(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getImage(COLLECTIONS.paymentProofs, transactionId)
+    getImage(collection, transactionId)
       .then((val) => {
         if (!cancelled) setSrc(val);
       })
@@ -18,7 +18,7 @@ export function ProofViewer({ transactionId, onClose }) {
     return () => {
       cancelled = true;
     };
-  }, [transactionId]);
+  }, [transactionId, collection]);
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
