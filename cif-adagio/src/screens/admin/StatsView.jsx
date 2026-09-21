@@ -23,9 +23,14 @@ export function StatsView() {
   );
   const collectionRate = owing.length ? Math.round((paidThisMonth.length / owing.length) * 100) : 100;
 
-  const collectedThisMonth = payments.items
-    .filter((p) => p.confirmed !== false && p.date?.startsWith(month))
-    .reduce((s, p) => s + p.amount, 0);
+  const monthPayments = payments.items.filter((p) => p.confirmed !== false && p.date?.startsWith(month));
+  const collectedThisMonth = monthPayments.reduce((s, p) => s + p.amount, 0);
+  const collectedByType = {
+    mensualidad: monthPayments.filter((p) => p.type === "mensualidad").reduce((s, p) => s + p.amount, 0),
+    inscripcion: monthPayments.filter((p) => p.type === "inscripcion").reduce((s, p) => s + p.amount, 0),
+    clase: monthPayments.filter((p) => p.type === "clase").reduce((s, p) => s + p.amount, 0),
+    extra: monthPayments.filter((p) => p.type === "extra").reduce((s, p) => s + p.amount, 0),
+  };
 
   const yearTotal = payments.items
     .filter((p) => p.confirmed !== false && p.date?.startsWith(String(year)))
@@ -46,17 +51,41 @@ export function StatsView() {
     const revenue = inGroup.reduce((s, st) => s + effectivePrice(st, groups.items), 0);
     return { ...g, count: inGroup.length, revenue };
   });
+  const totalExpectedIncome = byGroup.reduce((s, g) => s + g.revenue, 0);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-5 py-6">
       <h1 className="font-display text-2xl text-ink">Estadísticas</h1>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat label="Cobrado este mes" value={usd(collectedThisMonth)} />
+      <div className="grid grid-cols-3 gap-3">
         <Stat label="Cobro del mes" value={`${collectionRate}%`} />
-        <Stat label={`Ingresos ${year}`} value={usd(yearTotal)} />
         <Stat label="Asistencia" value={attendanceRate === null ? "—" : `${attendanceRate}%`} />
         <Stat label="Estudiantes activos" value={active.length} />
+      </div>
+
+      <div>
+        <h2 className="font-display mb-3 text-lg text-ink">Cobrado este mes</h2>
+        <div className="card space-y-3 p-4">
+          <p className="font-display text-3xl text-ink">{usd(collectedThisMonth)}</p>
+          <div className="divide-y divide-line-soft border-t border-line-soft">
+            <div className="flex items-center justify-between py-2">
+              <span className="t13 text-muted">Mensualidades</span>
+              <span className="t13 font-medium text-ink">{usd(collectedByType.mensualidad)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="t13 text-muted">Inscripciones</span>
+              <span className="t13 font-medium text-ink">{usd(collectedByType.inscripcion)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="t13 text-muted">Clases sueltas</span>
+              <span className="t13 font-medium text-ink">{usd(collectedByType.clase)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="t13 text-muted">Extras</span>
+              <span className="t13 font-medium text-ink">{usd(collectedByType.extra)}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -70,6 +99,10 @@ export function StatsView() {
               <span className="t13 font-medium text-ink">{usd(g.revenue)}/mes</span>
             </div>
           ))}
+          <div className="card flex items-center justify-between border-l-4 border-l-teal p-3">
+            <span className="t13 font-semibold text-ink">Total de ingreso esperado</span>
+            <span className="font-display text-lg text-ink">{usd(totalExpectedIncome)}/mes</span>
+          </div>
         </div>
       </div>
 
@@ -81,6 +114,8 @@ export function StatsView() {
           <Stat label="Completa" value={scholarshipCounts.full} />
         </div>
       </div>
+
+      <Stat label={`Ingresos ${year}`} value={usd(yearTotal)} />
     </div>
   );
 }
