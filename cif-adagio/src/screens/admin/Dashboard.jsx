@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertCircle, HeartHandshake, Users, GraduationCap, Clock } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { effectivePrice, isActive, owedMonths, owesMonthlyFee, sortByGroupThenName } from "../../lib/business";
+import { effectivePrice, isActive, monthOwedAmount, owedMonths, owesMonthlyFee, sortByGroupThenName } from "../../lib/business";
 import { monthLabel, studentDisplayName, usd } from "../../lib/format";
 import { ActionMenu, MenuItem, StudentAvatar } from "../../components/ui";
 import { ExemptMonthModal } from "../../components/ExemptMonthModal";
@@ -29,7 +29,7 @@ export function Dashboard() {
   const [exemptingEntry, setExemptingEntry] = useState(null);
 
   const pendingEntries = sortByGroupThenName(activeStudents.filter(owesMonthlyFee), groups.items)
-    .map((s) => ({ student: s, owed: owedMonths(s, payments.items) }))
+    .map((s) => ({ student: s, owed: owedMonths(s, payments.items, groups.items) }))
     .filter((e) => e.owed.length > 0);
 
   const unconfirmed = payments.items.filter((p) => p.confirmed === false);
@@ -66,15 +66,20 @@ export function Dashboard() {
             {pendingEntries.map((entry) => {
               const { student: s, owed } = entry;
               const g = groupById(groups.items, s.group);
+              const price = effectivePrice(s, groups.items);
+              const owedPerMonth = owed.map((m) => ({ month: m, amount: monthOwedAmount(payments.items, s, m, groups.items) }));
+              const totalOwed = owedPerMonth.reduce((sum, o) => sum + o.amount, 0);
               return (
                 <div key={s.id} className="card flex items-center gap-3 p-3">
                   <StudentAvatar student={s} size={36} />
                   <div className="min-w-0 flex-1">
                     <p className="t13 font-medium text-ink">{studentDisplayName(s)}</p>
                     <p className="t11 text-muted">{g?.name}</p>
-                    <p className="t11 text-wine">Debe: {owed.map(monthLabel).join(", ")}</p>
+                    <p className="t11 text-wine">
+                      Debe: {owedPerMonth.map((o) => (o.amount < price ? `${monthLabel(o.month)} (${usd(o.amount)})` : monthLabel(o.month))).join(", ")}
+                    </p>
                   </div>
-                  <span className="t13 font-medium text-wine">{usd(effectivePrice(s, groups.items) * owed.length)}</span>
+                  <span className="t13 font-medium text-wine">{usd(totalOwed)}</span>
                   <ActionMenu>
                     <MenuItem icon={<HeartHandshake size={15} />} label="Exonerar un mes" onClick={() => setExemptingEntry(entry)} />
                   </ActionMenu>

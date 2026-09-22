@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Camera, Plus, Trash2, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
-import { effectivePrice, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
+import { effectivePrice, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -15,6 +15,7 @@ const newItem = (student, groups) => ({
   concept: "Mensualidad",
   amount: student ? String(effectivePrice(student, groups)) : "",
   month: currentMonthKey(),
+  prorated: false,
 });
 
 /**
@@ -64,13 +65,13 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
       concept = "Inscripción anual";
       amount = String(settings.value.inscriptionFee || 0);
     }
-    updateItem(key, { type, concept, amount, month });
+    updateItem(key, { type, concept, amount, month, prorated: false });
   };
 
   const applyProration = (key) => {
     if (!student) return;
     const { amount, monthKey, nextMonthKey, suggestNextMonth } = proratedFirstMonth(effectivePrice(student, groups.items), date);
-    updateItem(key, { amount: String(amount), month: suggestNextMonth ? nextMonthKey : monthKey });
+    updateItem(key, { amount: String(amount), month: suggestNextMonth ? nextMonthKey : monthKey, prorated: true });
   };
 
   const handleProof = async (e) => {
@@ -102,13 +103,12 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
     if (currency === "VES" && !(rate > 0)) return setError("Configura la tasa oficial en Ajustes antes de registrar pagos en bolívares.");
     if (!isAdmin && !proofPreview) return setError("Adjunta una foto del comprobante de pago para poder reportarlo.");
 
-    // Guardia de mes duplicado
+    // Guardia de mes ya resuelto — un abono parcial (ej. pagó la mitad de la
+    // mensualidad) SÍ debe poder completarse con otro pago para el mismo mes;
+    // solo bloqueamos si ese mes ya quedó completamente pagado o exonerado.
     for (const it of items) {
-      if (it.type === "mensualidad") {
-        const dup = payments.items.some((p) => p.studentId === student.id && p.type === "mensualidad" && p.month === it.month);
-        if (dup) return setError(`Ya existe un pago de mensualidad para ${monthLabel(it.month)}. Elimínalo primero si es una corrección.`);
-        const exempted = payments.items.some((p) => p.studentId === student.id && p.type === "exoneracion" && p.month === it.month && p.confirmed !== false);
-        if (exempted) return setError(`${monthLabel(it.month)} ya está exonerado para este estudiante.`);
+      if (it.type === "mensualidad" && monthIsSettled(payments.items, student, it.month, groups.items)) {
+        return setError(`${monthLabel(it.month)} ya está pagado por completo (o exonerado) para este estudiante.`);
       }
     }
 
@@ -136,6 +136,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
           hasProof,
           confirmed: isAdmin,
           reportedBy: isAdmin ? "admin" : "representante",
+          prorated: it.type === "mensualidad" ? Boolean(it.prorated) : false,
         });
       }
       if (proofPreview) await setImage(COLLECTIONS.paymentProofs, transactionId, proofPreview);
@@ -200,7 +201,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                   <p className="t13 text-muted">{it.concept}</p>
                 )}
                 <div className="flex items-center gap-2">
-                  <input type="number" className={inputCls} placeholder="Monto ($)" value={it.amount} onChange={(e) => updateItem(it.key, { amount: e.target.value })} />
+                  <input type="number" className={inputCls} placeholder="Monto ($)" value={it.amount} onChange={(e) => updateItem(it.key, { amount: e.target.value, prorated: false })} />
                   {it.type === "mensualidad" && (
                     <button type="button" onClick={() => applyProration(it.key)} className="btn btn-ghost whitespace-nowrap">
                       Prorratear
@@ -212,6 +213,15 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                     <input type="month" className={inputCls} value={it.month} onChange={(e) => updateItem(it.key, { month: e.target.value })} />
                   </Field>
                 )}
+                {it.type === "mensualidad" && student && !it.prorated && (() => {
+                  const already = monthPaidAmount(payments.items, student.id, it.month);
+                  const remaining = effectivePrice(student, groups.items) - already - (Number(it.amount) || 0);
+                  return remaining > 0 ? (
+                    <p className="t11 text-bronze-dark">
+                      Es un abono parcial — después de este pago quedarán pendientes {usd(remaining)} más de {monthLabel(it.month)}.
+                    </p>
+                  ) : null;
+                })()}
               </div>
             ))}
             <button onClick={addItem} className="btn btn-ghost w-full">

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Camera, ChevronDown, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
-import { effectivePrice, familyMembersOf, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
+import { effectivePrice, familyMembersOf, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -15,6 +15,7 @@ const newItemFor = (student, groups) => ({
   concept: "Mensualidad",
   amount: String(effectivePrice(student, groups)),
   month: currentMonthKey(),
+  prorated: false,
 });
 
 /**
@@ -77,12 +78,12 @@ export function FamilyPaymentForm({ student, onClose }) {
       concept = "Inscripción anual";
       amount = String(settings.value.inscriptionFee || 0);
     }
-    updateItem(entryStudent.id, key, { type, concept, amount, month });
+    updateItem(entryStudent.id, key, { type, concept, amount, month, prorated: false });
   };
 
   const applyProration = (entryStudent, key) => {
     const { amount, monthKey, nextMonthKey, suggestNextMonth } = proratedFirstMonth(effectivePrice(entryStudent, groups.items), date);
-    updateItem(entryStudent.id, key, { amount: String(amount), month: suggestNextMonth ? nextMonthKey : monthKey });
+    updateItem(entryStudent.id, key, { amount: String(amount), month: suggestNextMonth ? nextMonthKey : monthKey, prorated: true });
   };
 
   // Agrupa las entradas por a qué cuenta de Pago Móvil corresponde pagar (o un
@@ -142,13 +143,11 @@ export function FamilyPaymentForm({ student, onClose }) {
       }
     }
     for (const entry of entries) {
-      const name = studentDisplayName(studentOf(entry.studentId));
+      const entryStudent = studentOf(entry.studentId);
+      const name = studentDisplayName(entryStudent);
       for (const it of entry.items) {
-        if (it.type === "mensualidad") {
-          const dup = payments.items.some((p) => p.studentId === entry.studentId && p.type === "mensualidad" && p.month === it.month);
-          if (dup) return setError(`${name} ya tiene un pago de mensualidad para ${monthLabel(it.month)}. Elimínalo primero si es una corrección.`);
-          const exempted = payments.items.some((p) => p.studentId === entry.studentId && p.type === "exoneracion" && p.month === it.month && p.confirmed !== false);
-          if (exempted) return setError(`${monthLabel(it.month)} ya está exonerado para ${name}.`);
+        if (it.type === "mensualidad" && monthIsSettled(payments.items, entryStudent, it.month, groups.items)) {
+          return setError(`${monthLabel(it.month)} ya está pagado por completo (o exonerado) para ${name}.`);
         }
       }
     }
@@ -180,6 +179,7 @@ export function FamilyPaymentForm({ student, onClose }) {
               hasProof: Boolean(proofDataUrl),
               confirmed: false,
               reportedBy: "representante",
+              prorated: it.type === "mensualidad" ? Boolean(it.prorated) : false,
             });
           }
           if (proofDataUrl) await setImage(COLLECTIONS.paymentProofs, transactionId, proofDataUrl);
@@ -250,7 +250,7 @@ export function FamilyPaymentForm({ student, onClose }) {
                           <p className="t13 text-muted">{it.concept}</p>
                         )}
                         <div className="flex items-center gap-2">
-                          <input type="number" className={inputCls} placeholder="Monto ($)" value={it.amount} onChange={(e) => updateItem(entry.studentId, it.key, { amount: e.target.value })} />
+                          <input type="number" className={inputCls} placeholder="Monto ($)" value={it.amount} onChange={(e) => updateItem(entry.studentId, it.key, { amount: e.target.value, prorated: false })} />
                           {it.type === "mensualidad" && (
                             <button type="button" onClick={() => applyProration(entryStudent, it.key)} className="btn btn-ghost whitespace-nowrap">
                               Prorratear
@@ -262,6 +262,15 @@ export function FamilyPaymentForm({ student, onClose }) {
                             <input type="month" className={inputCls} value={it.month} onChange={(e) => updateItem(entry.studentId, it.key, { month: e.target.value })} />
                           </Field>
                         )}
+                        {it.type === "mensualidad" && !it.prorated && (() => {
+                          const already = monthPaidAmount(payments.items, entryStudent.id, it.month);
+                          const remaining = effectivePrice(entryStudent, groups.items) - already - (Number(it.amount) || 0);
+                          return remaining > 0 ? (
+                            <p className="t11 text-bronze-dark">
+                              Es un abono parcial — después de este pago quedarán pendientes {usd(remaining)} más de {monthLabel(it.month)}.
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
                     ))}
                   </div>

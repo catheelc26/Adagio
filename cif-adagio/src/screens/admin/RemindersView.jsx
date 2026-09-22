@@ -1,7 +1,7 @@
 import { Mail, MessageCircle } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { effectivePrice, isActive, monthIsSettled, owesMonthlyFee } from "../../lib/business";
+import { isActive, monthIsSettled, monthOwedAmount, owesMonthlyFee } from "../../lib/business";
 import {
   buildReminderText, currentMonthKey, mailtoLink, monthLabel, reminderContactEmail,
   reminderContactName, reminderContactPhone, studentDisplayName, usd, waLink,
@@ -16,7 +16,7 @@ export function RemindersView() {
 
   const pending = students.items.filter((s) => {
     if (!isActive(s) || !owesMonthlyFee(s)) return false;
-    return !monthIsSettled(payments.items, s.id, month);
+    return !monthIsSettled(payments.items, s, month, groups.items);
   });
 
   const logReminder = async (studentId, channel) => {
@@ -36,7 +36,8 @@ export function RemindersView() {
       <div className="space-y-2">
         {pending.map((s) => {
           const g = groupById(groups.items, s.group);
-          const text = buildReminderText(s, g, month, groups.items);
+          const owed = monthOwedAmount(payments.items, s, month, groups.items);
+          const text = buildReminderText(s, g, month, owed);
           const phone = reminderContactPhone(s);
           const email = reminderContactEmail(s);
           return (
@@ -44,7 +45,7 @@ export function RemindersView() {
               <StudentAvatar student={s} size={36} />
               <div className="flex-1">
                 <p className="t13 font-medium text-ink">{studentDisplayName(s)}</p>
-                <p className="t11 text-muted">{g?.name} · {usd(effectivePrice(s, groups.items))} · para {reminderContactName(s)}</p>
+                <p className="t11 text-muted">{g?.name} · {usd(owed)} · para {reminderContactName(s)}</p>
               </div>
               {phone && (
                 <a href={waLink(phone, text)} target="_blank" rel="noreferrer" onClick={() => logReminder(s.id, "whatsapp")} className="rounded-lg p-2 text-teal hover:bg-teal/10">

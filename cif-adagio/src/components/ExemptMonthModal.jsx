@@ -12,7 +12,7 @@ import { Field, inputCls } from "./ui";
  * pagos pendientes, con el motivo guardado para referencia futura.
  */
 export function ExemptMonthModal({ student: fixedStudent, monthOptions, onClose }) {
-  const { students, payments, toast } = useAppData();
+  const { students, payments, groups, toast } = useAppData();
   const [studentId, setStudentId] = useState(fixedStudent?.id || "");
   const student = fixedStudent || students.items.find((s) => s.id === studentId);
   const [month, setMonth] = useState(monthOptions?.[0] || currentMonthKey());
@@ -25,7 +25,7 @@ export function ExemptMonthModal({ student: fixedStudent, monthOptions, onClose 
     if (!student) return setError("Selecciona un estudiante.");
     if (!month) return setError("Selecciona el mes a exonerar.");
     if (!reason.trim()) return setError("Escribe el motivo de la exoneración.");
-    if (monthIsSettled(payments.items, student.id, month)) {
+    if (monthIsSettled(payments.items, student, month, groups.items)) {
       return setError(`${monthLabel(month)} ya tiene un pago o exoneración registrada.`);
     }
     setSaving(true);

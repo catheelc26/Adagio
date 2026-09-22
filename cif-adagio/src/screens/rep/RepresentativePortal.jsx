@@ -70,7 +70,7 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const month = currentMonthKey();
   const welcomeName = student.isMinor ? student.guardianName : student.fullName;
 
-  const paidThisMonth = monthIsSettled(payments.items, student.id, month);
+  const paidThisMonth = monthIsSettled(payments.items, student, month, groups.items);
 
   let statusLabel = "Al día";
   let statusColor = "var(--color-teal)";

@@ -19,7 +19,9 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
 - **Administración** (`/admin`, protegida por PIN — se crea la primera vez
   que alguien entra): Inicio (estudiantes activos, con beca, y pendientes
   del mes — ordenados por grupo y luego alfabéticamente, mostrando todos
-  los meses que debe cada quien si son varios), estudiantes (alta/edición/
+  los meses que debe cada quien si son varios y, si abonó solo una parte
+  de algún mes, cuánto le falta todavía — un abono parcial nunca se marca
+  como mes pagado), estudiantes (alta/edición/
   baja — incluye cambiar de grupo, becas, exportación a Excel, también
   ordenados por grupo), pagos (mensualidad, clases sueltas, inscripción,
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin

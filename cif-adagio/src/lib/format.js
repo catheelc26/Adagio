@@ -1,5 +1,3 @@
-import { effectivePrice } from "./business";
-
 export const usd = (n) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
 
@@ -32,9 +30,9 @@ export const reminderContactName = (student) => (student.isMinor ? student.guard
 export const reminderContactPhone = (student) => (student.isMinor ? student.guardianPhone : student.phone) || "";
 export const reminderContactEmail = (student) => (student.isMinor ? student.guardianEmail : student.email) || "";
 
-export const buildReminderText = (student, group, mKey, groups) => {
+export const buildReminderText = (student, group, mKey, amountOwed) => {
   const name = reminderContactName(student);
-  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(effectivePrice(student, groups))}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
+  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(amountOwed)}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
 };
 
 export const studentDisplayName = (student) =>
