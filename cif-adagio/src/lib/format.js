@@ -40,6 +40,9 @@ export const studentDisplayName = (student) =>
     ? `${student.fullName} & ${student.partnerFullName}`
     : student.fullName;
 
+export const trialContactText = (booking, groupName) =>
+  `Hola ${booking.fullName}, te escribimos de CIF Adagio sobre tu clase de prueba de ${groupName} el ${booking.date} (${booking.startTime}). Hubo un pequeño cambio, ¿tienes un momento para coordinar?`;
+
 export const waLink = (phone, text) => `https://wa.me/${digitsOnly(phone)}?text=${encodeURIComponent(text)}`;
 export const mailtoLink = (email, subject, body) =>
   `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

@@ -27,7 +27,10 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles),
-  clases de prueba, calendario, avisos, recordatorios de pago por
+  **clases de prueba** (ordenadas por fecha; el día pasa a "Realizada" solo
+  al llegar la fecha, sin marcarlo a mano; se puede indicar si la persona
+  vino o no vino, reprogramar fecha y horario, y contactar por WhatsApp),
+  calendario, avisos, recordatorios de pago por
   WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
   (crear funciones, mapa de butacas del teatro con precio por asiento — $12
   los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
@@ -69,7 +72,8 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   entradas quedan guardadas en el navegador de quien compra para poder
   volver a verlas sin necesidad de una cuenta.
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de
-  prueba próximas, asistencia, notas del día y tareas por grupo.
+  prueba próximas y recientes (con quién vino o no vino y su WhatsApp),
+  asistencia, notas del día y tareas por grupo.
 - Instalable en el celular como app (PWA) — "Agregar a pantalla de inicio".
 - **Notificaciones push** (opcional, ver más abajo): administración recibe
   un aviso al llegar una clase de prueba o un pago por confirmar;

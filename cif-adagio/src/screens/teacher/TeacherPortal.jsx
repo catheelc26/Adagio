@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
-import { CalendarCheck, CheckCircle2, ClipboardList, LogOut, StickyNote, Trash2 } from "lucide-react";
+import { CalendarCheck, CheckCircle2, ClipboardList, LogOut, MessageCircle, StickyNote, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { WEEKDAYS, groupById } from "../../lib/constants";
-import { isActive } from "../../lib/business";
-import { studentDisplayName } from "../../lib/format";
-import { inputCls } from "../../components/ui";
+import { isActive, trialStatus } from "../../lib/business";
+import { studentDisplayName, trialContactText, waLink } from "../../lib/format";
+import { Chip, inputCls } from "../../components/ui";
 import { PushToggle } from "../../components/PushToggle";
+
+const TRIAL_STATUS_LABEL = { pendiente: "Pendiente", realizada: "Realizada" };
+const TRIAL_STATUS_COLOR = { pendiente: "var(--color-bronze)", realizada: "var(--color-teal)" };
 
 const TABS = [
   { id: "trials", label: "Pruebas", icon: CalendarCheck },
@@ -54,21 +57,61 @@ export function TeacherPortal({ teacherName, onLogout }) {
 }
 
 function TrialsTab() {
-  const { trialBookings, groups } = useAppData();
-  const upcoming = trialBookings.items
-    .filter((b) => b.status === "pendiente")
+  const { trialBookings, groups, toast } = useAppData();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 14);
+  const cutoffKey = cutoff.toISOString().slice(0, 10);
+
+  const visible = trialBookings.items
+    .filter((b) => b.status !== "cancelado" && (trialStatus(b) === "pendiente" || b.date >= cutoffKey))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  const setAttended = async (b, attended) => {
+    await trialBookings.update(b.id, { attended });
+    toast("Actualizado.");
+  };
 
   return (
     <div className="space-y-2">
-      <h2 className="font-display mb-2 text-xl text-ink">Próximas clases de prueba</h2>
-      {upcoming.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-4 text-muted">Sin clases de prueba próximas.</p>}
-      {upcoming.map((b) => {
+      <h2 className="font-display mb-2 text-xl text-ink">Clases de prueba</h2>
+      {visible.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-4 text-muted">Sin clases de prueba por ahora.</p>}
+      {visible.map((b) => {
         const g = groupById(groups.items, b.group);
+        const st = trialStatus(b);
         return (
-          <div key={b.id} className="card p-3">
-            <p className="t13 font-medium text-ink">{b.fullName} · {g?.name}</p>
+          <div key={b.id} className="card space-y-2 p-3">
+            <div className="flex items-center gap-2">
+              <p className="t13 flex-1 font-medium text-ink">{b.fullName} · {g?.name}</p>
+              <Chip color={TRIAL_STATUS_COLOR[st]}>{TRIAL_STATUS_LABEL[st]}</Chip>
+            </div>
             <p className="t11 text-muted">{WEEKDAYS[b.weekday]} {b.startTime}–{b.endTime} · {b.date}</p>
+            <div className="flex items-center gap-1.5">
+              {st === "realizada" && (
+                <>
+                  <button
+                    onClick={() => setAttended(b, true)}
+                    className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === true ? "bg-teal text-white" : "bg-cream-dim text-muted"}`}
+                  >
+                    Vino
+                  </button>
+                  <button
+                    onClick={() => setAttended(b, false)}
+                    className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === false ? "bg-wine text-white" : "bg-cream-dim text-muted"}`}
+                  >
+                    No vino
+                  </button>
+                </>
+              )}
+              <a
+                href={waLink(b.phone, trialContactText(b, g?.name || ""))}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-auto rounded-lg p-2 text-teal hover:bg-teal/10"
+                title="Contactar por WhatsApp"
+              >
+                <MessageCircle size={16} />
+              </a>
+            </div>
           </div>
         );
       })}

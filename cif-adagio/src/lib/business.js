@@ -123,16 +123,31 @@ export function proratedFirstMonth(fullPrice, startDateStr) {
   };
 }
 
+// Índice de día de la semana (0=Lunes...6=Domingo) de una fecha YYYY-MM-DD, en
+// la misma convención que usa el horario semanal de la escuela.
+export const weekdayIndexForDate = (dateStr) => {
+  const jsDay = new Date(`${dateStr}T00:00:00`).getDay();
+  return jsDay === 0 ? 6 : jsDay - 1;
+};
+
 // Próximas N fechas (YYYY-MM-DD) que caen en un día de la semana dado (0=Lunes...6=Domingo).
 export function nextDatesForWeekday(weekdayIndex, count = 4) {
   const dates = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const jsToOurIndex = (jsDay) => (jsDay === 0 ? 6 : jsDay - 1);
   const cursor = new Date(today);
   while (dates.length < count) {
-    if (jsToOurIndex(cursor.getDay()) === weekdayIndex) dates.push(new Date(cursor));
+    if (weekdayIndexForDate(cursor.toISOString().slice(0, 10)) === weekdayIndex) dates.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
   return dates.map((d) => d.toISOString().slice(0, 10));
+}
+
+// Estado real de una clase de prueba: si quedó cancelada se respeta esa marca;
+// si no, se considera "realizada" en cuanto pasa el día (ya no depende de que
+// alguien la marque a mano) y "pendiente" mientras sigue por venir.
+export function trialStatus(booking) {
+  if (booking.status === "cancelado") return "cancelado";
+  const today = new Date().toISOString().slice(0, 10);
+  return booking.date < today ? "realizada" : "pendiente";
 }
