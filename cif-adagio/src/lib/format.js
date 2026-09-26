@@ -26,6 +26,18 @@ export const genAccessCode = () => {
 
 export const digitsOnly = (str) => (str || "").replace(/\D/g, "");
 
+// Normaliza un teléfono venezolano a formato internacional +58, sin duplicar
+// el código si ya lo tenía y quitando el 0 inicial que llevan los números
+// locales (0412... -> +58412...). Idempotente: aplicarlo varias veces sobre
+// el mismo número da siempre el mismo resultado.
+export const normalizePhoneVE = (raw) => {
+  const digits = digitsOnly(raw);
+  if (!digits) return "";
+  let national = digits.startsWith("58") && digits.length >= 12 ? digits.slice(2) : digits;
+  if (national.startsWith("0")) national = national.slice(1);
+  return `+58${national}`;
+};
+
 export const reminderContactName = (student) => (student.isMinor ? student.guardianName : student.fullName) || student.fullName;
 export const reminderContactPhone = (student) => (student.isMinor ? student.guardianPhone : student.phone) || "";
 export const reminderContactEmail = (student) => (student.isMinor ? student.guardianEmail : student.email) || "";
@@ -43,6 +55,6 @@ export const studentDisplayName = (student) =>
 export const trialContactText = (booking, groupName) =>
   `Hola ${booking.fullName}, te escribimos de CIF Adagio sobre tu clase de prueba de ${groupName} el ${booking.date} (${booking.startTime}). Hubo un pequeño cambio, ¿tienes un momento para coordinar?`;
 
-export const waLink = (phone, text) => `https://wa.me/${digitsOnly(phone)}?text=${encodeURIComponent(text)}`;
+export const waLink = (phone, text) => `https://wa.me/${digitsOnly(normalizePhoneVE(phone))}?text=${encodeURIComponent(text)}`;
 export const mailtoLink = (email, subject, body) =>
   `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

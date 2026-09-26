@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Camera, Copy, CheckCircle2 } from "lucide-react";
 import { WEEKDAYS, levelsForGroup } from "../lib/constants";
-import { genAccessCode, uid } from "../lib/format";
+import { genAccessCode, normalizePhoneVE, uid } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
@@ -114,6 +114,10 @@ export function StudentForm({ student, isAdmin, extraFields, skipCodeScreen, onC
         partnerAge: isSalsaPareja ? Number(f.partnerAge) || 0 : 0,
         scholarshipDiscount: f.scholarshipType === "partial" ? Number(f.scholarshipDiscount) || 0 : 0,
         scheduleFrequency: groupScheduleText,
+        phone: normalizePhoneVE(f.phone),
+        guardianPhone: normalizePhoneVE(f.guardianPhone),
+        emergencyPhone: normalizePhoneVE(f.emergencyPhone),
+        emergencyPhone2: normalizePhoneVE(f.emergencyPhone2),
       };
 
       let id = student?.id;

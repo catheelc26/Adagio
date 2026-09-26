@@ -38,7 +38,10 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   de cada entrada** desde la cámara del celular o buscarla manualmente para
   verificarla en la puerta el día de la función), estadísticas
   (incluye lo cobrado en el mes) y ajustes (tasa de
-  cambio, cuota de inscripción, PIN de maestros, **cuentas de Pago Móvil**
+  cambio, cuota de inscripción, PIN de maestros, **corregir de una vez todos
+  los teléfonos guardados al formato +58 de Venezuela** (sin duplicar el
+  código ni dejar el 0 inicial — los números nuevos ya se guardan
+  corregidos), **cuentas de Pago Móvil**
   — pueden ser varias, cada una asignada a los grupos que le correspondan,
   ej. una cuenta para los grupos de sábado y otra para el resto — datos
   bancarios de los demás métodos de pago, **grupos y precios** —

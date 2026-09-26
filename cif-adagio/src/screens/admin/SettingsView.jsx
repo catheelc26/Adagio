@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Camera, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Camera, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
-import { uid } from "../../lib/format";
+import { normalizePhoneVE, uid } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { Field, inputCls } from "../../components/ui";
 
@@ -10,13 +10,16 @@ const emptyGroupForm = () => ({ name: "", price: "", classPrice: "", pairPrice: 
 const emptyAccountForm = () => ({ label: "", bank: "", cedula: "", phone: "", groupIds: [] });
 const OTHER_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m.id !== "pago_movil");
 
+const PHONE_FIELDS = ["phone", "guardianPhone", "emergencyPhone", "emergencyPhone2"];
+
 export function SettingsView() {
-  const { settings, schedule, rateHistory, groups, students, toast } = useAppData();
+  const { settings, schedule, rateHistory, groups, students, trialBookings, toast } = useAppData();
   const s = settings.value;
 
   const [rateInput, setRateInput] = useState(String(s.officialRate || ""));
   const [feeInput, setFeeInput] = useState(String(s.inscriptionFee ?? 15));
   const [teacherPinInput, setTeacherPinInput] = useState(s.teacherPin || "");
+  const [normalizingPhones, setNormalizingPhones] = useState(false);
   const [newSlot, setNewSlot] = useState({ group: groups.items[0]?.id || "", weekday: 0, startTime: "16:00", endTime: "17:00" });
   const [editingGroup, setEditingGroup] = useState(null); // grupo existente, o {} para uno nuevo
   const [groupForm, setGroupForm] = useState(emptyGroupForm());
@@ -42,6 +45,39 @@ export function SettingsView() {
   const saveTeacherPin = async () => {
     await settings.save({ teacherPin: teacherPinInput.trim() });
     toast("PIN de maestros actualizado.");
+  };
+
+  // Corrige de una vez todos los teléfonos ya guardados (estudiantes,
+  // representantes, contactos de emergencia y clases de prueba) para que
+  // todos queden en formato +58, sin duplicarlo y sin el 0 inicial.
+  const normalizePhones = async () => {
+    setNormalizingPhones(true);
+    try {
+      let fixed = 0;
+      for (const st of students.items) {
+        const patch = {};
+        for (const field of PHONE_FIELDS) {
+          if (!st[field]) continue;
+          const normalized = normalizePhoneVE(st[field]);
+          if (normalized !== st[field]) patch[field] = normalized;
+        }
+        if (Object.keys(patch).length > 0) {
+          await students.update(st.id, patch);
+          fixed++;
+        }
+      }
+      for (const b of trialBookings.items) {
+        if (!b.phone) continue;
+        const normalized = normalizePhoneVE(b.phone);
+        if (normalized !== b.phone) {
+          await trialBookings.update(b.id, { phone: normalized });
+          fixed++;
+        }
+      }
+      toast(fixed > 0 ? `${fixed} registro${fixed === 1 ? "" : "s"} corregido${fixed === 1 ? "" : "s"} con +58.` : "Todos los teléfonos ya tenían el formato correcto.");
+    } finally {
+      setNormalizingPhones(false);
+    }
   };
 
   const updatePaymentDetail = async (methodId, text) => {
@@ -181,6 +217,18 @@ export function SettingsView() {
           <input className={inputCls} value={teacherPinInput} onChange={(e) => setTeacherPinInput(e.target.value)} placeholder="PIN compartido" />
           <button onClick={saveTeacherPin} className="btn btn-teal whitespace-nowrap">Guardar</button>
         </div>
+      </section>
+
+      <section className="card space-y-3 p-4">
+        <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Formato de teléfonos</h2>
+        <p className="t11 text-muted">
+          Corrige de una vez todos los números ya guardados (estudiantes, representantes, contactos de emergencia y
+          clases de prueba) para que todos tengan el código +58 de Venezuela, sin repetirlo y sin el 0 inicial —
+          así el botón de WhatsApp siempre abre bien. Los números nuevos ya se guardan corregidos automáticamente.
+        </p>
+        <button onClick={normalizePhones} disabled={normalizingPhones} className="btn btn-teal">
+          <Phone size={15} /> {normalizingPhones ? "Corrigiendo…" : "Corregir números de teléfono"}
+        </button>
       </section>
 
       <section className="card space-y-4 p-4">

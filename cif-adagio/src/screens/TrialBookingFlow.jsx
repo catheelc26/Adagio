@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, CheckCircle2, ChevronRight } from "lucide-react";
 import { WEEKDAYS } from "../lib/constants";
 import { nextDatesForWeekday } from "../lib/business";
+import { normalizePhoneVE } from "../lib/format";
 import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
 import { Field, inputCls } from "../components/ui";
@@ -58,7 +59,7 @@ export function TrialBookingFlow() {
       await trialBookings.add({
         fullName: form.fullName.trim(),
         age: Number(form.age),
-        phone: form.phone.trim(),
+        phone: normalizePhoneVE(form.phone),
         email: form.email.trim(),
         notes: form.notes.trim(),
         group: group.id,
