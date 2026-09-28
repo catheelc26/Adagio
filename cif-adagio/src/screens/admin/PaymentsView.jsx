@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, FileSpreadsheet, HeartHandshake, Image as ImageIcon, Plus, Receipt, Trash2 } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, HeartHandshake, Image as ImageIcon, Pencil, Plus, Receipt, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, paymentMethodInfo } from "../../lib/constants";
 import { currentMonthKey, monthLabel, studentDisplayName, usd } from "../../lib/format";
@@ -7,6 +7,7 @@ import { exportPaymentsAnalysisToExcel } from "../../lib/exportExcel";
 import { ActionMenu, ConfirmDialog, MenuItem, StudentAvatar } from "../../components/ui";
 import { PaymentForm } from "../../components/PaymentForm";
 import { ExemptMonthModal } from "../../components/ExemptMonthModal";
+import { EditPaymentModal } from "../../components/EditPaymentModal";
 import { ReceiptModal } from "../../components/ReceiptModal";
 import { ProofViewer } from "../../components/ProofViewer";
 
@@ -18,6 +19,7 @@ export function PaymentsView() {
   const [receiptId, setReceiptId] = useState(null);
   const [proofId, setProofId] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const months = useMemo(() => {
     const set = new Set(payments.items.map((p) => p.date?.slice(0, 7)).filter(Boolean));
@@ -91,6 +93,7 @@ export function PaymentsView() {
               {p.type !== "exoneracion" && <span className="t13 font-medium text-ink">{usd(p.amount)}</span>}
               <ActionMenu>
                 {p.confirmed === false && <MenuItem icon={<CheckCircle2 size={15} />} label="Confirmar" onClick={() => confirmPayment(p)} />}
+                <MenuItem icon={<Pencil size={15} />} label="Corregir (mes, monto…)" onClick={() => setEditing(p)} />
                 <MenuItem icon={<Receipt size={15} />} label="Ver recibo" onClick={() => setReceiptId(p.transactionId || p.id)} />
                 {p.hasProof && <MenuItem icon={<ImageIcon size={15} />} label="Ver comprobante" onClick={() => setProofId(p.transactionId || p.id)} />}
                 <MenuItem icon={<Trash2 size={15} />} label="Eliminar" danger onClick={() => setDeleting(p)} />
@@ -103,6 +106,7 @@ export function PaymentsView() {
 
       {creating && <PaymentForm isAdmin onClose={() => setCreating(false)} />}
       {exempting && <ExemptMonthModal onClose={() => setExempting(false)} />}
+      {editing && <EditPaymentModal payment={editing} onClose={() => setEditing(null)} />}
       {receiptId && <ReceiptModal transactionId={receiptId} payments={payments.items} students={students.items} onClose={() => setReceiptId(null)} />}
       {proofId && <ProofViewer transactionId={proofId} onClose={() => setProofId(null)} />}
       {deleting && (

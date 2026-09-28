@@ -27,6 +27,10 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles;
+  **corregir un pago ya registrado** — mes, monto, fecha o referencia, por
+  si un representante se equivocó al reportarlo (ej. pagó octubre pero
+  quedó registrado como septiembre) — sin tener que borrarlo y crear uno
+  nuevo;
   **recargo por mora del reglamento** — $5 automáticos sobre la mensualidad
   de cualquier mes que quede vencido (ya pasó por completo, sin pagarse) —
   el mes en curso nunca lo carga, aunque ya hayan pasado los primeros 5 días
