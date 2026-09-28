@@ -60,24 +60,60 @@ export const monthPaidAmount = (payments, studentId, month) =>
     .filter((p) => p.studentId === studentId && p.type === "mensualidad" && p.month === month && p.confirmed !== false)
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
+// Recargo por mora del reglamento ("Las personas con pagos pendientes estarán
+// sujetas a un incremento de 5$ de su mensualidad") y día límite de pago
+// ("los primeros cinco (5) días de cada mes, sin excepción").
+// Nota: el reglamento adelanta el límite de agosto y diciembre a julio y
+// noviembre respectivamente — eso todavía no está contemplado aquí, solo la
+// regla general de "día 5 del mismo mes".
+export const LATE_FEE = 5;
+export const PAYMENT_DUE_DAY = 5;
+
+// Un mes queda "vencido" desde el día siguiente al límite de pago (día 5) de
+// ese mismo mes en adelante — cualquier mes ya pasado también cuenta.
+export function isMonthOverdue(month, today = new Date()) {
+  const [y, m] = month.split("-").map(Number);
+  const deadline = new Date(y, m - 1, PAYMENT_DUE_DAY, 23, 59, 59, 999);
+  return today > deadline;
+}
+
+// Días que faltan para el límite de pago de un mes (negativo si ya venció) —
+// para poder avisar con anticipación antes de que aplique el recargo.
+export function daysUntilMonthDue(month, today = new Date()) {
+  const [y, m] = month.split("-").map(Number);
+  const deadline = new Date(y, m - 1, PAYMENT_DUE_DAY);
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((deadline - start) / 86400000);
+}
+
+// Lo que corresponde pagar por la mensualidad de un mes puntual: el precio
+// normal, más el recargo por mora si ese mes ya venció. Los becados al 100%
+// (precio $0) nunca cargan el recargo, porque de entrada no deben nada.
+export function monthDueAmount(student, month, groups) {
+  const base = effectivePrice(student, groups);
+  if (base <= 0) return 0;
+  return base + (isMonthOverdue(month) ? LATE_FEE : 0);
+}
+
 // Un mes queda "resuelto" para un estudiante si hay una exoneración confirmada,
 // un abono marcado como prorrateo (primer mes parcial, ya completo aunque sea
-// menos que la mensualidad llena), o si lo pagado en total alcanza el precio
-// de su mensualidad — así un abono parcial (ej. pagó 25 de 50) sigue dejando
-// el mes como pendiente por la diferencia, en vez de darlo por pagado.
+// menos que la mensualidad llena), o si lo pagado en total alcanza lo que
+// corresponde ese mes (precio + recargo si ya venció) — así un abono parcial
+// (ej. pagó 25 de 50) sigue dejando el mes como pendiente por la diferencia,
+// en vez de darlo por pagado.
 export function monthIsSettled(payments, student, month, groups) {
   const monthPayments = payments.filter((p) => p.studentId === student.id && p.month === month && p.confirmed !== false);
   if (monthPayments.some((p) => p.type === "exoneracion")) return true;
   if (monthPayments.some((p) => p.type === "mensualidad" && p.prorated)) return true;
-  const price = effectivePrice(student, groups);
-  if (price <= 0) return true;
-  return monthPaidAmount(payments, student.id, month) >= price;
+  const due = monthDueAmount(student, month, groups);
+  if (due <= 0) return true;
+  return monthPaidAmount(payments, student.id, month) >= due;
 }
 
 // Cuánto le falta a un estudiante por pagar de un mes puntual (0 si ya quedó resuelto).
 export function monthOwedAmount(payments, student, month, groups) {
   if (monthIsSettled(payments, student, month, groups)) return 0;
-  return Math.max(0, effectivePrice(student, groups) - monthPaidAmount(payments, student.id, month));
+  return Math.max(0, monthDueAmount(student, month, groups) - monthPaidAmount(payments, student.id, month));
 }
 
 // Meses (más reciente al final) en los que un estudiante debe mensualidad sin pago

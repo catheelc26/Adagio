@@ -26,12 +26,17 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   ordenados por grupo), pagos (mensualidad, clases sueltas, inscripción,
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
-  confirmación de pagos reportados por representantes; recibos imprimibles),
+  confirmación de pagos reportados por representantes; recibos imprimibles;
+  **recargo por mora del reglamento** — $5 automáticos sobre la mensualidad
+  de cualquier mes que siga sin pagarse después del día 5, reflejado en
+  pendientes, recordatorios, estado de cuenta y en el monto que se
+  pre-llena al registrar el pago —),
   **clases de prueba** (ordenadas por fecha; el día pasa a "Realizada" solo
   al llegar la fecha, sin marcarlo a mano; se puede indicar si la persona
   vino o no vino, reprogramar fecha y horario, y contactar por WhatsApp),
   calendario, avisos, recordatorios de pago por
-  WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
+  WhatsApp/correo (ya no avisan de meses exonerados; si el mes ya venció,
+  el mensaje aclara que el monto incluye el recargo), **presentaciones**
   (crear funciones, mapa de butacas del teatro con precio por asiento — $12
   los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
   vendidas de cada función con su comprador y asiento, y **escanear el QR
@@ -50,7 +55,10 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   de representantes —, **grupos y precios** — agregar/editar/eliminar
   grupos, y **horario semanal** — agregar/quitar las clases de cada grupo).
 - **Portal de representantes** (`/representante`, acceso con un código que
-  genera la app o autorregistro): estado de cuenta, registro de pagos (con
+  genera la app o autorregistro): estado de cuenta (con aviso unos días
+  antes de que venza la mensualidad, y el detalle de cuánto se debe por
+  mes — incluyendo el recargo de $5 si ya venció, para que nunca sea
+  sorpresa), registro de pagos (con
   los datos de pago — incluyendo Pago Móvil según el grupo — visibles y
   copiables al reportar), calendario del grupo, avisos, reglamento, pueden
   actualizar la planilla de registro de su estudiante si hay algún error o

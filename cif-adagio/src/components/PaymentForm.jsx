@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Camera, Plus, Trash2, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
-import { effectivePrice, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
+import { effectivePrice, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -13,7 +13,7 @@ const newItem = (student, groups) => ({
   key: uid(),
   type: "mensualidad",
   concept: "Mensualidad",
-  amount: student ? String(effectivePrice(student, groups)) : "",
+  amount: student ? String(monthDueAmount(student, currentMonthKey(), groups)) : "",
   month: currentMonthKey(),
   prorated: false,
 });
@@ -56,7 +56,7 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
     let month;
     if (type === "mensualidad") {
       concept = "Mensualidad";
-      amount = student ? String(effectivePrice(student, groups.items)) : "";
+      amount = student ? String(monthDueAmount(student, currentMonthKey(), groups.items)) : "";
       month = currentMonthKey();
     } else if (type === "clase") {
       concept = "Clase individual";
@@ -213,9 +213,14 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                     <input type="month" className={inputCls} value={it.month} onChange={(e) => updateItem(it.key, { month: e.target.value })} />
                   </Field>
                 )}
+                {it.type === "mensualidad" && student && isMonthOverdue(it.month) && (
+                  <p className="t11 text-wine">
+                    {monthLabel(it.month)} ya venció (después del día 5) — el monto incluye el recargo de {usd(LATE_FEE)} del reglamento.
+                  </p>
+                )}
                 {it.type === "mensualidad" && student && !it.prorated && (() => {
                   const already = monthPaidAmount(payments.items, student.id, it.month);
-                  const remaining = effectivePrice(student, groups.items) - already - (Number(it.amount) || 0);
+                  const remaining = monthDueAmount(student, it.month, groups.items) - already - (Number(it.amount) || 0);
                   return remaining > 0 ? (
                     <p className="t11 text-bronze-dark">
                       Es un abono parcial — después de este pago quedarán pendientes {usd(remaining)} más de {monthLabel(it.month)}.

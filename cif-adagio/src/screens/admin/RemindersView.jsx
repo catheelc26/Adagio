@@ -1,7 +1,7 @@
 import { Mail, MessageCircle } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { isActive, monthIsSettled, monthOwedAmount, owesMonthlyFee } from "../../lib/business";
+import { isActive, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owesMonthlyFee } from "../../lib/business";
 import {
   buildReminderText, currentMonthKey, mailtoLink, monthLabel, reminderContactEmail,
   reminderContactName, reminderContactPhone, studentDisplayName, usd, waLink,
@@ -11,8 +11,7 @@ import { StudentAvatar } from "../../components/ui";
 export function RemindersView() {
   const { students, payments, reminders, groups } = useAppData();
   const month = currentMonthKey();
-  const today = new Date();
-  const overdue = today.getDate() > 5;
+  const overdue = isMonthOverdue(month);
 
   const pending = students.items.filter((s) => {
     if (!isActive(s) || !owesMonthlyFee(s)) return false;
@@ -29,7 +28,7 @@ export function RemindersView() {
         <h1 className="font-display text-2xl text-ink">Recordatorios</h1>
         <p className="t13 text-muted">
           {pending.length} pendientes de {monthLabel(month)}
-          {overdue && <span className="ml-1 text-wine">· ya pasaron los primeros 5 días del mes</span>}
+          {overdue && <span className="ml-1 text-wine">· ya pasaron los primeros 5 días del mes, con recargo de {usd(LATE_FEE)}</span>}
         </p>
       </div>
 
@@ -37,7 +36,7 @@ export function RemindersView() {
         {pending.map((s) => {
           const g = groupById(groups.items, s.group);
           const owed = monthOwedAmount(payments.items, s, month, groups.items);
-          const text = buildReminderText(s, g, month, owed);
+          const text = buildReminderText(s, g, month, owed, overdue);
           const phone = reminderContactPhone(s);
           const email = reminderContactEmail(s);
           return (

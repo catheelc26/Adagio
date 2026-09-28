@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Copy, CheckCircle2, X } from "lucide-react";
 import { groupById, MONTH_NAMES } from "../lib/constants";
-import { effectivePrice, monthIsSettled, monthPaidAmount, owesMonthlyFee } from "../lib/business";
+import { effectivePrice, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, monthPaidAmount, owesMonthlyFee } from "../lib/business";
 import { studentDisplayName, usd } from "../lib/format";
 import { useAppData } from "../lib/AppDataContext";
 import { ReceiptModal } from "./ReceiptModal";
@@ -22,20 +22,24 @@ export function StudentAccountModal({ student, onClose }) {
   const yearTotal = confirmed.filter((p) => p.date?.startsWith(String(year))).reduce((s, p) => s + p.amount, 0);
   const owes = owesMonthlyFee(student);
   const currentMonthIdx = now.getMonth();
-  const price = effectivePrice(student, groups.items);
+  const enrolled = student.createdAt ? new Date(student.createdAt) : null;
+  const enrolledMonthIdx = enrolled && enrolled.getFullYear() === year ? enrolled.getMonth() : null;
 
   const monthCells = Array.from({ length: 12 }, (_, i) => {
     const key = `${year}-${String(i + 1).padStart(2, "0")}`;
     const settled = monthIsSettled(payments.items, student, key, groups.items);
     const exempted = confirmed.some((p) => p.type === "exoneracion" && p.month === key);
     const paidAmt = monthPaidAmount(payments.items, student.id, key);
+    const owedAmt = monthOwedAmount(payments.items, student, key, groups.items);
+    const overdue = isMonthOverdue(key);
+    const beforeEnrollment = enrolledMonthIdx !== null && i < enrolledMonthIdx;
     let status = "future";
-    if (!owes) status = "notOwed";
+    if (!owes || beforeEnrollment) status = "notOwed";
     else if (exempted) status = "exempted";
     else if (settled) status = "paid";
     else if (paidAmt > 0) status = "partial";
     else if (i <= currentMonthIdx) status = "pending";
-    return { key, label: MONTH_NAMES[i].slice(0, 3), status, paidAmt };
+    return { key, label: MONTH_NAMES[i].slice(0, 3), status, paidAmt, owedAmt, overdue };
   });
 
   const studentAttendance = attendance.items
@@ -108,15 +112,21 @@ export function StudentAccountModal({ student, onClose }) {
           <div>
             <p className="t11 mb-2 font-semibold uppercase tracking-wide text-bronze-dark">Estado de mensualidades {year}</p>
             <div className="grid grid-cols-6 gap-1.5">
-              {monthCells.map((m) => (
-                <div
-                  key={m.key}
-                  title={m.status === "partial" ? `Abonó ${usd(m.paidAmt)} de ${usd(price)} — quedan ${usd(price - m.paidAmt)}` : undefined}
-                  className={`t11 rounded-lg py-2 text-center font-medium ${statusColor[m.status]}`}
-                >
-                  {m.label}
-                </div>
-              ))}
+              {monthCells.map((m) => {
+                const recargoNota = m.overdue ? ` (incluye recargo de ${usd(LATE_FEE)})` : "";
+                let tip;
+                if (m.status === "partial") tip = `Abonó ${usd(m.paidAmt)} — quedan ${usd(m.owedAmt)}${recargoNota}`;
+                else if (m.status === "pending") tip = `Debe ${usd(m.owedAmt)}${recargoNota}`;
+                return (
+                  <div
+                    key={m.key}
+                    title={tip}
+                    className={`t11 rounded-lg py-2 text-center font-medium ${statusColor[m.status]}`}
+                  >
+                    {m.label}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

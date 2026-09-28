@@ -76,7 +76,7 @@ export function Dashboard() {
                     <p className="t13 font-medium text-ink">{studentDisplayName(s)}</p>
                     <p className="t11 text-muted">{g?.name}</p>
                     <p className="t11 text-wine">
-                      Debe: {owedPerMonth.map((o) => (o.amount < price ? `${monthLabel(o.month)} (${usd(o.amount)})` : monthLabel(o.month))).join(", ")}
+                      Debe: {owedPerMonth.map((o) => (o.amount !== price ? `${monthLabel(o.month)} (${usd(o.amount)})` : monthLabel(o.month))).join(", ")}
                     </p>
                   </div>
                   <span className="t13 font-medium text-wine">{usd(totalOwed)}</span>

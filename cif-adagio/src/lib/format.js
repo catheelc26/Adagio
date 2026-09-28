@@ -42,9 +42,10 @@ export const reminderContactName = (student) => (student.isMinor ? student.guard
 export const reminderContactPhone = (student) => (student.isMinor ? student.guardianPhone : student.phone) || "";
 export const reminderContactEmail = (student) => (student.isMinor ? student.guardianEmail : student.email) || "";
 
-export const buildReminderText = (student, group, mKey, amountOwed) => {
+export const buildReminderText = (student, group, mKey, amountOwed, overdue = false) => {
   const name = reminderContactName(student);
-  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(amountOwed)}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
+  const nota = overdue ? " (ya incluye el recargo por mora del reglamento)" : "";
+  return `Hola ${name}, te escribimos de CIF Adagio para recordarte que la mensualidad de ${student.fullName} correspondiente a ${monthLabel(mKey)} (grupo ${group.name}, ${usd(amountOwed)}${nota}) sigue pendiente. Cualquier duda, con gusto te ayudamos. ¡Gracias!`;
 };
 
 export const studentDisplayName = (student) =>

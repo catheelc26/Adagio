@@ -5,9 +5,11 @@ import {
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
-import { familyMembersOf, monthIsSettled, owesMonthlyFee } from "../../lib/business";
+import {
+  daysUntilMonthDue, familyMembersOf, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owedMonths, owesMonthlyFee, PAYMENT_DUE_DAY,
+} from "../../lib/business";
 import { showLabel } from "../../lib/tickets";
-import { currentMonthKey, specialistContactText, usd, waLink } from "../../lib/format";
+import { currentMonthKey, monthLabel, specialistContactText, usd, waLink } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
 import { Chip, StudentAvatar } from "../../components/ui";
@@ -72,6 +74,14 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const welcomeName = student.isMinor ? student.guardianName : student.fullName;
 
   const paidThisMonth = monthIsSettled(payments.items, student, month, groups.items);
+  const daysToDeadline = daysUntilMonthDue(month);
+  const owedMonthKeys = owesMonthlyFee(student) ? owedMonths(student, payments.items, groups.items) : [];
+  const owedWithAmounts = owedMonthKeys.map((m) => ({
+    month: m,
+    amount: monthOwedAmount(payments.items, student, m, groups.items),
+    overdue: isMonthOverdue(m),
+  }));
+  const totalOwed = owedWithAmounts.reduce((sum, o) => sum + o.amount, 0);
 
   let statusLabel = "Al día";
   let statusColor = "var(--color-teal)";
@@ -155,6 +165,29 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
               <Chip color={statusColor}>{statusLabel}</Chip>
               {!owesMonthlyFee(student) && student.scholarshipType !== "full" && <Chip color="var(--color-blue)">Por clase</Chip>}
             </div>
+
+            {owesMonthlyFee(student) && !paidThisMonth && !isMonthOverdue(month) && daysToDeadline >= 0 && daysToDeadline <= 3 && (
+              <div className="card border-l-4 border-l-bronze p-4">
+                <p className="t13 text-ink">
+                  Tu mensualidad de {monthLabel(month)} vence {daysToDeadline === 0 ? "hoy" : `en ${daysToDeadline} día${daysToDeadline > 1 ? "s" : ""}`} (día {PAYMENT_DUE_DAY}).
+                  Después de esa fecha aplica un recargo de {usd(LATE_FEE)}, según el reglamento.
+                </p>
+              </div>
+            )}
+
+            {owedWithAmounts.length > 0 && (
+              <div className="card border-l-4 border-l-wine p-4">
+                <p className="t11 mb-1.5 font-semibold uppercase tracking-wide text-wine">Mensualidades pendientes</p>
+                <div className="space-y-0.5">
+                  {owedWithAmounts.map((o) => (
+                    <p key={o.month} className="t13 text-ink">
+                      {monthLabel(o.month)} — {usd(o.amount)}{o.overdue ? ` (incluye recargo de ${usd(LATE_FEE)})` : ""}
+                    </p>
+                  ))}
+                </div>
+                <p className="t13 mt-2 font-semibold text-wine">Total: {usd(totalOwed)}</p>
+              </div>
+            )}
 
             {student.pendingReview && (
               <div className="card border-l-4 border-l-bronze p-4">
