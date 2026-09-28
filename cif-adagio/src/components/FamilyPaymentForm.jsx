@@ -9,11 +9,11 @@ import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
 import { CopyButton, CopyRow, Field, inputCls, StudentAvatar } from "./ui";
 
-const newItemFor = (student, groups) => ({
+const newItemFor = (student, payments, groups) => ({
   key: uid(),
   type: "mensualidad",
   concept: "Mensualidad",
-  amount: String(monthDueAmount(student, currentMonthKey(), groups)),
+  amount: String(monthDueAmount(payments, student, currentMonthKey(), groups)),
   month: currentMonthKey(),
   prorated: false,
 });
@@ -31,7 +31,7 @@ export function FamilyPaymentForm({ student, onClose }) {
   const { students, payments, settings, groups, toast } = useAppData();
   const familyMembers = useMemo(() => familyMembersOf(students.items, student), [students.items, student]);
 
-  const [entries, setEntries] = useState([{ studentId: student.id, items: [newItemFor(student, groups.items)] }]);
+  const [entries, setEntries] = useState([{ studentId: student.id, items: [newItemFor(student, payments.items, groups.items)] }]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [method, setMethod] = useState(PAYMENT_METHODS[0].id);
   const [referenceByGroup, setReferenceByGroup] = useState({});
@@ -52,7 +52,7 @@ export function FamilyPaymentForm({ student, onClose }) {
 
   const addMember = (memberId) => {
     const m = studentOf(memberId);
-    setEntries((prev) => [...prev, { studentId: memberId, items: [newItemFor(m, groups.items)] }]);
+    setEntries((prev) => [...prev, { studentId: memberId, items: [newItemFor(m, payments.items, groups.items)] }]);
     setShowAddMember(false);
   };
   const removeMember = (studentId) => setEntries((prev) => prev.filter((e) => e.studentId !== studentId));
@@ -69,7 +69,7 @@ export function FamilyPaymentForm({ student, onClose }) {
     let month;
     if (type === "mensualidad") {
       concept = "Mensualidad";
-      amount = String(monthDueAmount(entryStudent, currentMonthKey(), groups.items));
+      amount = String(monthDueAmount(payments.items, entryStudent, currentMonthKey(), groups.items));
       month = currentMonthKey();
     } else if (type === "clase") {
       concept = "Clase individual";
@@ -264,12 +264,12 @@ export function FamilyPaymentForm({ student, onClose }) {
                         )}
                         {it.type === "mensualidad" && isMonthOverdue(it.month) && (
                           <p className="t11 text-wine">
-                            {monthLabel(it.month)} ya venció (después del día 5) — el monto incluye el recargo de {usd(LATE_FEE)} del reglamento.
+                            {monthLabel(it.month)} ya venció (el mes ya pasó) — el monto incluye el recargo de {usd(LATE_FEE)} del reglamento.
                           </p>
                         )}
                         {it.type === "mensualidad" && !it.prorated && (() => {
                           const already = monthPaidAmount(payments.items, entryStudent.id, it.month);
-                          const remaining = monthDueAmount(entryStudent, it.month, groups.items) - already - (Number(it.amount) || 0);
+                          const remaining = monthDueAmount(payments.items, entryStudent, it.month, groups.items) - already - (Number(it.amount) || 0);
                           return remaining > 0 ? (
                             <p className="t11 text-bronze-dark">
                               Es un abono parcial — después de este pago quedarán pendientes {usd(remaining)} más de {monthLabel(it.month)}.

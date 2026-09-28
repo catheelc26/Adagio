@@ -1,7 +1,7 @@
 import { Mail, MessageCircle } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { isActive, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owesMonthlyFee } from "../../lib/business";
+import { isActive, monthIsSettled, monthOwedAmount, owesMonthlyFee, PAYMENT_DUE_DAY } from "../../lib/business";
 import {
   buildReminderText, currentMonthKey, mailtoLink, monthLabel, reminderContactEmail,
   reminderContactName, reminderContactPhone, studentDisplayName, usd, waLink,
@@ -11,7 +11,10 @@ import { StudentAvatar } from "../../components/ui";
 export function RemindersView() {
   const { students, payments, reminders, groups } = useAppData();
   const month = currentMonthKey();
-  const overdue = isMonthOverdue(month);
+  // Informativo: el reglamento pide pagar dentro de los primeros 5 días del
+  // mes — el recargo de $5 en sí solo aplica una vez que el mes ya venció
+  // (pasó por completo), no simplemente por haber pasado el día 5.
+  const pastRequestedDate = new Date().getDate() > PAYMENT_DUE_DAY;
 
   const pending = students.items.filter((s) => {
     if (!isActive(s) || !owesMonthlyFee(s)) return false;
@@ -28,7 +31,7 @@ export function RemindersView() {
         <h1 className="font-display text-2xl text-ink">Recordatorios</h1>
         <p className="t13 text-muted">
           {pending.length} pendientes de {monthLabel(month)}
-          {overdue && <span className="ml-1 text-wine">· ya pasaron los primeros 5 días del mes, con recargo de {usd(LATE_FEE)}</span>}
+          {pastRequestedDate && <span className="ml-1 text-bronze-dark">· ya pasaron los primeros 5 días del mes que pide el reglamento</span>}
         </p>
       </div>
 
@@ -36,7 +39,7 @@ export function RemindersView() {
         {pending.map((s) => {
           const g = groupById(groups.items, s.group);
           const owed = monthOwedAmount(payments.items, s, month, groups.items);
-          const text = buildReminderText(s, g, month, owed, overdue);
+          const text = buildReminderText(s, g, month, owed);
           const phone = reminderContactPhone(s);
           const email = reminderContactEmail(s);
           return (

@@ -61,38 +61,61 @@ export const monthPaidAmount = (payments, studentId, month) =>
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
 // Recargo por mora del reglamento ("Las personas con pagos pendientes estarán
-// sujetas a un incremento de 5$ de su mensualidad") y día límite de pago
-// ("los primeros cinco (5) días de cada mes, sin excepción").
-// Nota: el reglamento adelanta el límite de agosto y diciembre a julio y
-// noviembre respectivamente — eso todavía no está contemplado aquí, solo la
-// regla general de "día 5 del mismo mes".
+// sujetas a un incremento de 5$ de su mensualidad"). El reglamento pide pagar
+// dentro de los primeros 5 días de cada mes, pero el recargo en sí es por
+// tener un MES VENCIDO — o sea, se le da todo ese mes para pagar; el recargo
+// solo se aplica una vez que ese mes ya quedó completamente atrás (estamos en
+// un mes calendario posterior) y sigue sin pagarse por completo.
+// Nota: el reglamento adelanta el vencimiento de agosto y diciembre a julio y
+// noviembre respectivamente — eso todavía no está contemplado aquí.
 export const LATE_FEE = 5;
 export const PAYMENT_DUE_DAY = 5;
 
-// Un mes queda "vencido" desde el día siguiente al límite de pago (día 5) de
-// ese mismo mes en adelante — cualquier mes ya pasado también cuenta.
-export function isMonthOverdue(month, today = new Date()) {
+// Último día (YYYY-MM-DD) de un mes dado.
+function monthLastDateStr(month) {
   const [y, m] = month.split("-").map(Number);
-  const deadline = new Date(y, m - 1, PAYMENT_DUE_DAY, 23, 59, 59, 999);
-  return today > deadline;
+  const last = new Date(y, m, 0);
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
 }
 
-// Días que faltan para el límite de pago de un mes (negativo si ya venció) —
-// para poder avisar con anticipación antes de que aplique el recargo.
-export function daysUntilMonthDue(month, today = new Date()) {
-  const [y, m] = month.split("-").map(Number);
-  const deadline = new Date(y, m - 1, PAYMENT_DUE_DAY);
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  return Math.round((deadline - start) / 86400000);
+// Un mes queda "vencido" cuando ya estamos en un mes calendario posterior —
+// el mes en curso nunca está vencido, sin importar qué día sea.
+export function isMonthOverdue(month, today = new Date()) {
+  const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  return month < currentKey;
 }
+
+// Días que faltan para que termine un mes — para avisar unos días antes de
+// que, si sigue sin pagarse, empiece a correr el recargo al pasar a vencido.
+export function daysUntilMonthEnd(month, today = new Date()) {
+  const [y, m] = month.split("-").map(Number);
+  const lastDay = new Date(y, m, 0);
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((lastDay - start) / 86400000);
+}
+
+// Cuánto de la mensualidad de un mes se pagó (confirmado) con fecha dentro de
+// ese mismo mes — decide si corresponde el recargo, sin importar cuándo se
+// terminó de confirmar el pago después. Si ya se cubrió el precio completo
+// con fecha dentro del mes, ese mes nunca carga el recargo aunque hoy ya
+// estemos en meses posteriores.
+export const monthPaidOnTime = (payments, studentId, month) => {
+  const deadline = monthLastDateStr(month);
+  return payments
+    .filter((p) => p.studentId === studentId && p.type === "mensualidad" && p.month === month && p.confirmed !== false && p.date && p.date <= deadline)
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+};
 
 // Lo que corresponde pagar por la mensualidad de un mes puntual: el precio
-// normal, más el recargo por mora si ese mes ya venció. Los becados al 100%
-// (precio $0) nunca cargan el recargo, porque de entrada no deben nada.
-export function monthDueAmount(student, month, groups) {
+// normal, más el recargo de $5 si ese mes ya venció (quedó completamente
+// atrás) sin haberse pagado por completo dentro del mismo. Los becados al
+// 100% (precio $0) nunca cargan el recargo, porque de entrada no deben nada.
+export function monthDueAmount(payments, student, month, groups) {
   const base = effectivePrice(student, groups);
   if (base <= 0) return 0;
-  return base + (isMonthOverdue(month) ? LATE_FEE : 0);
+  const paidOnTime = monthPaidOnTime(payments, student.id, month) >= base;
+  const surcharge = !paidOnTime && isMonthOverdue(month) ? LATE_FEE : 0;
+  return base + surcharge;
 }
 
 // Un mes queda "resuelto" para un estudiante si hay una exoneración confirmada,
@@ -105,7 +128,7 @@ export function monthIsSettled(payments, student, month, groups) {
   const monthPayments = payments.filter((p) => p.studentId === student.id && p.month === month && p.confirmed !== false);
   if (monthPayments.some((p) => p.type === "exoneracion")) return true;
   if (monthPayments.some((p) => p.type === "mensualidad" && p.prorated)) return true;
-  const due = monthDueAmount(student, month, groups);
+  const due = monthDueAmount(payments, student, month, groups);
   if (due <= 0) return true;
   return monthPaidAmount(payments, student.id, month) >= due;
 }
@@ -113,7 +136,7 @@ export function monthIsSettled(payments, student, month, groups) {
 // Cuánto le falta a un estudiante por pagar de un mes puntual (0 si ya quedó resuelto).
 export function monthOwedAmount(payments, student, month, groups) {
   if (monthIsSettled(payments, student, month, groups)) return 0;
-  return Math.max(0, monthDueAmount(student, month, groups) - monthPaidAmount(payments, student.id, month));
+  return Math.max(0, monthDueAmount(payments, student, month, groups) - monthPaidAmount(payments, student.id, month));
 }
 
 // Meses (más reciente al final) en los que un estudiante debe mensualidad sin pago

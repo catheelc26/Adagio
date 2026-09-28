@@ -28,15 +28,17 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles;
   **recargo por mora del reglamento** — $5 automáticos sobre la mensualidad
-  de cualquier mes que siga sin pagarse después del día 5, reflejado en
-  pendientes, recordatorios, estado de cuenta y en el monto que se
-  pre-llena al registrar el pago —),
+  de cualquier mes que quede vencido (ya pasó por completo, sin pagarse) —
+  el mes en curso nunca lo carga, aunque ya hayan pasado los primeros 5 días
+  que pide el reglamento; y si se pagó por completo con fecha dentro del
+  mismo mes, ese mes nunca carga el recargo, sin importar cuándo se
+  confirme después. Se refleja en pendientes, recordatorios, estado de
+  cuenta y en el monto que se pre-llena al registrar el pago —),
   **clases de prueba** (ordenadas por fecha; el día pasa a "Realizada" solo
   al llegar la fecha, sin marcarlo a mano; se puede indicar si la persona
   vino o no vino, reprogramar fecha y horario, y contactar por WhatsApp),
   calendario, avisos, recordatorios de pago por
-  WhatsApp/correo (ya no avisan de meses exonerados; si el mes ya venció,
-  el mensaje aclara que el monto incluye el recargo), **presentaciones**
+  WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
   (crear funciones, mapa de butacas del teatro con precio por asiento — $12
   los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
   vendidas de cada función con su comprador y asiento, y **escanear el QR

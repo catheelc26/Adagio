@@ -6,7 +6,7 @@ import {
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
 import {
-  daysUntilMonthDue, familyMembersOf, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owedMonths, owesMonthlyFee, PAYMENT_DUE_DAY,
+  daysUntilMonthEnd, familyMembersOf, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owedMonths, owesMonthlyFee,
 } from "../../lib/business";
 import { showLabel } from "../../lib/tickets";
 import { currentMonthKey, monthLabel, specialistContactText, usd, waLink } from "../../lib/format";
@@ -74,7 +74,7 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
   const welcomeName = student.isMinor ? student.guardianName : student.fullName;
 
   const paidThisMonth = monthIsSettled(payments.items, student, month, groups.items);
-  const daysToDeadline = daysUntilMonthDue(month);
+  const daysToMonthEnd = daysUntilMonthEnd(month);
   const owedMonthKeys = owesMonthlyFee(student) ? owedMonths(student, payments.items, groups.items) : [];
   const owedWithAmounts = owedMonthKeys.map((m) => ({
     month: m,
@@ -166,11 +166,11 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
               {!owesMonthlyFee(student) && student.scholarshipType !== "full" && <Chip color="var(--color-blue)">Por clase</Chip>}
             </div>
 
-            {owesMonthlyFee(student) && !paidThisMonth && !isMonthOverdue(month) && daysToDeadline >= 0 && daysToDeadline <= 3 && (
+            {owesMonthlyFee(student) && !paidThisMonth && daysToMonthEnd >= 0 && daysToMonthEnd <= 3 && (
               <div className="card border-l-4 border-l-bronze p-4">
                 <p className="t13 text-ink">
-                  Tu mensualidad de {monthLabel(month)} vence {daysToDeadline === 0 ? "hoy" : `en ${daysToDeadline} día${daysToDeadline > 1 ? "s" : ""}`} (día {PAYMENT_DUE_DAY}).
-                  Después de esa fecha aplica un recargo de {usd(LATE_FEE)}, según el reglamento.
+                  Tu mensualidad de {monthLabel(month)} vence {daysToMonthEnd === 0 ? "hoy" : `en ${daysToMonthEnd} día${daysToMonthEnd > 1 ? "s" : ""}`}, al terminar el mes.
+                  Si sigue sin pagarse, al mes siguiente aplica un recargo de {usd(LATE_FEE)}, según el reglamento.
                 </p>
               </div>
             )}
