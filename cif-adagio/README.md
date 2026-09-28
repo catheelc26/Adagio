@@ -44,9 +44,11 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   corregidos), **cuentas de Pago Móvil**
   — pueden ser varias, cada una asignada a los grupos que le correspondan,
   ej. una cuenta para los grupos de sábado y otra para el resto — datos
-  bancarios de los demás métodos de pago, **grupos y precios** —
-  agregar/editar/eliminar grupos, y **horario semanal** — agregar/quitar
-  las clases de cada grupo).
+  bancarios de los demás métodos de pago, **equipo multidisciplinario** —
+  agregar especialistas externos (fisioterapia, psicología, nutrición,
+  etc.) con su tarifa preferencial y WhatsApp, visibles luego en el portal
+  de representantes —, **grupos y precios** — agregar/editar/eliminar
+  grupos, y **horario semanal** — agregar/quitar las clases de cada grupo).
 - **Portal de representantes** (`/representante`, acceso con un código que
   genera la app o autorregistro): estado de cuenta, registro de pagos (con
   los datos de pago — incluyendo Pago Móvil según el grupo — visibles y
@@ -62,10 +64,13 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   administración; si pagan a cuentas de Pago Móvil distintas, se piden
   comprobantes por separado, uno por cuenta), y cambiar su
   código de acceso por uno propio (administración siempre puede ver el
-  código actual desde la ficha del estudiante), y **comprar entradas para
+  código actual desde la ficha del estudiante), **comprar entradas para
   presentaciones** eligiendo su asiento en el mapa del teatro, con sus
   datos pre-llenados y viendo ahí mismo las entradas ya compradas ("Mis
-  entradas").
+  entradas"), y ver el **equipo multidisciplinario** (fisioterapia,
+  psicología, nutrición, etc.) con tarifa preferencial para familias de la
+  escuela, con botón de WhatsApp para contactar a cada especialista
+  directamente — visible solo dentro del portal, de forma privada.
 - **Compra pública de entradas** (`/entradas`, sin necesidad de iniciar
   sesión): elegir función, elegir asiento en el mapa del teatro (como
   comprar entradas de cine — asientos ocupados se ven bloqueados en tiempo

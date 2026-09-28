@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
   Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound, PencilLine,
-  Ticket, X,
+  Ticket, X, HeartPulse, MessageCircle,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
 import { familyMembersOf, monthIsSettled, owesMonthlyFee } from "../../lib/business";
 import { showLabel } from "../../lib/tickets";
-import { currentMonthKey, usd } from "../../lib/format";
+import { currentMonthKey, specialistContactText, usd, waLink } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { COLLECTIONS, setImage } from "../../lib/db";
 import { Chip, StudentAvatar } from "../../components/ui";
@@ -54,7 +54,8 @@ function TicketGroupModal({ transactionId, tickets, shows, onClose }) {
 }
 
 export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
-  const { payments, schedule, events, tasks, announcements, groups, students, shows, tickets, toast } = useAppData();
+  const { payments, schedule, events, tasks, announcements, groups, students, shows, tickets, settings, toast } = useAppData();
+  const wellnessTeam = settings.value.wellnessTeam || [];
   const hasFamily = familyMembersOf(students.items, student).length > 1;
   const [tab, setTab] = useState("inicio");
   const [showReglamento, setShowReglamento] = useState(false);
@@ -206,6 +207,37 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
               <p className="t13 text-ink">{student.emergencyName} ({student.emergencyRelationship || "—"})</p>
               <p className="t13 text-muted">{student.emergencyPhone}</p>
             </div>
+
+            {wellnessTeam.length > 0 && (
+              <div className="card p-4">
+                <p className="t11 mb-1 flex items-center gap-1.5 font-semibold uppercase tracking-wide text-bronze-dark">
+                  <HeartPulse size={13} /> Equipo multidisciplinario
+                </p>
+                <p className="t11 mb-3 text-muted">Tarifas preferenciales para familias de CIF Adagio.</p>
+                <div className="space-y-2">
+                  {wellnessTeam.map((sp) => (
+                    <div key={sp.id} className="flex items-center gap-3 rounded-lg bg-cream-dim p-2.5">
+                      <div className="flex-1">
+                        <p className="t13 font-medium text-ink">{sp.name}</p>
+                        <p className="t11 text-muted">{sp.specialty}</p>
+                        <p className="t11 text-faint">
+                          {sp.followUpPrice ? `Primera consulta ${usd(sp.price)} · Seguimiento ${usd(sp.followUpPrice)}` : `Consulta ${usd(sp.price)}`}
+                        </p>
+                      </div>
+                      <a
+                        href={waLink(sp.phone, specialistContactText(sp))}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 rounded-lg p-2 text-teal hover:bg-teal/10"
+                        title="Contactar por WhatsApp"
+                      >
+                        <MessageCircle size={18} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button onClick={() => setShowTicketFlow(true)} className="btn btn-ghost w-full">
               <Ticket size={15} /> Comprar entradas para presentaciones

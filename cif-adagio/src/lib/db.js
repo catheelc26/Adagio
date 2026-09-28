@@ -39,6 +39,7 @@ const DEFAULT_SETTINGS = {
   studioPhoto: null,
   paymentDetails: {},
   pagoMovilAccounts: [],
+  wellnessTeam: [],
 };
 
 /** Lista en tiempo real de una colección completa, con helpers add/update/remove. */

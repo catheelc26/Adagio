@@ -8,6 +8,7 @@ import { Field, inputCls } from "../../components/ui";
 
 const emptyGroupForm = () => ({ name: "", price: "", classPrice: "", pairPrice: "", color: "#3D7A6E", requiresInscription: true });
 const emptyAccountForm = () => ({ label: "", bank: "", cedula: "", phone: "", groupIds: [] });
+const emptySpecialistForm = () => ({ name: "", specialty: "", phone: "", price: "", followUpPrice: "", notes: "" });
 const OTHER_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m.id !== "pago_movil");
 
 const PHONE_FIELDS = ["phone", "guardianPhone", "emergencyPhone", "emergencyPhone2"];
@@ -25,6 +26,8 @@ export function SettingsView() {
   const [groupForm, setGroupForm] = useState(emptyGroupForm());
   const [editingAccount, setEditingAccount] = useState(null); // cuenta existente, o {} para una nueva
   const [accountForm, setAccountForm] = useState(emptyAccountForm());
+  const [editingSpecialist, setEditingSpecialist] = useState(null); // especialista existente, o {} para uno nuevo
+  const [specialistForm, setSpecialistForm] = useState(emptySpecialistForm());
 
   const saveRate = async () => {
     const rate = Number(rateInput);
@@ -176,6 +179,45 @@ export function SettingsView() {
     toast("Cuenta eliminada.");
   };
 
+  const openNewSpecialist = () => {
+    setSpecialistForm(emptySpecialistForm());
+    setEditingSpecialist({});
+  };
+  const openEditSpecialist = (sp) => {
+    setSpecialistForm({
+      name: sp.name || "", specialty: sp.specialty || "", phone: sp.phone || "",
+      price: String(sp.price ?? ""), followUpPrice: String(sp.followUpPrice ?? ""), notes: sp.notes || "",
+    });
+    setEditingSpecialist(sp);
+  };
+
+  const saveSpecialist = async () => {
+    if (!specialistForm.name.trim() || !specialistForm.specialty.trim() || !specialistForm.phone.trim()) {
+      return toast("Ingresa al menos el nombre, la especialidad y el teléfono.");
+    }
+    if (!(Number(specialistForm.price) >= 0)) return toast("Ingresa un precio de consulta válido.");
+    const payload = {
+      name: specialistForm.name.trim(),
+      specialty: specialistForm.specialty.trim(),
+      phone: normalizePhoneVE(specialistForm.phone),
+      price: Number(specialistForm.price) || 0,
+      followUpPrice: specialistForm.followUpPrice ? Number(specialistForm.followUpPrice) : undefined,
+      notes: specialistForm.notes.trim(),
+    };
+    const list = s.wellnessTeam || [];
+    const next = editingSpecialist?.id
+      ? list.map((sp) => (sp.id === editingSpecialist.id ? { ...sp, ...payload } : sp))
+      : [...list, { id: uid(), ...payload }];
+    await settings.save({ wellnessTeam: next });
+    toast(editingSpecialist?.id ? "Especialista actualizado." : "Especialista agregado.");
+    setEditingSpecialist(null);
+  };
+
+  const deleteSpecialist = async (sp) => {
+    await settings.save({ wellnessTeam: (s.wellnessTeam || []).filter((x) => x.id !== sp.id) });
+    toast("Especialista eliminado.");
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-5 py-6">
       <h1 className="font-display text-2xl text-ink">Ajustes</h1>
@@ -259,6 +301,36 @@ export function SettingsView() {
             </div>
           ))}
           {(s.pagoMovilAccounts || []).length === 0 && <p className="t13 text-muted">Aún no hay cuentas de Pago Móvil configuradas.</p>}
+        </div>
+      </section>
+
+      <section className="card space-y-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Equipo multidisciplinario</h2>
+          <button onClick={openNewSpecialist} className="btn btn-ghost">
+            <Plus size={15} /> Nuevo especialista
+          </button>
+        </div>
+        <p className="t11 text-muted">
+          Especialistas externos (fisioterapia, psicología, nutrición, etc.) con tarifa preferencial para las
+          familias de CIF Adagio. Aparecen en el portal de representantes con su WhatsApp para contactarlos
+          directamente.
+        </p>
+        <div className="space-y-2">
+          {(s.wellnessTeam || []).map((sp) => (
+            <div key={sp.id} className="flex items-center gap-3 rounded-lg bg-cream-dim p-2.5">
+              <div className="flex-1">
+                <p className="t13 text-ink">{sp.name} <span className="text-muted">· {sp.specialty}</span></p>
+                <p className="t11 text-muted">
+                  {sp.followUpPrice ? `Primera consulta $${sp.price} · Seguimiento $${sp.followUpPrice}` : `Consulta $${sp.price}`} · {sp.phone}
+                </p>
+                {sp.notes && <p className="t11 text-faint">{sp.notes}</p>}
+              </div>
+              <button onClick={() => openEditSpecialist(sp)} className="rounded-lg p-1.5 text-muted hover:bg-line hover:text-ink"><Pencil size={15} /></button>
+              <button onClick={() => deleteSpecialist(sp)} className="rounded-lg p-1.5 text-wine hover:bg-wine/10"><Trash2 size={15} /></button>
+            </div>
+          ))}
+          {(s.wellnessTeam || []).length === 0 && <p className="t13 text-muted">Aún no hay especialistas agregados.</p>}
         </div>
       </section>
 
@@ -408,6 +480,43 @@ export function SettingsView() {
             <div className="mt-5 flex gap-3">
               <button onClick={() => setEditingAccount(null)} className="btn btn-ghost flex-1">Cancelar</button>
               <button onClick={saveAccount} className="btn btn-primary flex-1">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingSpecialist && (
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+          <div className="modal-panel max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg text-ink">{editingSpecialist.id ? "Editar especialista" : "Nuevo especialista"}</h3>
+              <button onClick={() => setEditingSpecialist(null)} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <Field label="Nombre" required>
+                <input className={inputCls} value={specialistForm.name} onChange={(e) => setSpecialistForm({ ...specialistForm, name: e.target.value })} placeholder="Ej. Rainier Sierra" />
+              </Field>
+              <Field label="Especialidad" required>
+                <input className={inputCls} value={specialistForm.specialty} onChange={(e) => setSpecialistForm({ ...specialistForm, specialty: e.target.value })} placeholder="Ej. Fisioterapia" />
+              </Field>
+              <Field label="Teléfono" required>
+                <input className={inputCls} value={specialistForm.phone} onChange={(e) => setSpecialistForm({ ...specialistForm, phone: e.target.value })} placeholder="0412-0000000" />
+              </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Precio de consulta ($)" required>
+                  <input type="number" className={inputCls} value={specialistForm.price} onChange={(e) => setSpecialistForm({ ...specialistForm, price: e.target.value })} />
+                </Field>
+                <Field label="Precio de seguimiento (opcional)">
+                  <input type="number" className={inputCls} value={specialistForm.followUpPrice} onChange={(e) => setSpecialistForm({ ...specialistForm, followUpPrice: e.target.value })} placeholder="Si es distinto al de la primera consulta" />
+                </Field>
+              </div>
+              <Field label="Notas (opcional)">
+                <textarea rows={2} className={inputCls} value={specialistForm.notes} onChange={(e) => setSpecialistForm({ ...specialistForm, notes: e.target.value })} placeholder="Ej. Consultas en la sede los martes" />
+              </Field>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setEditingSpecialist(null)} className="btn btn-ghost flex-1">Cancelar</button>
+              <button onClick={saveSpecialist} className="btn btn-primary flex-1">Guardar</button>
             </div>
           </div>
         </div>
