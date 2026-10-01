@@ -38,9 +38,11 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   mismo mes, ese mes nunca carga el recargo, sin importar cuándo se
   confirme después. Se refleja en pendientes, recordatorios, estado de
   cuenta y en el monto que se pre-llena al registrar el pago —),
-  **clases de prueba** (ordenadas por fecha; el día pasa a "Realizada" solo
-  al llegar la fecha, sin marcarlo a mano; se puede indicar si la persona
-  vino o no vino, reprogramar fecha y horario, y contactar por WhatsApp),
+  **clases de prueba** (ordenadas por fecha y agrupadas visualmente por día;
+  se puede filtrar por una fecha puntual para ver solo esas solicitudes y
+  contactarlas más fácil; el día pasa a "Realizada" solo al llegar la fecha,
+  sin marcarlo a mano; se puede indicar si la persona vino o no vino,
+  reprogramar fecha y horario, y contactar por WhatsApp),
   calendario, avisos, recordatorios de pago por
   WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
   (crear funciones, mapa de butacas del teatro con precio por asiento — $12

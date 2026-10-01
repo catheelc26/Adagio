@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarClock, MessageCircle, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, WEEKDAYS } from "../../lib/constants";
@@ -8,6 +8,11 @@ import { ActionMenu, Chip, Field, inputCls, MenuItem } from "../../components/ui
 
 const STATUS_LABEL = { pendiente: "Pendiente", realizada: "Realizada", cancelado: "Cancelada" };
 const STATUS_COLOR = { pendiente: "var(--color-bronze)", realizada: "var(--color-teal)", cancelado: "var(--color-faint)" };
+
+const dateLabel = (d) => {
+  const raw = new Date(d + "T00:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
 
 function RescheduleModal({ booking, onClose }) {
   const { trialBookings, toast } = useAppData();
@@ -71,6 +76,22 @@ export function TrialBookingsView() {
   const { trialBookings, groups, toast } = useAppData();
   const sorted = trialBookings.items.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
   const [rescheduling, setRescheduling] = useState(null);
+  const [dateFilter, setDateFilter] = useState("all");
+
+  const dates = useMemo(() => {
+    const counts = new Map();
+    sorted.forEach((b) => counts.set(b.date, (counts.get(b.date) || 0) + 1));
+    return Array.from(counts.entries()).sort(([a], [b]) => (a < b ? -1 : 1));
+  }, [sorted]);
+
+  const filtered = dateFilter === "all" ? sorted : sorted.filter((b) => b.date === dateFilter);
+
+  const dateGroups = [];
+  filtered.forEach((b) => {
+    const last = dateGroups[dateGroups.length - 1];
+    if (last && last.date === b.date) last.items.push(b);
+    else dateGroups.push({ date: b.date, items: [b] });
+  });
 
   const setCancelled = async (b, cancelled) => {
     await trialBookings.update(b.id, { status: cancelled ? "cancelado" : "pendiente" });
@@ -86,54 +107,72 @@ export function TrialBookingsView() {
     <div className="mx-auto max-w-4xl space-y-5 px-5 py-6">
       <div>
         <h1 className="font-display text-2xl text-ink">Clases de prueba</h1>
-        <p className="t13 text-muted">{sorted.length} solicitudes</p>
+        <p className="t13 text-muted">{filtered.length} solicitud{filtered.length === 1 ? "" : "es"}{dateFilter !== "all" ? ` · ${dateLabel(dateFilter)}` : ""}</p>
       </div>
 
-      <div className="space-y-2">
-        {sorted.map((b) => {
-          const g = groupById(groups.items, b.group);
-          const st = trialStatus(b);
-          return (
-            <div key={b.id} className="card flex flex-wrap items-center gap-3 p-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="t13 font-medium text-ink">{b.fullName}</p>
-                  <Chip color={STATUS_COLOR[st]}>{STATUS_LABEL[st]}</Chip>
+      <select className="field-input sm:w-64" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+        <option value="all">Todas las fechas</option>
+        {dates.map(([d, count]) => (
+          <option key={d} value={d}>{dateLabel(d)} ({count})</option>
+        ))}
+      </select>
+
+      <div className="space-y-5">
+        {dateGroups.map((group) => (
+          <div key={group.date} className="space-y-2">
+            {dateFilter === "all" && (
+              <h2 className="t12 font-medium text-muted">{dateLabel(group.date)}</h2>
+            )}
+            {group.items.map((b) => {
+              const g = groupById(groups.items, b.group);
+              const st = trialStatus(b);
+              return (
+                <div key={b.id} className="card flex flex-wrap items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="t13 font-medium text-ink">{b.fullName}</p>
+                      <Chip color={STATUS_COLOR[st]}>{STATUS_LABEL[st]}</Chip>
+                    </div>
+                    <p className="t11 text-muted">
+                      {g?.name} · {WEEKDAYS[b.weekday]} {b.startTime}–{b.endTime} · {b.date} · {b.phone}
+                    </p>
+                    {b.notes && <p className="t11 mt-1 text-faint">{b.notes}</p>}
+                  </div>
+                  {st === "realizada" && (
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        onClick={() => setAttended(b, true)}
+                        className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === true ? "bg-teal text-white" : "bg-cream-dim text-muted"}`}
+                      >
+                        Vino
+                      </button>
+                      <button
+                        onClick={() => setAttended(b, false)}
+                        className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === false ? "bg-wine text-white" : "bg-cream-dim text-muted"}`}
+                      >
+                        No vino
+                      </button>
+                    </div>
+                  )}
+                  <a href={waLink(b.phone, trialContactText(b, g?.name || ""))} target="_blank" rel="noreferrer" className="shrink-0 rounded-lg p-2 text-teal hover:bg-teal/10" title="Contactar por WhatsApp">
+                    <MessageCircle size={16} />
+                  </a>
+                  <ActionMenu>
+                    <MenuItem icon={<CalendarClock size={15} />} label="Reprogramar" onClick={() => setRescheduling(b)} />
+                    {st !== "cancelado" && <MenuItem label="Marcar cancelada" onClick={() => setCancelled(b, true)} />}
+                    {st === "cancelado" && <MenuItem label="Reactivar" onClick={() => setCancelled(b, false)} />}
+                    <MenuItem icon={<Trash2 size={15} />} label="Eliminar" danger onClick={() => trialBookings.remove(b.id)} />
+                  </ActionMenu>
                 </div>
-                <p className="t11 text-muted">
-                  {g?.name} · {WEEKDAYS[b.weekday]} {b.startTime}–{b.endTime} · {b.date} · {b.phone}
-                </p>
-                {b.notes && <p className="t11 mt-1 text-faint">{b.notes}</p>}
-              </div>
-              {st === "realizada" && (
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <button
-                    onClick={() => setAttended(b, true)}
-                    className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === true ? "bg-teal text-white" : "bg-cream-dim text-muted"}`}
-                  >
-                    Vino
-                  </button>
-                  <button
-                    onClick={() => setAttended(b, false)}
-                    className={`t12 rounded-lg px-2.5 py-1.5 font-medium ${b.attended === false ? "bg-wine text-white" : "bg-cream-dim text-muted"}`}
-                  >
-                    No vino
-                  </button>
-                </div>
-              )}
-              <a href={waLink(b.phone, trialContactText(b, g?.name || ""))} target="_blank" rel="noreferrer" className="shrink-0 rounded-lg p-2 text-teal hover:bg-teal/10" title="Contactar por WhatsApp">
-                <MessageCircle size={16} />
-              </a>
-              <ActionMenu>
-                <MenuItem icon={<CalendarClock size={15} />} label="Reprogramar" onClick={() => setRescheduling(b)} />
-                {st !== "cancelado" && <MenuItem label="Marcar cancelada" onClick={() => setCancelled(b, true)} />}
-                {st === "cancelado" && <MenuItem label="Reactivar" onClick={() => setCancelled(b, false)} />}
-                <MenuItem icon={<Trash2 size={15} />} label="Eliminar" danger onClick={() => trialBookings.remove(b.id)} />
-              </ActionMenu>
-            </div>
-          );
-        })}
-        {sorted.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">Sin solicitudes de clase de prueba.</p>}
+              );
+            })}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">
+            {dateFilter === "all" ? "Sin solicitudes de clase de prueba." : "Ninguna clase de prueba en esta fecha."}
+          </p>
+        )}
       </div>
 
       {rescheduling && <RescheduleModal booking={rescheduling} onClose={() => setRescheduling(null)} />}
