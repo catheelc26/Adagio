@@ -42,6 +42,8 @@ const emptyStudent = (defaultGroupId) => ({
   status: "active",
   scholarshipType: "none",
   scholarshipDiscount: "",
+  participationFeeExempt: false,
+  participationFeeDiscount: "",
   paymentSchedule: "mensual",
   adminNotes: "",
   hasPhoto: false,
@@ -113,6 +115,7 @@ export function StudentForm({ student, isAdmin, extraFields, skipCodeScreen, onC
         level,
         partnerAge: isSalsaPareja ? Number(f.partnerAge) || 0 : 0,
         scholarshipDiscount: f.scholarshipType === "partial" ? Number(f.scholarshipDiscount) || 0 : 0,
+        participationFeeDiscount: f.participationFeeExempt ? 0 : Number(f.participationFeeDiscount) || 0,
         scheduleFrequency: groupScheduleText,
         phone: normalizePhoneVE(f.phone),
         guardianPhone: normalizePhoneVE(f.guardianPhone),
@@ -449,6 +452,25 @@ export function StudentForm({ student, isAdmin, extraFields, skipCodeScreen, onC
                 {f.scholarshipType === "partial" && (
                   <Field label="Descuento de beca ($)">
                     <input type="number" className={inputCls} value={f.scholarshipDiscount} onChange={(e) => set({ scholarshipDiscount: e.target.value })} />
+                  </Field>
+                )}
+                <div className="col-span-2 flex items-center gap-2">
+                  <input
+                    id="participation-fee-exempt"
+                    type="checkbox"
+                    checked={!f.participationFeeExempt}
+                    onChange={(e) => set({ participationFeeExempt: !e.target.checked })}
+                  />
+                  <label htmlFor="participation-fee-exempt" className="t13 text-ink">Paga cuotas de participación</label>
+                </div>
+                {!f.participationFeeExempt && (
+                  <Field label="Rebaja en cuotas de participación ($)">
+                    <input
+                      type="number"
+                      className={inputCls}
+                      value={f.participationFeeDiscount}
+                      onChange={(e) => set({ participationFeeDiscount: e.target.value })}
+                    />
                   </Field>
                 )}
                 <div className="col-span-2">

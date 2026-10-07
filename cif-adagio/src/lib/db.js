@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS = {
   paymentDetails: {},
   pagoMovilAccounts: [],
   wellnessTeam: [],
+  participationInstallments: [],
 };
 
 /** Lista en tiempo real de una colección completa, con helpers add/update/remove. */

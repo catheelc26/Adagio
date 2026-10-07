@@ -19,6 +19,16 @@ export const DEFAULT_GROUPS = [
 /** Busca un grupo por id dentro de la lista dinámica (`groups.items` del contexto). */
 export const groupById = (groups, id) => (groups || []).find((g) => g.id === id) || null;
 
+// Cuotas de participación "de fábrica" — solo se usan como sugerencia
+// mientras administración no haya configurado las suyas en Ajustes (ver
+// `participationInstallmentsOf` en business.js). Ajustes guarda la lista
+// real en `settings.value.participationInstallments`.
+export const DEFAULT_PARTICIPATION_INSTALLMENTS = [
+  { id: "cuota1", label: "Cuota 1", amount: 35 },
+  { id: "cuota2", label: "Cuota 2", amount: 35 },
+  { id: "cuota3", label: "Cuota 3", amount: 30 },
+];
+
 /** Si un grupo cobra inscripción anual — false para Adultos/Salsa por defecto, configurable por grupo. */
 export const requiresInscription = (groups, groupId) => {
   const g = groupById(groups, groupId);

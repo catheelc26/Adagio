@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Camera, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
-import { PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
+import { DEFAULT_PARTICIPATION_INSTALLMENTS, PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
+import { participationInstallmentsOf } from "../../lib/business";
 import { normalizePhoneVE, uid } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { Field, inputCls } from "../../components/ui";
@@ -9,6 +10,7 @@ import { Field, inputCls } from "../../components/ui";
 const emptyGroupForm = () => ({ name: "", price: "", classPrice: "", pairPrice: "", color: "#3D7A6E", requiresInscription: true });
 const emptyAccountForm = () => ({ label: "", bank: "", cedula: "", phone: "", groupIds: [] });
 const emptySpecialistForm = () => ({ name: "", specialty: "", phone: "", price: "", followUpPrice: "", notes: "" });
+const emptyInstallmentForm = () => ({ label: "", amount: "" });
 const OTHER_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m.id !== "pago_movil");
 
 const PHONE_FIELDS = ["phone", "guardianPhone", "emergencyPhone", "emergencyPhone2"];
@@ -28,6 +30,9 @@ export function SettingsView() {
   const [accountForm, setAccountForm] = useState(emptyAccountForm());
   const [editingSpecialist, setEditingSpecialist] = useState(null); // especialista existente, o {} para uno nuevo
   const [specialistForm, setSpecialistForm] = useState(emptySpecialistForm());
+  const [editingInstallment, setEditingInstallment] = useState(null); // cuota existente, o {} para una nueva
+  const [installmentForm, setInstallmentForm] = useState(emptyInstallmentForm());
+  const installments = participationInstallmentsOf(s);
 
   const saveRate = async () => {
     const rate = Number(rateInput);
@@ -218,6 +223,37 @@ export function SettingsView() {
     toast("Especialista eliminado.");
   };
 
+  const useSuggestedInstallments = async () => {
+    await settings.save({ participationInstallments: DEFAULT_PARTICIPATION_INSTALLMENTS });
+    toast("Cuotas sugeridas aplicadas — puedes editarlas abajo.");
+  };
+
+  const openNewInstallment = () => {
+    setInstallmentForm(emptyInstallmentForm());
+    setEditingInstallment({});
+  };
+  const openEditInstallment = (inst) => {
+    setInstallmentForm({ label: inst.label || "", amount: String(inst.amount ?? "") });
+    setEditingInstallment(inst);
+  };
+
+  const saveInstallment = async () => {
+    if (!installmentForm.label.trim()) return toast("Ponle un nombre a la cuota, ej. \"Cuota 1\".");
+    if (!(Number(installmentForm.amount) > 0)) return toast("Ingresa un monto válido.");
+    const payload = { label: installmentForm.label.trim(), amount: Number(installmentForm.amount) };
+    const next = editingInstallment?.id
+      ? installments.map((i) => (i.id === editingInstallment.id ? { ...i, ...payload } : i))
+      : [...installments, { id: uid(), ...payload }];
+    await settings.save({ participationInstallments: next });
+    toast(editingInstallment?.id ? "Cuota actualizada." : "Cuota agregada.");
+    setEditingInstallment(null);
+  };
+
+  const deleteInstallment = async (inst) => {
+    await settings.save({ participationInstallments: installments.filter((i) => i.id !== inst.id) });
+    toast("Cuota eliminada.");
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-5 py-6">
       <h1 className="font-display text-2xl text-ink">Ajustes</h1>
@@ -251,6 +287,40 @@ export function SettingsView() {
           <button onClick={saveFee} className="btn btn-teal whitespace-nowrap">Guardar</button>
         </div>
         <p className="t11 text-muted">No aplica a los grupos marcados como "sin inscripción" (ver Grupos y precios abajo).</p>
+      </section>
+
+      <section className="card space-y-4 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Cuotas de participación</h2>
+          <button onClick={openNewInstallment} className="btn btn-ghost">
+            <Plus size={15} /> Nueva cuota
+          </button>
+        </div>
+        <p className="t11 text-muted">
+          Cuotas aparte de la mensualidad (ej. para una presentación) que pagan los estudiantes inscritos — se suman
+          para el total que le corresponde a cada quien. Desde la ficha de cada estudiante puedes marcarlo como
+          exento o darle una rebaja.
+        </p>
+        <div className="space-y-2">
+          {installments.map((inst) => (
+            <div key={inst.id} className="flex items-center gap-3 rounded-lg bg-cream-dim p-2.5">
+              <div className="flex-1">
+                <p className="t13 text-ink">{inst.label}</p>
+                <p className="t11 text-muted">${inst.amount}</p>
+              </div>
+              <button onClick={() => openEditInstallment(inst)} className="rounded-lg p-1.5 text-muted hover:bg-line hover:text-ink"><Pencil size={15} /></button>
+              <button onClick={() => deleteInstallment(inst)} className="rounded-lg p-1.5 text-wine hover:bg-wine/10"><Trash2 size={15} /></button>
+            </div>
+          ))}
+        </div>
+        {!(s.participationInstallments?.length) && (
+          <div className="rounded-lg bg-cream-dim p-3">
+            <p className="t12 text-muted">
+              Todavía no has configurado tus propias cuotas — por ahora se usan estas sugeridas: {installments.map((i) => `${i.label} ($${i.amount})`).join(", ")}.
+            </p>
+            <button onClick={useSuggestedInstallments} className="btn btn-ghost mt-2">Usar estas y poder editarlas</button>
+          </div>
+        )}
       </section>
 
       <section className="card space-y-3 p-4">
@@ -517,6 +587,29 @@ export function SettingsView() {
             <div className="mt-5 flex gap-3">
               <button onClick={() => setEditingSpecialist(null)} className="btn btn-ghost flex-1">Cancelar</button>
               <button onClick={saveSpecialist} className="btn btn-primary flex-1">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingInstallment && (
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+          <div className="modal-panel w-full max-w-sm rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-display text-lg text-ink">{editingInstallment.id ? "Editar cuota" : "Nueva cuota"}</h3>
+              <button onClick={() => setEditingInstallment(null)} className="text-muted hover:text-ink"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              <Field label="Nombre" required>
+                <input className={inputCls} value={installmentForm.label} onChange={(e) => setInstallmentForm({ ...installmentForm, label: e.target.value })} placeholder="Ej. Cuota 1" />
+              </Field>
+              <Field label="Monto ($)" required>
+                <input type="number" className={inputCls} value={installmentForm.amount} onChange={(e) => setInstallmentForm({ ...installmentForm, amount: e.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setEditingInstallment(null)} className="btn btn-ghost flex-1">Cancelar</button>
+              <button onClick={saveInstallment} className="btn btn-primary flex-1">Guardar</button>
             </div>
           </div>
         </div>

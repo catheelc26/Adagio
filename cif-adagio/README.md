@@ -22,7 +22,8 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   los meses que debe cada quien si son varios y, si abonó solo una parte
   de algún mes, cuánto le falta todavía — un abono parcial nunca se marca
   como mes pagado), estudiantes (alta/edición/
-  baja — incluye cambiar de grupo, becas, exportación a Excel, también
+  baja — incluye cambiar de grupo, becas, marcar exento de cuotas de
+  participación o darle una rebaja, exportación a Excel, también
   ordenados por grupo), pagos (mensualidad, clases sueltas, inscripción,
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
@@ -38,6 +39,14 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   mismo mes, ese mes nunca carga el recargo, sin importar cuándo se
   confirme después. Se refleja en pendientes, recordatorios, estado de
   cuenta y en el monto que se pre-llena al registrar el pago —),
+  **cuotas de participación** — cobros aparte de la mensualidad (ej. para
+  una presentación), configurables en Ajustes como una lista de cuotas con
+  su propio monto (por defecto 2 de $35 y una última de $30); desde la
+  ficha de cada estudiante se puede marcar como exento o darle una rebaja
+  en dólares sobre el total. Al registrar un pago de este tipo, el selector
+  de cuota arranca en la que realmente falta (según lo ya pagado) y muestra
+  el total, lo pagado y lo pendiente — se refleja también en el estado de
+  cuenta del estudiante,
   **clases de prueba** (ordenadas por fecha y agrupadas visualmente por día;
   se puede filtrar por una fecha puntual para ver solo esas solicitudes y
   contactarlas más fácil; el día pasa a "Realizada" solo al llegar la fecha,
@@ -51,7 +60,9 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   de cada entrada** desde la cámara del celular o buscarla manualmente para
   verificarla en la puerta el día de la función), estadísticas
   (incluye lo cobrado en el mes) y ajustes (tasa de
-  cambio, cuota de inscripción, PIN de maestros, **corregir de una vez todos
+  cambio, cuota de inscripción, **cuotas de participación** (agregar/editar/
+  eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
+  no se configuren las propias), PIN de maestros, **corregir de una vez todos
   los teléfonos guardados al formato +58 de Venezuela** (sin duplicar el
   código ni dejar el 0 inicial — los números nuevos ya se guardan
   corregidos), **cuentas de Pago Móvil**

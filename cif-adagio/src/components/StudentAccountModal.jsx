@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Copy, CheckCircle2, X } from "lucide-react";
 import { groupById, MONTH_NAMES } from "../lib/constants";
-import { effectivePrice, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, monthPaidAmount, owesMonthlyFee } from "../lib/business";
+import {
+  effectivePrice, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, monthPaidAmount, owesMonthlyFee,
+  participationFeePaidAmount, participationFeeTotal, participationInstallmentsOf,
+} from "../lib/business";
 import { studentDisplayName, usd } from "../lib/format";
 import { useAppData } from "../lib/AppDataContext";
 import { ReceiptModal } from "./ReceiptModal";
 
 export function StudentAccountModal({ student, onClose }) {
-  const { payments, attendance, students, groups } = useAppData();
+  const { payments, attendance, students, groups, settings } = useAppData();
   const [receiptId, setReceiptId] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -21,6 +24,9 @@ export function StudentAccountModal({ student, onClose }) {
   const year = now.getFullYear();
   const yearTotal = confirmed.filter((p) => p.date?.startsWith(String(year))).reduce((s, p) => s + p.amount, 0);
   const owes = owesMonthlyFee(student);
+  const participationInstallments = participationInstallmentsOf(settings.value);
+  const participationTotal = participationFeeTotal(student, participationInstallments);
+  const participationPaid = participationFeePaidAmount(payments.items, student.id);
   const currentMonthIdx = now.getMonth();
   const enrolled = student.createdAt ? new Date(student.createdAt) : null;
   const enrolledMonthIdx = enrolled && enrolled.getFullYear() === year ? enrolled.getMonth() : null;
@@ -108,6 +114,25 @@ export function StudentAccountModal({ student, onClose }) {
               <p className="font-display text-lg text-ink">{attendanceRate === null ? "—" : `${attendanceRate}%`}</p>
             </div>
           </div>
+
+          {!student.participationFeeExempt && (
+            <div className="rounded-xl bg-cream-dim px-4 py-3">
+              <p className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Cuotas de participación</p>
+              <p className="t13 mt-1 text-ink">
+                Pagado {usd(participationPaid)} de {usd(participationTotal)}
+                {student.participationFeeDiscount > 0 && ` (con rebaja de ${usd(student.participationFeeDiscount)})`}
+                {participationPaid < participationTotal
+                  ? ` · Pendiente ${usd(participationTotal - participationPaid)}`
+                  : " · Completo"}
+              </p>
+            </div>
+          )}
+          {student.participationFeeExempt && (
+            <div className="rounded-xl bg-cream-dim px-4 py-3">
+              <p className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Cuotas de participación</p>
+              <p className="t13 mt-1 text-muted">Exento</p>
+            </div>
+          )}
 
           <div>
             <p className="t11 mb-2 font-semibold uppercase tracking-wide text-bronze-dark">Estado de mensualidades {year}</p>

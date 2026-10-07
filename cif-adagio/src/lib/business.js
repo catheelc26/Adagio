@@ -1,4 +1,4 @@
-import { groupById } from "./constants";
+import { DEFAULT_PARTICIPATION_INSTALLMENTS, groupById } from "./constants";
 
 export const isActive = (student) => student.status !== "inactive";
 
@@ -17,6 +17,35 @@ export function effectivePrice(student, groups) {
     return Math.max(0, basePrice - (Number(student.scholarshipDiscount) || 0));
   }
   return basePrice;
+}
+
+// Cuotas de participación del reglamento (ej. para una presentación): una
+// lista configurable de montos (por defecto 2 cuotas de $35 quincenales y
+// una última de $30) que paga cada estudiante inscrito, salvo quien esté
+// marcado como exento o tenga una rebaja. Es independiente de la
+// mensualidad — un cobro aparte, con su propio tipo de pago ("cuota_participacion").
+export const participationInstallmentsOf = (settingsValue) =>
+  settingsValue?.participationInstallments?.length ? settingsValue.participationInstallments : DEFAULT_PARTICIPATION_INSTALLMENTS;
+
+// Total que le corresponde pagar a un estudiante por las cuotas de
+// participación — $0 si está exento, y con su rebaja (si tiene) descontada
+// del total de todas las cuotas.
+export function participationFeeTotal(student, installments) {
+  if (!student || student.participationFeeExempt) return 0;
+  const base = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+  const discount = Number(student.participationFeeDiscount) || 0;
+  return Math.max(0, base - discount);
+}
+
+export const participationFeePaidAmount = (payments, studentId) =>
+  payments
+    .filter((p) => p.studentId === studentId && p.type === "cuota_participacion" && p.confirmed !== false)
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+export function participationFeeOwed(payments, student, installments) {
+  const total = participationFeeTotal(student, installments);
+  if (total <= 0) return 0;
+  return Math.max(0, total - participationFeePaidAmount(payments, student.id));
 }
 
 // Cuenta de Pago Móvil que corresponde a un grupo. Cada cuenta puede marcar a qué

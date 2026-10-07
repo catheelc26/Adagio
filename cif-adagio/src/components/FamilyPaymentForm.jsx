@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { Camera, ChevronDown, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
-import { effectivePrice, familyMembersOf, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup, proratedFirstMonth } from "../lib/business";
+import {
+  effectivePrice, familyMembersOf, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup,
+  participationFeeOwed, participationFeePaidAmount, participationFeeTotal, participationInstallmentsOf, proratedFirstMonth,
+} from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -46,6 +49,19 @@ export function FamilyPaymentForm({ student, onClose }) {
   const rate = Number(settings.value.officialRate) || 0;
   const studentOf = (id) => familyMembers.find((s) => s.id === id);
   const availableToAdd = familyMembers.filter((m) => !entries.some((e) => e.studentId === m.id));
+  const installments = participationInstallmentsOf(settings.value);
+
+  // La primera cuota que todavía no está cubierta por lo ya pagado — así el
+  // selector arranca en la que realmente falta, en vez de siempre la 1.
+  const nextUnpaidInstallment = (forStudent) => {
+    const paid = participationFeePaidAmount(payments.items, forStudent.id);
+    let cumulative = 0;
+    for (const inst of installments) {
+      cumulative += Number(inst.amount) || 0;
+      if (cumulative > paid) return inst;
+    }
+    return installments[installments.length - 1];
+  };
 
   const updateEntryItems = (studentId, updater) =>
     setEntries((prev) => prev.map((e) => (e.studentId === studentId ? { ...e, items: updater(e.items) } : e)));
@@ -67,6 +83,7 @@ export function FamilyPaymentForm({ student, onClose }) {
     let concept = "";
     let amount = "";
     let month;
+    let installmentId = null;
     if (type === "mensualidad") {
       concept = "Mensualidad";
       amount = String(monthDueAmount(payments.items, entryStudent, currentMonthKey(), groups.items));
@@ -77,8 +94,22 @@ export function FamilyPaymentForm({ student, onClose }) {
     } else if (type === "inscripcion") {
       concept = "Inscripción anual";
       amount = String(settings.value.inscriptionFee || 0);
+    } else if (type === "cuota_participacion") {
+      const inst = nextUnpaidInstallment(entryStudent);
+      concept = inst ? `Cuota de participación — ${inst.label}` : "Cuota de participación";
+      amount = inst ? String(inst.amount) : "";
+      installmentId = inst?.id || null;
     }
-    updateItem(entryStudent.id, key, { type, concept, amount, month, prorated: false });
+    updateItem(entryStudent.id, key, { type, concept, amount, month, installmentId, prorated: false });
+  };
+
+  const setInstallment = (entryStudent, key, installmentId) => {
+    const inst = installments.find((i) => i.id === installmentId);
+    updateItem(entryStudent.id, key, {
+      installmentId: installmentId || null,
+      concept: inst ? `Cuota de participación — ${inst.label}` : "Cuota de participación",
+      amount: inst ? String(inst.amount) : "",
+    });
   };
 
   const applyProration = (entryStudent, key) => {
@@ -149,6 +180,9 @@ export function FamilyPaymentForm({ student, onClose }) {
         if (it.type === "mensualidad" && monthIsSettled(payments.items, entryStudent, it.month, groups.items)) {
           return setError(`${monthLabel(it.month)} ya está pagado por completo (o exonerado) para ${name}.`);
         }
+        if (it.type === "cuota_participacion" && participationFeeOwed(payments.items, entryStudent, installments) <= 0) {
+          return setError(`Las cuotas de participación de ${name} ya están completas (o está exento).`);
+        }
       }
     }
 
@@ -173,6 +207,7 @@ export function FamilyPaymentForm({ student, onClose }) {
               amountVES,
               rateUsed: currency === "VES" ? rate : null,
               month: it.type === "mensualidad" ? it.month : null,
+              installmentId: it.type === "cuota_participacion" ? it.installmentId || null : null,
               date,
               method,
               reference,
@@ -236,6 +271,7 @@ export function FamilyPaymentForm({ student, onClose }) {
                             <option value="mensualidad">Mensualidad</option>
                             {g?.classPrice && <option value="clase">Clase</option>}
                             {g && requiresInscription(groups.items, g.id) && <option value="inscripcion">Inscripción</option>}
+                            {!entryStudent.participationFeeExempt && <option value="cuota_participacion">Cuota de participación</option>}
                             <option value="extra">Extra</option>
                           </select>
                           {entry.items.length > 1 && (
@@ -275,6 +311,27 @@ export function FamilyPaymentForm({ student, onClose }) {
                               Es un abono parcial — después de este pago quedarán pendientes {usd(remaining)} más de {monthLabel(it.month)}.
                             </p>
                           ) : null;
+                        })()}
+                        {it.type === "cuota_participacion" && (
+                          <Field label="Cuota">
+                            <select className={inputCls} value={it.installmentId || ""} onChange={(e) => setInstallment(entryStudent, it.key, e.target.value)}>
+                              {installments.map((inst) => (
+                                <option key={inst.id} value={inst.id}>{inst.label} (${inst.amount})</option>
+                              ))}
+                              <option value="">Otro monto</option>
+                            </select>
+                          </Field>
+                        )}
+                        {it.type === "cuota_participacion" && (() => {
+                          const total = participationFeeTotal(entryStudent, installments);
+                          const already = participationFeePaidAmount(payments.items, entryStudent.id);
+                          const remaining = total - already - (Number(it.amount) || 0);
+                          return (
+                            <p className="t11 text-muted">
+                              Total de cuotas: {usd(total)}{entryStudent.participationFeeDiscount > 0 ? ` (con rebaja de ${usd(entryStudent.participationFeeDiscount)})` : ""} ·
+                              {" "}Ya pagado: {usd(already)}{remaining > 0 ? ` · Quedarían pendientes ${usd(remaining)}` : " · Quedaría completo"}
+                            </p>
+                          );
                         })()}
                       </div>
                     ))}
