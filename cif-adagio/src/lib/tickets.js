@@ -30,6 +30,23 @@ export const isSeatTaken = (tickets, showId, row, seat) =>
 
 export const ticketsForShow = (tickets, showId) => tickets.filter((t) => t.showId === showId);
 
+// Agrupa entradas por transacción (compra) — para mostrar todos los
+// asientos de una misma compra juntos en un recibo, antes de las entradas
+// individuales de cada asiento.
+export const groupTicketsByTransaction = (ticketList) => {
+  const order = [];
+  const map = new Map();
+  ticketList.forEach((t) => {
+    const key = t.transactionId || t.id;
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key).push(t);
+  });
+  return order.map((key) => map.get(key));
+};
+
 export const showLabel = (show) => {
   if (!show) return "";
   const d = new Date(`${show.date}T00:00:00`);

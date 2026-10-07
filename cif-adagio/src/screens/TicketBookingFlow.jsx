@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, Camera, CheckCircle2, ChevronRight, Printer, Ticket as TicketIcon, X } from "lucide-react";
 import { PAYMENT_METHODS, paymentMethodInfo } from "../lib/constants";
 import { pagoMovilAccountForGroup } from "../lib/business";
-import { isSeatTaken, seatKey, seatPrice, showLabel, ticketsForShow } from "../lib/tickets";
+import { groupTicketsByTransaction, isSeatTaken, seatKey, seatPrice, showLabel, ticketsForShow } from "../lib/tickets";
 import { reminderContactEmail, reminderContactName, reminderContactPhone, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
@@ -13,6 +13,7 @@ import { notifyPush } from "../lib/push";
 import { CopyButton, CopyRow, Field, inputCls } from "../components/ui";
 import { SeatMap } from "../components/SeatMap";
 import { TicketQR } from "../components/TicketQR";
+import { TicketReceipt } from "../components/TicketReceipt";
 
 const MY_TICKETS_KEY = "adagioMyTicketIds";
 const EASE_OUT = [0.23, 1, 0.32, 1];
@@ -359,7 +360,8 @@ export function TicketBookingFlow({ student, onClose }) {
                   Guarda estas entradas — muéstralas en la puerta el día de la función. Quedan por confirmar hasta que administración revise el pago.
                 </p>
               </div>
-              <div className="space-y-4 print-tickets">
+              <div className="space-y-4 printable-receipt">
+                {createdTickets.length > 1 && <TicketReceipt tickets={createdTickets} show={show} />}
                 {createdTickets.map((t) => (
                   <TicketQR key={t.id} ticket={t} show={show} />
                 ))}
@@ -385,27 +387,43 @@ export function MyTicketsPanel({ onClose }) {
   const { tickets, shows } = useAppData();
   const [ids] = useState(readMyTicketIds);
   const myTickets = tickets.items.filter((t) => ids.includes(t.id)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const groups = groupTicketsByTransaction(myTickets);
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
       <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-md sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
+        <div className="no-print sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
           <h3 className="font-display text-lg text-ink">Mis entradas</h3>
           <button onClick={onClose} className="text-muted hover:text-ink">
             <X size={20} />
           </button>
         </div>
-        <div className="space-y-4 p-5">
+        <div className="space-y-6 p-5 printable-receipt">
           {myTickets.length === 0 && (
             <div className="flex flex-col items-center py-8 text-center">
               <TicketIcon size={28} className="mb-2 text-faint" />
               <p className="t13 text-muted">No encontramos entradas compradas desde este dispositivo.</p>
             </div>
           )}
-          {myTickets.map((t) => (
-            <TicketQR key={t.id} ticket={t} show={shows.items.find((s) => s.id === t.showId)} />
-          ))}
+          {groups.map((group) => {
+            const show = shows.items.find((s) => s.id === group[0].showId);
+            return (
+              <div key={group[0].transactionId || group[0].id} className="space-y-4">
+                {group.length > 1 && <TicketReceipt tickets={group} show={show} />}
+                {group.map((t) => (
+                  <TicketQR key={t.id} ticket={t} show={show} />
+                ))}
+              </div>
+            );
+          })}
         </div>
+        {myTickets.length > 0 && (
+          <div className="no-print border-t border-line p-4">
+            <button onClick={() => window.print()} className="btn btn-primary w-full">
+              <Printer size={15} /> Guardar como PDF
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

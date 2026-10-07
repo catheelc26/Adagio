@@ -88,13 +88,20 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   escuela, con botón de WhatsApp para contactar a cada especialista
   directamente — visible solo dentro del portal, de forma privada.
 - **Compra pública de entradas** (`/entradas`, sin necesidad de iniciar
-  sesión): elegir función, elegir asiento en el mapa del teatro (como
-  comprar entradas de cine — asientos ocupados se ven bloqueados en tiempo
-  real), reportar el pago con foto de comprobante (igual que cualquier otro
-  pago de la app) y recibir al instante un **código QR por cada asiento**
-  con la fila y el número — administración lo confirma después. Las
-  entradas quedan guardadas en el navegador de quien compra para poder
-  volver a verlas sin necesidad de una cuenta.
+  sesión): elegir función, elegir asiento en un mapa del teatro con butacas
+  ilustradas (ícono por asiento, leyenda con precio por tipo — Lateral,
+  Centro — y un escenario curvo arriba; mantiene nuestra numeración y
+  distribución de filas/asientos), reportar el pago con foto de comprobante
+  (igual que cualquier otro pago de la app) y recibir al instante un
+  **código QR por cada asiento** con la fila y el número — administración lo
+  confirma después. Si se compra más de un asiento en la misma compra, antes
+  de las entradas sale un **recibo con todos los asientos juntos** (comprador,
+  método, referencia y total); cada entrada individual lleva el diseño de
+  "El Cascanueces" con su código QR. Las entradas quedan guardadas en el
+  navegador de quien compra para poder volver a verlas sin necesidad de una
+  cuenta, con el botón **"Guardar como PDF"** para imprimirlas o guardarlas
+  (se arregló un error que dejaba la página en blanco al intentar
+  imprimir/descargar).
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de
   prueba próximas y recientes (con quién vino o no vino y su WhatsApp),
   asistencia, notas del día y tareas por grupo.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound, PencilLine,
-  Ticket, X, HeartPulse, MessageCircle,
+  Ticket, X, HeartPulse, MessageCircle, Printer,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
@@ -25,6 +25,7 @@ import { StudentForm } from "../../components/StudentForm";
 import { FamilyMenu } from "../../components/FamilyMenu";
 import { TicketBookingFlow } from "../TicketBookingFlow";
 import { TicketQR } from "../../components/TicketQR";
+import { TicketReceipt } from "../../components/TicketReceipt";
 
 const TABS = [
   { id: "inicio", label: "Inicio", icon: Home },
@@ -39,16 +40,22 @@ function TicketGroupModal({ transactionId, tickets, shows, onClose }) {
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
       <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-md sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
+        <div className="no-print sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
           <h3 className="font-display text-lg text-ink">Mis entradas</h3>
           <button onClick={onClose} className="text-muted hover:text-ink">
             <X size={20} />
           </button>
         </div>
-        <div className="space-y-4 p-5">
+        <div className="space-y-4 p-5 printable-receipt">
+          {items.length > 1 && <TicketReceipt tickets={items} show={show} />}
           {items.map((t) => (
             <TicketQR key={t.id} ticket={t} show={show} />
           ))}
+        </div>
+        <div className="no-print border-t border-line p-4">
+          <button onClick={() => window.print()} className="btn btn-primary w-full">
+            <Printer size={15} /> Guardar como PDF
+          </button>
         </div>
       </div>
     </div>

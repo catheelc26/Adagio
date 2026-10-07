@@ -1,4 +1,12 @@
+import { Armchair } from "lucide-react";
 import { CENTER_PRICE, SIDE_PRICE, THEATER_ROW_LETTERS, isCenterSeat, isSeatTaken, seatGroupsForRow, seatKey } from "../lib/tickets";
+
+const LEGEND = [
+  { label: "Lateral", price: SIDE_PRICE, icon: "text-blue-dark", bg: "bg-blue/20" },
+  { label: "Centro", price: CENTER_PRICE, icon: "text-bronze-dark", bg: "bg-bronze/25" },
+  { label: "Elegido", price: null, icon: "text-white", bg: "bg-teal" },
+  { label: "Ocupado", price: null, icon: "text-faint", bg: "bg-line" },
+];
 
 /**
  * Mapa de butacas del teatro: 16 filas (A a la Ñ, y la fila O al fondo) de
@@ -10,28 +18,37 @@ import { CENTER_PRICE, SIDE_PRICE, THEATER_ROW_LETTERS, isCenterSeat, isSeatTake
  */
 export function SeatMap({ showId, tickets, selected, onToggle }) {
   return (
-    <div className="space-y-3">
-      <div className="rounded-xl bg-ink py-2 text-center">
-        <p className="t11 font-semibold uppercase tracking-[0.3em] text-cream/80">Escenario</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-xl bg-cream-dim px-4 py-3">
+        {LEGEND.map((l) => (
+          <div key={l.label} className="flex flex-col items-center gap-1">
+            <span className={`flex h-7 w-7 items-center justify-center rounded-md ${l.bg}`}>
+              <Armchair size={16} className={l.icon} />
+            </span>
+            <span className="t10 text-center leading-tight text-muted">
+              {l.label}
+              {l.price != null && <><br />${l.price}</>}
+            </span>
+          </div>
+        ))}
       </div>
 
-      <div className="flex items-center justify-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded bg-blue/20" />
-          <span className="t10 text-muted">Lateral ${SIDE_PRICE}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded bg-bronze/25" />
-          <span className="t10 text-muted">Centro ${CENTER_PRICE}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="h-3.5 w-3.5 rounded bg-line" />
-          <span className="t10 text-muted">Ocupado</span>
-        </div>
+      <div className="relative mx-auto h-10 w-full max-w-sm">
+        <svg viewBox="0 0 400 40" preserveAspectRatio="none" className="h-full w-full">
+          <defs>
+            <linearGradient id="screenArc" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--color-line)" stopOpacity="0" />
+              <stop offset="50%" stopColor="var(--color-blue)" />
+              <stop offset="100%" stopColor="var(--color-line)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d="M10,34 Q200,2 390,34" fill="none" stroke="url(#screenArc)" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        <p className="absolute inset-x-0 bottom-0 text-center t10 font-semibold uppercase tracking-[0.4em] text-faint">Escenario</p>
       </div>
 
-      <div className="space-y-1 overflow-x-auto pb-1">
-        <div className="min-w-max space-y-1">
+      <div className="space-y-1.5 overflow-x-auto pb-1">
+        <div className="min-w-max space-y-1.5">
           {THEATER_ROW_LETTERS.map((row) => (
             <div key={row} className="flex items-center gap-2">
               <span className="w-4 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
@@ -49,23 +66,28 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
                           disabled={taken}
                           onClick={() => onToggle(row, seat)}
                           title={`Fila ${row} · Asiento ${seat}`}
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded t10 font-medium transition-colors ${
+                          className={`flex h-9 w-7 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md transition-colors ${
                             taken
-                              ? "cursor-not-allowed bg-line text-faint"
+                              ? "cursor-not-allowed bg-line"
                               : isSelected
-                              ? "bg-teal text-white"
+                              ? "bg-teal"
                               : isCenterSeat(seat)
-                              ? "bg-bronze/25 text-bronze-dark hover:bg-bronze/40"
-                              : "bg-blue/20 text-blue-dark hover:bg-blue/35"
+                              ? "bg-bronze/25 hover:bg-bronze/40"
+                              : "bg-blue/20 hover:bg-blue/35"
                           }`}
                         >
-                          {seat}
+                          <Armchair
+                            size={15}
+                            className={taken ? "text-faint" : isSelected ? "text-white" : isCenterSeat(seat) ? "text-bronze-dark" : "text-blue-dark"}
+                          />
+                          <span className={`t10 leading-none ${taken ? "text-faint" : isSelected ? "text-white" : "text-ink/70"}`}>{seat}</span>
                         </button>
                       );
                     })}
                   </div>
                 ))}
               </div>
+              <span className="w-4 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
             </div>
           ))}
         </div>
