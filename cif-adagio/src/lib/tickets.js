@@ -47,6 +47,11 @@ export const groupTicketsByTransaction = (ticketList) => {
   return order.map((key) => map.get(key));
 };
 
+// Prefijo para que el escáner de administración distinga un QR de entrada
+// de cualquier otro código que alguien pudiera apuntar a la cámara.
+export const ticketQrPayload = (ticketId) => `ADAGIO-TICKET:${ticketId}`;
+export const parseTicketQrPayload = (text) => (text?.startsWith("ADAGIO-TICKET:") ? text.slice("ADAGIO-TICKET:".length) : null);
+
 export const showLabel = (show) => {
   if (!show) return "";
   const d = new Date(`${show.date}T00:00:00`);

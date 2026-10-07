@@ -100,11 +100,17 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   confirma después. Si se compra más de un asiento en la misma compra, antes
   de las entradas sale un **recibo con todos los asientos juntos** (comprador,
   método, referencia y total); cada entrada individual lleva el diseño de
-  "El Cascanueces" con su código QR. Las entradas quedan guardadas en el
-  navegador de quien compra para poder volver a verlas sin necesidad de una
-  cuenta, con el botón **"Guardar como PDF"** para imprimirlas o guardarlas
-  (se arregló un error que dejaba la página en blanco al intentar
-  imprimir/descargar).
+  "El Cascanueces" con su código QR. El correo es obligatorio al comprar sin
+  haber iniciado sesión (ahí se envían las entradas); si se compra desde el
+  portal de representantes, se envían solas al correo con el que la persona
+  está inscrita, sin tener que volver a escribirlo. El botón **"Descargar
+  PDF"** genera el archivo directo en el dispositivo (ya no depende del
+  diálogo de impresión del navegador, que en varios celulares no dejaba
+  descargar nada y en computadora a veces sacaba páginas en blanco), y hay
+  un botón **"Por correo"** para reenviarlas cuando se quiera — tanto justo
+  después de comprar como después, desde "Mis entradas" o el portal de
+  representantes. El envío de correos necesita configurarse una vez — ver
+  "Correo con las entradas" más abajo.
 - **Portal de maestros** (`/maestro`, nombre + PIN compartido): clases de
   prueba próximas y recientes (con quién vino o no vino y su WhatsApp),
   asistencia, notas del día y tareas por grupo.
@@ -232,12 +238,51 @@ Apple, no de esta app. En Android/Chrome funciona directo desde el navegador.
    (debería notificar a representantes) o agenda una clase de prueba desde
    `/prueba` (debería notificar a administración).
 
+## Correo con las entradas
+
+Para que la app pueda enviar las entradas por correo (al comprar y con el
+botón "Por correo") hace falta un proveedor de correo — se usa
+[Resend](https://resend.com) porque tiene un plan gratis y es sencillo de
+configurar. Sin este paso, los botones de PDF y las entradas en sí funcionan
+igual — lo único que no funciona es el envío por correo (el botón muestra
+"No se pudo enviar el correo").
+
+1. Crea una cuenta gratis en [resend.com](https://resend.com) → **API Keys**
+   → **Create API Key** → copia la clave (empieza con `re_`).
+
+2. (Opcional pero recomendado) En Resend, ve a **Domains** → agrega y
+   verifica tu propio dominio (ej. `cifadagio.com`) siguiendo sus
+   instrucciones (son registros DNS que agregas donde compraste el
+   dominio). Mientras no verifiques un dominio propio, los correos solo se
+   pueden enviar a la cuenta con la que te registraste en Resend — útil
+   para probar, pero no sirve para enviarle a tus compradores reales.
+
+3. En el panel de Supabase, ve a **Edge Functions** → **Deploy a new
+   function** → nómbrala exactamente **`send-ticket-email`** → borra el
+   contenido de ejemplo y pega todo el archivo
+   [`supabase/functions/send-ticket-email/index.ts`](./supabase/functions/send-ticket-email/index.ts)
+   de este proyecto → **Deploy**.
+
+4. Dentro de esa misma función, busca **Secrets** y agrega:
+   - `RESEND_API_KEY` → la clave de arriba.
+   - `RESEND_FROM` (opcional) → el remitente que verán tus compradores, por
+     ejemplo `CIF Adagio <entradas@cifadagio.com>` (necesita el dominio
+     verificado del paso 2). Si no lo configuras, se usa la dirección de
+     prueba de Resend.
+
+5. Para probar: compra una entrada desde `/entradas` sin iniciar sesión,
+   usando tu propio correo (o el de tu cuenta de Resend si todavía no
+   verificaste un dominio) — debería llegarte con el código QR a los
+   pocos segundos.
+
 ## Estructura del proyecto
 
 ```
 src/lib/constants.js       Catálogo del negocio: grupos, niveles, métodos de pago, reglamento
 src/lib/business.js        Precios, prorrateo, reglas de beca/facturación
 src/lib/tickets.js         Mapa de butacas del teatro, precio por fila, helpers de entradas
+src/lib/ticketsPdf.js      Genera el PDF descargable de las entradas (jsPDF, corre en el navegador)
+src/lib/email.js           Pide al backend que envíe las entradas por correo (opcional, ver abajo)
 src/lib/format.js          Formateo de moneda/fecha, generación de códigos, enlaces de recordatorio
 src/lib/supabase.js        Configuración de Supabase (lee variables de entorno)
 src/lib/db.js              Hooks de datos en tiempo real (colecciones + settings + fotos)
@@ -251,7 +296,8 @@ src/screens/admin/          Panel de administración (10 pestañas)
 src/screens/rep/            Portal de representantes
 src/screens/teacher/        Portal de maestros
 supabase/schema.sql          Tabla + políticas de seguridad + tiempo real (léelo antes de correrlo)
-supabase/functions/send-push  Función que envía las notificaciones push (despliegue manual, ver arriba)
+supabase/functions/send-push         Función que envía las notificaciones push (despliegue manual, ver arriba)
+supabase/functions/send-ticket-email Función que envía las entradas por correo (despliegue manual, ver arriba)
 ```
 
 ## Notas

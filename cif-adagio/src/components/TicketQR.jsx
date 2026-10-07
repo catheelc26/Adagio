@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { seatSection } from "../lib/tickets";
+import { seatSection, ticketQrPayload } from "../lib/tickets";
 
-// Prefijo para que el escáner de administración distingua un QR de entrada
-// de cualquier otro código que alguien pudiera apuntar a la cámara.
-export const ticketQrPayload = (ticketId) => `ADAGIO-TICKET:${ticketId}`;
-export const parseTicketQrPayload = (text) => (text?.startsWith("ADAGIO-TICKET:") ? text.slice("ADAGIO-TICKET:".length) : null);
+export { ticketQrPayload, parseTicketQrPayload } from "../lib/tickets";
 
 /** Tarjeta imprimible de una entrada, con su código QR (fila + asiento codificados por id). */
 export function TicketQR({ ticket, show }) {
