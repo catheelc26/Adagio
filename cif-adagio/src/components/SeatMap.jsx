@@ -1,30 +1,74 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { Armchair } from "lucide-react";
 import { CENTER_PRICE, SIDE_PRICE, THEATER_ROW_LETTERS, isCenterSeat, isSeatTaken, seatGroupsForRow, seatKey } from "../lib/tickets";
 
+// Azul vibrante y rojo navideño (como en el arte de "El Cascanueces"), gris
+// para ocupado y el verde-azulado de la marca para el asiento elegido —
+// asientos como siluetas de butaca llenas de color, no cuadros.
+const SEAT_COLORS = {
+  lateral: { fill: "#2F6FEE", stroke: "#1D4ED8" },
+  centro: { fill: "#C8102E", stroke: "#960E22" },
+  selected: { fill: "#0D9488", stroke: "#0B766B" },
+  taken: { fill: "#9CA3AF", stroke: "#7C838C" },
+};
+
 const LEGEND = [
-  { label: "Lateral", price: SIDE_PRICE, icon: "text-blue-dark", bg: "bg-blue/20" },
-  { label: "Centro", price: CENTER_PRICE, icon: "text-bronze-dark", bg: "bg-bronze/25" },
-  { label: "Elegido", price: null, icon: "text-white", bg: "bg-teal" },
-  { label: "Ocupado", price: null, icon: "text-faint", bg: "bg-line" },
+  { label: "Lateral", price: SIDE_PRICE, colors: SEAT_COLORS.lateral },
+  { label: "Centro", price: CENTER_PRICE, colors: SEAT_COLORS.centro },
+  { label: "Elegido", price: null, colors: SEAT_COLORS.selected },
+  { label: "Ocupado", price: null, colors: SEAT_COLORS.taken },
 ];
+
+/** Encoge el contenido (vía transform: scale) para que quepa en el ancho
+ * disponible sin desbordarse — así se ven todas las butacas sin tener que
+ * deslizar el dedo a los lados. Nunca agranda más allá del tamaño natural. */
+function useFitWidth() {
+  const wrapperRef = useRef(null);
+  const contentRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [height, setHeight] = useState(null);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    const content = contentRef.current;
+    if (!wrapper || !content) return;
+
+    const recalc = () => {
+      const contentWidth = content.scrollWidth;
+      const contentHeight = content.scrollHeight;
+      const wrapperWidth = wrapper.clientWidth;
+      if (!contentWidth || !wrapperWidth) return;
+      const nextScale = Math.min(1, wrapperWidth / contentWidth);
+      setScale(nextScale);
+      setHeight(contentHeight * nextScale);
+    };
+
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, []);
+
+  return { wrapperRef, contentRef, scale, height };
+}
 
 /**
  * Mapa de butacas del teatro: 16 filas (A a la Ñ, y la fila O al fondo) de
  * 21 asientos cada una, agrupados en 3 bloques (izquierdo, centro, derecho)
- * con pasillos entre ellos. Los asientos 8 a 14 son la sección central
- * (resaltada, $12); el resto son laterales ($10). La fila O tiene los
- * pasillos corridos un puesto hacia cada lado. Los asientos ya vendidos
- * quedan deshabilitados; los seleccionados se marcan.
+ * con pasillos bien marcados entre ellos. Los asientos 8 a 14 son la
+ * sección central (resaltada, $12); el resto son laterales ($10). La fila O
+ * tiene los pasillos corridos un puesto hacia cada lado. Los asientos ya
+ * vendidos quedan deshabilitados; los seleccionados se marcan.
  */
 export function SeatMap({ showId, tickets, selected, onToggle }) {
+  const { wrapperRef, contentRef, scale, height } = useFitWidth();
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-xl bg-cream-dim px-4 py-3">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-xl bg-cream-dim px-4 py-3">
         {LEGEND.map((l) => (
-          <div key={l.label} className="flex flex-col items-center gap-1">
-            <span className={`flex h-7 w-7 items-center justify-center rounded-md ${l.bg}`}>
-              <Armchair size={16} className={l.icon} />
-            </span>
+          <div key={l.label} className="flex flex-col items-center gap-0.5">
+            <Armchair size={24} strokeWidth={1.5} fill={l.colors.fill} stroke={l.colors.stroke} />
             <span className="t10 text-center leading-tight text-muted">
               {l.label}
               {l.price != null && <><br />${l.price}</>}
@@ -47,18 +91,31 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
         <p className="absolute inset-x-0 bottom-0 text-center t10 font-semibold uppercase tracking-[0.4em] text-faint">Escenario</p>
       </div>
 
-      <div className="space-y-1.5 overflow-x-auto pb-1">
-        <div className="min-w-max space-y-1.5">
+      {/* -mx-5 compensa el padding lateral de la pantalla de compra (px-5) para
+          aprovechar todo el ancho disponible y que quepan las 21 columnas. */}
+      <div ref={wrapperRef} className="-mx-5" style={height ? { height } : undefined}>
+        <div
+          ref={contentRef}
+          className="w-max space-y-2 px-1"
+          style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
+        >
           {THEATER_ROW_LETTERS.map((row) => (
             <div key={row} className="flex items-center gap-2">
-              <span className="w-4 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
-              <div className="flex gap-2.5">
+              <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+              <div className="flex gap-5">
                 {seatGroupsForRow(row).map(([from, to], groupIdx) => (
                   <div key={groupIdx} className="flex gap-1">
                     {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((seat) => {
                       const key = seatKey(row, seat);
                       const taken = isSeatTaken(tickets, showId, row, seat);
                       const isSelected = selected.includes(key);
+                      const colors = taken
+                        ? SEAT_COLORS.taken
+                        : isSelected
+                        ? SEAT_COLORS.selected
+                        : isCenterSeat(seat)
+                        ? SEAT_COLORS.centro
+                        : SEAT_COLORS.lateral;
                       return (
                         <button
                           key={seat}
@@ -66,28 +123,21 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
                           disabled={taken}
                           onClick={() => onToggle(row, seat)}
                           title={`Fila ${row} · Asiento ${seat}`}
-                          className={`flex h-9 w-7 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md transition-colors ${
-                            taken
-                              ? "cursor-not-allowed bg-line"
-                              : isSelected
-                              ? "bg-teal"
-                              : isCenterSeat(seat)
-                              ? "bg-bronze/25 hover:bg-bronze/40"
-                              : "bg-blue/20 hover:bg-blue/35"
+                          className={`relative flex h-8 w-7 shrink-0 items-center justify-center transition-transform ${
+                            taken ? "cursor-not-allowed" : "hover:scale-110"
                           }`}
                         >
-                          <Armchair
-                            size={15}
-                            className={taken ? "text-faint" : isSelected ? "text-white" : isCenterSeat(seat) ? "text-bronze-dark" : "text-blue-dark"}
-                          />
-                          <span className={`t10 leading-none ${taken ? "text-faint" : isSelected ? "text-white" : "text-ink/70"}`}>{seat}</span>
+                          <Armchair size={24} strokeWidth={1.5} fill={colors.fill} stroke={colors.stroke} />
+                          {isSelected && (
+                            <span className="pointer-events-none absolute bottom-[5px] t10 font-semibold text-white">{seat}</span>
+                          )}
                         </button>
                       );
                     })}
                   </div>
                 ))}
               </div>
-              <span className="w-4 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+              <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
             </div>
           ))}
         </div>
