@@ -115,3 +115,38 @@ export async function deleteVideoAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/biblioteca");
 }
+
+export async function moveVideoAction(formData: FormData) {
+  await requireAdmin();
+
+  const videoId = formData.get("videoId");
+  const direction = formData.get("direction");
+  if (typeof videoId !== "string" || !videoId) return;
+  if (direction !== "up" && direction !== "down") return;
+
+  const video = await prisma.video.findUnique({ where: { id: videoId } });
+  if (!video) return;
+
+  const siblings = await prisma.video.findMany({
+    where: { pillarId: video.pillarId },
+    orderBy: { order: "asc" },
+  });
+
+  const index = siblings.findIndex((v) => v.id === videoId);
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (index === -1 || swapWith < 0 || swapWith >= siblings.length) return;
+
+  [siblings[index], siblings[swapWith]] = [siblings[swapWith], siblings[index]];
+
+  await prisma.$transaction(
+    siblings.map((sibling, i) =>
+      prisma.video.update({ where: { id: sibling.id }, data: { order: i } })
+    )
+  );
+
+  const pillar = await prisma.pillar.findUnique({ where: { id: video.pillarId } });
+
+  revalidatePath("/admin");
+  revalidatePath("/biblioteca");
+  if (pillar) revalidatePath(`/pilares/${pillar.slug}`);
+}
