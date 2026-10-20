@@ -91,6 +91,28 @@ export function ShowsView() {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [proofTx, setProofTx] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [clearingOrphans, setClearingOrphans] = useState(false);
+
+  // Entradas de funciones que ya no existen (ej. de pruebas que se borraron
+  // antes de que eliminar una función se llevara también sus entradas) —
+  // sin esto, seguían apareciendo en "Mis entradas" y en el portal de
+  // representantes aunque la función ya no estuviera.
+  const orphanedTickets = useMemo(
+    () => tickets.items.filter((t) => !shows.items.some((s) => s.id === t.showId)),
+    [tickets.items, shows.items]
+  );
+
+  const clearOrphanedTickets = async () => {
+    setClearingOrphans(true);
+    try {
+      for (const t of orphanedTickets) {
+        await tickets.remove(t.id);
+      }
+      toast(`${orphanedTickets.length} entrada${orphanedTickets.length > 1 ? "s" : ""} de funciones ya eliminadas, borrada${orphanedTickets.length > 1 ? "s" : ""}.`);
+    } finally {
+      setClearingOrphans(false);
+    }
+  };
 
   const activeShow = sortedShows.find((s) => s.id === activeShowId) || sortedShows[0] || null;
   const showTickets = activeShow
@@ -118,10 +140,18 @@ export function ShowsView() {
 
   const handleDeleteShow = async () => {
     if (!deletingShow) return;
+    const relatedTickets = ticketsForShow(tickets.items, deletingShow.id);
+    for (const t of relatedTickets) {
+      await tickets.remove(t.id);
+    }
     await shows.remove(deletingShow.id);
     if (activeShowId === deletingShow.id) setActiveShowId(null);
     setDeletingShow(null);
-    toast("Función eliminada.");
+    toast(
+      relatedTickets.length > 0
+        ? `Función y ${relatedTickets.length} entrada${relatedTickets.length > 1 ? "s" : ""} eliminadas.`
+        : "Función eliminada."
+    );
   };
 
   return (
@@ -140,6 +170,19 @@ export function ShowsView() {
           </button>
         </div>
       </div>
+
+      {orphanedTickets.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-bronze/10 p-4">
+          <p className="t13 text-ink">
+            Hay {orphanedTickets.length} entrada{orphanedTickets.length > 1 ? "s" : ""} de función{orphanedTickets.length > 1 ? "es" : ""} que
+            ya no existe{orphanedTickets.length > 1 ? "n" : ""} (probablemente de pruebas) — siguen apareciendo en "Mis entradas" y en el
+            portal de representantes.
+          </p>
+          <button onClick={clearOrphanedTickets} disabled={clearingOrphans} className="btn btn-bronze whitespace-nowrap">
+            {clearingOrphans ? "Eliminando…" : "Eliminarlas"}
+          </button>
+        </div>
+      )}
 
       {sortedShows.length === 0 ? (
         <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">Aún no has creado ninguna función.</p>
@@ -239,7 +282,12 @@ export function ShowsView() {
       {deletingShow && (
         <ConfirmDialog
           title="Eliminar función"
-          message="Se eliminará la función. Las entradas ya vendidas no se borran automáticamente."
+          message={(() => {
+            const count = ticketsForShow(tickets.items, deletingShow.id).length;
+            return count > 0
+              ? `Se eliminará la función junto con ${count} entrada${count > 1 ? "s" : ""} vendida${count > 1 ? "s" : ""} (incluidas las ya confirmadas) — dejarán de verse en "Mis entradas" y en el portal de representantes. Esta acción no se puede deshacer.`
+              : "Se eliminará la función. Esta acción no se puede deshacer.";
+          })()}
           confirmLabel="Eliminar"
           destructive
           onConfirm={handleDeleteShow}

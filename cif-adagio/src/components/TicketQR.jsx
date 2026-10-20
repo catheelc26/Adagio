@@ -22,8 +22,8 @@ export function TicketQR({ ticket, show }) {
 
   return (
     <div className="ticket-card">
-      <div className="relative h-32 overflow-hidden rounded-t-2xl">
-        <img src="/brand/cascanueces-poster.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_30%]" />
+      <div className="relative h-40 overflow-hidden rounded-t-2xl">
+        <img src="/brand/cascanueces-poster.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_46%]" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-ink/5" />
         <div className="relative flex h-full flex-col items-center justify-end pb-2.5 text-center">
           <p className="t10 font-semibold uppercase tracking-[0.4em] text-bronze-light/90">CIF Adagio</p>

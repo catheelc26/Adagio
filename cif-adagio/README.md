@@ -58,7 +58,13 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
   vendidas de cada función con su comprador y asiento, y **escanear el QR
   de cada entrada** desde la cámara del celular o buscarla manualmente para
-  verificarla en la puerta el día de la función), estadísticas
+  verificarla en la puerta el día de la función; **al eliminar una función
+  se eliminan también sus entradas vendidas** — así dejan de aparecer en
+  "Mis entradas" y en el portal de representantes, con un aviso que dice
+  cuántas se van a borrar antes de confirmar; si quedaron entradas sueltas
+  de funciones que ya se habían borrado antes de este cambio (ej. de
+  pruebas), sale un aviso aparte arriba para limpiarlas con un clic),
+  estadísticas
   (incluye lo cobrado en el mes) y ajustes (tasa de
   cambio, cuota de inscripción, **cuotas de participación** (agregar/editar/
   eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
