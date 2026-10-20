@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Home, Wallet, CalendarDays, Megaphone, LogOut, Camera, Receipt, Image as ImageIcon, Sparkles, SquareCheck, KeyRound, PencilLine,
-  Ticket, X, HeartPulse, MessageCircle, Download, Mail,
+  Ticket, X, HeartPulse, MessageCircle, Download,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
@@ -26,7 +26,6 @@ import { FamilyMenu } from "../../components/FamilyMenu";
 import { TicketBookingFlow } from "../TicketBookingFlow";
 import { TicketQR } from "../../components/TicketQR";
 import { TicketReceipt } from "../../components/TicketReceipt";
-import { sendTicketsEmail } from "../../lib/email";
 import { downloadTicketsPdf } from "../../lib/ticketsPdf";
 
 const TABS = [
@@ -39,18 +38,6 @@ const TABS = [
 function TicketGroupModal({ transactionId, tickets, shows, onClose }) {
   const items = tickets.filter((t) => (t.transactionId || t.id) === transactionId);
   const show = shows.find((s) => s.id === items[0]?.showId);
-  const [emailStatus, setEmailStatus] = useState("idle");
-
-  const resendEmail = async () => {
-    const to = items[0]?.buyerEmail;
-    if (!to) {
-      setEmailStatus("failed");
-      return;
-    }
-    setEmailStatus("sending");
-    const { ok } = await sendTicketsEmail({ to, buyerName: items[0]?.buyerName, show, tickets: items });
-    setEmailStatus(ok ? "sent" : "failed");
-  };
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
@@ -68,16 +55,9 @@ function TicketGroupModal({ transactionId, tickets, shows, onClose }) {
           ))}
         </div>
         <div className="border-t border-line p-4">
-          <div className="flex gap-3">
-            <button onClick={() => downloadTicketsPdf(items, show)} className="btn btn-primary flex-1">
-              <Download size={15} /> Descargar PDF
-            </button>
-            <button onClick={resendEmail} disabled={emailStatus === "sending"} className="btn btn-ghost flex-1">
-              <Mail size={15} /> {emailStatus === "sent" ? "Reenviar" : "Por correo"}
-            </button>
-          </div>
-          {emailStatus === "sent" && <p className="t11 mt-2 text-center text-teal-dark">Enviado a {items[0]?.buyerEmail}.</p>}
-          {emailStatus === "failed" && <p className="t11 mt-2 text-center text-bronze-dark">No se pudo enviar el correo.</p>}
+          <button onClick={() => downloadTicketsPdf(items, show)} className="btn btn-primary w-full">
+            <Download size={15} /> Descargar PDF
+          </button>
         </div>
       </div>
     </div>

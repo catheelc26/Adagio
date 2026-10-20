@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Camera, CheckCircle2, ChevronRight, Download, Mail, Ticket as TicketIcon, X } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, ChevronRight, Download, Ticket as TicketIcon, X } from "lucide-react";
 import { PAYMENT_METHODS, paymentMethodInfo } from "../lib/constants";
 import { pagoMovilAccountForGroup } from "../lib/business";
 import { groupTicketsByTransaction, isSeatTaken, seatKey, seatPrice, showLabel, ticketsForShow } from "../lib/tickets";
@@ -10,7 +10,6 @@ import { compressImage } from "../lib/image";
 import { COLLECTIONS, setImage } from "../lib/db";
 import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
-import { sendTicketsEmail } from "../lib/email";
 import { downloadTicketsPdf } from "../lib/ticketsPdf";
 import { CopyButton, CopyRow, Field, inputCls } from "../components/ui";
 import { SeatMap } from "../components/SeatMap";
@@ -84,7 +83,6 @@ export function TicketBookingFlow({ student, onClose }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [createdTickets, setCreatedTickets] = useState(null);
-  const [emailStatus, setEmailStatus] = useState("idle"); // idle | sending | sent | failed
 
   const show = shows.items.find((s) => s.id === showId);
   const currency = paymentMethodInfo(method).currency;
@@ -92,17 +90,6 @@ export function TicketBookingFlow({ student, onClose }) {
   const pagoMovilAccount = method === "pago_movil" ? pagoMovilAccountForGroup(settings.value.pagoMovilAccounts, null) : null;
   const methodNote = method !== "pago_movil" ? (settings.value.paymentDetails || {})[method] : null;
   const total = useMemo(() => selected.reduce((sum, s) => sum + seatPrice(s.seat), 0), [selected]);
-
-  const emailTickets = async (createdList) => {
-    const to = buyerEmail.trim();
-    if (!to) {
-      setEmailStatus("failed");
-      return;
-    }
-    setEmailStatus("sending");
-    const { ok } = await sendTicketsEmail({ to, buyerName: buyerName.trim(), show, tickets: createdList });
-    setEmailStatus(ok ? "sent" : "failed");
-  };
 
   const toggleSeat = (row, seat) => {
     setSelected((prev) => {
@@ -127,7 +114,6 @@ export function TicketBookingFlow({ student, onClose }) {
   const validateBuyer = () => {
     if (!buyerName.trim()) return setError("Escribe tu nombre completo."), false;
     if (!buyerPhone.trim()) return setError("Escribe un teléfono de contacto."), false;
-    if (!buyerEmail.trim() || !buyerEmail.includes("@")) return setError("Escribe un correo válido — ahí te enviaremos las entradas."), false;
     setError("");
     return true;
   };
@@ -201,7 +187,6 @@ export function TicketBookingFlow({ student, onClose }) {
       });
       setCreatedTickets(created);
       setStage("listo");
-      emailTickets(created);
     } catch (err) {
       setError(err.message || "No se pudo completar la compra.");
     } finally {
@@ -274,9 +259,8 @@ export function TicketBookingFlow({ student, onClose }) {
                 <Field label="Teléfono" required>
                   <input className={inputCls} value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} />
                 </Field>
-                <Field label="Correo" required>
+                <Field label="Correo">
                   <input type="email" className={inputCls} value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} />
-                  <p className="t11 mt-1.5 text-muted">Ahí te enviaremos las entradas con su código QR.</p>
                 </Field>
               </div>
               {error && <p className="t13 mt-3 text-wine">{error}</p>}
@@ -377,25 +361,25 @@ export function TicketBookingFlow({ student, onClose }) {
                   Guarda estas entradas — muéstralas en la puerta el día de la función. Quedan por confirmar hasta que administración revise el pago.
                 </p>
               </div>
-              <div className="space-y-4 printable-receipt">
+              {!student && (
+                <div className="mb-5 rounded-2xl border-2 border-bronze bg-bronze/10 p-4 text-center">
+                  <Camera size={28} className="mx-auto mb-2 text-bronze-dark" />
+                  <p className="font-display text-lg text-bronze-dark">¡Toma una captura de pantalla!</p>
+                  <p className="t13 mt-1 text-ink">
+                    Guarda tus entradas en tu teléfono (captura de pantalla) o descarga el PDF abajo — es tu respaldo
+                    en caso de cualquier error, para que no haya sorpresas el día de la función.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-4">
                 {createdTickets.length > 1 && <TicketReceipt tickets={createdTickets} show={show} />}
                 {createdTickets.map((t) => (
                   <TicketQR key={t.id} ticket={t} show={show} />
                 ))}
               </div>
-              {emailStatus === "sending" && <p className="t12 mt-4 text-center text-muted">Enviando las entradas a tu correo…</p>}
-              {emailStatus === "sent" && <p className="t12 mt-4 text-center text-teal-dark">Te enviamos las entradas a {buyerEmail.trim()}.</p>}
-              {emailStatus === "failed" && (
-                <p className="t12 mt-4 text-center text-bronze-dark">No pudimos enviarte el correo — descarga el PDF o inténtalo de nuevo.</p>
-              )}
-              <div className="mt-3 flex gap-3">
-                <button onClick={() => downloadTicketsPdf(createdTickets, show)} className="btn btn-primary flex-1">
-                  <Download size={15} /> Descargar PDF
-                </button>
-                <button onClick={() => emailTickets(createdTickets)} disabled={emailStatus === "sending"} className="btn btn-ghost flex-1">
-                  <Mail size={15} /> {emailStatus === "sent" ? "Reenviar" : "Por correo"}
-                </button>
-              </div>
+              <button onClick={() => downloadTicketsPdf(createdTickets, show)} className="btn btn-primary mt-5 w-full">
+                <Download size={15} /> Descargar PDF
+              </button>
               {onClose ? (
                 <button onClick={onClose} className="btn btn-ghost mt-2 w-full">Volver al portal</button>
               ) : (
@@ -415,19 +399,6 @@ export function MyTicketsPanel({ onClose }) {
   const [ids] = useState(readMyTicketIds);
   const myTickets = tickets.items.filter((t) => ids.includes(t.id)).sort((a, b) => (a.date < b.date ? 1 : -1));
   const groups = groupTicketsByTransaction(myTickets);
-  const [emailStatus, setEmailStatus] = useState({});
-
-  const resendEmail = async (group, show) => {
-    const groupKey = group[0].transactionId || group[0].id;
-    const to = group[0].buyerEmail;
-    if (!to) {
-      setEmailStatus((prev) => ({ ...prev, [groupKey]: "failed" }));
-      return;
-    }
-    setEmailStatus((prev) => ({ ...prev, [groupKey]: "sending" }));
-    const { ok } = await sendTicketsEmail({ to, buyerName: group[0].buyerName, show, tickets: group });
-    setEmailStatus((prev) => ({ ...prev, [groupKey]: ok ? "sent" : "failed" }));
-  };
 
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
@@ -448,23 +419,15 @@ export function MyTicketsPanel({ onClose }) {
           {groups.map((group) => {
             const show = shows.items.find((s) => s.id === group[0].showId);
             const groupKey = group[0].transactionId || group[0].id;
-            const status = emailStatus[groupKey];
             return (
               <div key={groupKey} className="space-y-4">
                 {group.length > 1 && <TicketReceipt tickets={group} show={show} />}
                 {group.map((t) => (
                   <TicketQR key={t.id} ticket={t} show={show} />
                 ))}
-                <div className="flex gap-3">
-                  <button onClick={() => downloadTicketsPdf(group, show)} className="btn btn-primary flex-1">
-                    <Download size={15} /> Descargar PDF
-                  </button>
-                  <button onClick={() => resendEmail(group, show)} disabled={status === "sending"} className="btn btn-ghost flex-1">
-                    <Mail size={15} /> {status === "sent" ? "Reenviar" : "Por correo"}
-                  </button>
-                </div>
-                {status === "sent" && <p className="t11 text-center text-teal-dark">Enviado a {group[0].buyerEmail}.</p>}
-                {status === "failed" && <p className="t11 text-center text-bronze-dark">No se pudo enviar el correo.</p>}
+                <button onClick={() => downloadTicketsPdf(group, show)} className="btn btn-primary w-full">
+                  <Download size={15} /> Descargar PDF
+                </button>
               </div>
             );
           })}
