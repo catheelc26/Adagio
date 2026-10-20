@@ -64,8 +64,15 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   cuántas se van a borrar antes de confirmar; si quedaron entradas sueltas
   de funciones que ya se habían borrado antes de este cambio (ej. de
   pruebas), sale un aviso aparte arriba para limpiarlas con un clic),
-  estadísticas
-  (incluye lo cobrado en el mes) y ajustes (tasa de
+  **estadísticas** — lo cobrado por tipo (mensualidades, inscripciones,
+  clases sueltas, cuotas de participación — aparte de extras —, y entradas
+  vendidas), con un selector para ver un mes puntual o "Todos los meses";
+  un apartado de **gastos de la escuela** (agregar/editar/eliminar, con
+  concepto, monto, fecha y notas) con su propio total para el mismo
+  período elegido; un resultado — recaudado menos gastos — que se pone en
+  rojo si da negativo; y, siempre fijo abajo sin importar el período
+  elegido arriba, lo recaudado, los gastos y el neto **en general** (todo
+  el historial) —, y ajustes (tasa de
   cambio, cuota de inscripción, **cuotas de participación** (agregar/editar/
   eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
   no se configuren las propias), PIN de maestros, **corregir de una vez todos

@@ -27,6 +27,7 @@ export const COLLECTIONS = {
   shows: "shows",
   tickets: "tickets",
   ticketProofs: "ticketProofs",
+  expenses: "expenses",
 };
 
 const SETTINGS_ID = "settings";
