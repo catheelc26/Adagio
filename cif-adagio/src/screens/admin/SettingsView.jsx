@@ -3,7 +3,7 @@ import { Camera, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { DEFAULT_PARTICIPATION_INSTALLMENTS, PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
 import { participationInstallmentsOf } from "../../lib/business";
-import { normalizePhoneVE, uid } from "../../lib/format";
+import { normalizePhoneVE, uid, usd } from "../../lib/format";
 import { compressImage } from "../../lib/image";
 import { Field, inputCls } from "../../components/ui";
 
@@ -20,6 +20,8 @@ export function SettingsView() {
   const s = settings.value;
 
   const [rateInput, setRateInput] = useState(String(s.officialRate || ""));
+  const [binanceInput, setBinanceInput] = useState(String(s.binanceRate || ""));
+  const [calcBs, setCalcBs] = useState("");
   const [feeInput, setFeeInput] = useState(String(s.inscriptionFee ?? 15));
   const [teacherPinInput, setTeacherPinInput] = useState(s.teacherPin || "");
   const [normalizingPhones, setNormalizingPhones] = useState(false);
@@ -36,14 +38,27 @@ export function SettingsView() {
 
   const saveRate = async () => {
     const rate = Number(rateInput);
-    if (!(rate > 0)) return toast("Ingresa una tasa válida.");
+    const binanceRate = Number(binanceInput);
+    if (!(rate > 0)) return toast("Ingresa una tasa BCV válida.");
     const today = new Date().toISOString().slice(0, 10);
-    await settings.save({ officialRate: rate, rateDate: today });
+    const patch = { officialRate: rate, rateDate: today };
+    if (binanceRate > 0) { patch.binanceRate = binanceRate; patch.binanceRateDate = today; }
+    await settings.save(patch);
+    const historyPatch = binanceRate > 0 ? { rate, binanceRate } : { rate };
     const existing = rateHistory.items.find((r) => r.date === today);
-    if (existing) await rateHistory.update(existing.id, { rate });
-    else await rateHistory.add({ date: today, rate });
-    toast("Tasa actualizada.");
+    if (existing) await rateHistory.update(existing.id, historyPatch);
+    else await rateHistory.add({ date: today, ...historyPatch });
+    toast("Tasas actualizadas.");
   };
+
+  // Cuánto más caro sale comprar dólares en Binance que a tasa BCV — el
+  // "diferencial" que se acumula cada vez que se convierten los bolívares
+  // cobrados en algo (ver también Estadísticas, que lo suma por período).
+  const spreadPct = s.officialRate > 0 && s.binanceRate > 0 ? ((s.binanceRate - s.officialRate) / s.officialRate) * 100 : null;
+
+  const calcBsNum = Number(calcBs) || 0;
+  const calcAtBcv = s.officialRate > 0 ? calcBsNum / s.officialRate : null;
+  const calcAtBinance = s.binanceRate > 0 ? calcBsNum / s.binanceRate : null;
 
   const saveFee = async () => {
     await settings.save({ inscriptionFee: Number(feeInput) || 0 });
@@ -271,13 +286,52 @@ export function SettingsView() {
         </div>
       </section>
 
-      <section className="card space-y-3 p-4">
-        <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Tasa oficial (Bs. por $1)</h2>
-        <div className="flex gap-2">
-          <input type="number" className={inputCls} value={rateInput} onChange={(e) => setRateInput(e.target.value)} />
-          <button onClick={saveRate} className="btn btn-teal whitespace-nowrap">Guardar</button>
+      <section className="card space-y-4 p-4">
+        <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Tasas de cambio (Bs. por $1)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Tasa oficial (BCV)" required>
+            <input type="number" className={inputCls} value={rateInput} onChange={(e) => setRateInput(e.target.value)} />
+            {s.rateDate && <p className="t11 mt-1 text-muted">Última actualización: {s.rateDate}</p>}
+          </Field>
+          <Field label="Tasa Binance (paralela)">
+            <input type="number" className={inputCls} value={binanceInput} onChange={(e) => setBinanceInput(e.target.value)} />
+            {s.binanceRateDate && <p className="t11 mt-1 text-muted">Última actualización: {s.binanceRateDate}</p>}
+          </Field>
         </div>
-        {s.rateDate && <p className="t11 text-muted">Última actualización: {s.rateDate}</p>}
+        <button onClick={saveRate} className="btn btn-teal">Guardar tasas</button>
+
+        {spreadPct !== null && (
+          <p className="t12 rounded-lg bg-bronze/10 p-3 text-bronze-dark">
+            Binance está {spreadPct >= 0 ? `${spreadPct.toFixed(1)}% más caro` : `${Math.abs(spreadPct).toFixed(1)}% más barato`} que la tasa BCV
+            hoy — ese es el diferencial que se pierde cada vez que conviertes bolívares cobrados en dólares reales. En
+            Estadísticas puedes ver cuánto suma esto en lo que llevas cobrado del mes.
+          </p>
+        )}
+
+        <div className="rounded-xl bg-cream-dim p-4">
+          <p className="t11 mb-2 font-semibold uppercase tracking-wide text-muted">Calculadora rápida</p>
+          <Field label="Bolívares">
+            <input type="number" className={inputCls} placeholder="Ej. 300000" value={calcBs} onChange={(e) => setCalcBs(e.target.value)} />
+          </Field>
+          {calcBsNum > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="t13 text-muted">A tasa BCV</span>
+                <span className="t13 font-medium text-ink">{calcAtBcv !== null ? usd(calcAtBcv) : "—"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="t13 text-muted">A tasa Binance</span>
+                <span className="t13 font-medium text-ink">{calcAtBinance !== null ? usd(calcAtBinance) : "—"}</span>
+              </div>
+              {calcAtBcv !== null && calcAtBinance !== null && (
+                <div className="flex items-center justify-between border-t border-line-soft pt-1.5">
+                  <span className="t13 font-semibold text-ink">Diferencia</span>
+                  <span className="t13 font-semibold text-bronze-dark">{usd(calcAtBcv - calcAtBinance)}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="card space-y-3 p-4">

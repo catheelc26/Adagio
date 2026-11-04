@@ -67,13 +67,20 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   **estadísticas** — lo cobrado por tipo (mensualidades, inscripciones,
   clases sueltas, cuotas de participación — aparte de extras —, y entradas
   vendidas), con un selector para ver un mes puntual o "Todos los meses";
-  un apartado de **gastos de la escuela** (agregar/editar/eliminar, con
+  **diferencial cambiario** — de lo cobrado en bolívares (Pago Móvil o
+  transferencia), cuánto es a tasa BCV (como quedó registrado) contra
+  cuánto daría realmente si se convierte a dólares a tasa Binance, y la
+  diferencia entre ambos, sumada para el período elegido (usa la tasa
+  Binance que estuviera vigente el día de cada pago, no siempre la de
+  hoy); un apartado de **gastos de la escuela** (agregar/editar/eliminar, con
   concepto, monto, fecha y notas) con su propio total para el mismo
   período elegido; un resultado — recaudado menos gastos — que se pone en
   rojo si da negativo; y, siempre fijo abajo sin importar el período
   elegido arriba, lo recaudado, los gastos y el neto **en general** (todo
-  el historial) —, y ajustes (tasa de
-  cambio, cuota de inscripción, **cuotas de participación** (agregar/editar/
+  el historial) —, y ajustes (**dos tasas de cambio** — oficial BCV y
+  Binance/paralela, con un aviso de cuánto es el diferencial entre ambas
+  hoy y una calculadora rápida para convertir un monto en bolívares a las
+  dos —, cuota de inscripción, **cuotas de participación** (agregar/editar/
   eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
   no se configuren las propias), PIN de maestros, **corregir de una vez todos
   los teléfonos guardados al formato +58 de Venezuela** (sin duplicar el

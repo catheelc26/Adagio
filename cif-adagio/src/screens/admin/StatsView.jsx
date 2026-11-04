@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { effectivePrice, isActive, owesMonthlyFee } from "../../lib/business";
+import { effectivePrice, isActive, owesMonthlyFee, realValueAtBinanceRate } from "../../lib/business";
 import { currentMonthKey, monthLabel, uid, usd } from "../../lib/format";
 import { useAppData } from "../../lib/AppDataContext";
 import { ConfirmDialog, Field, inputCls } from "../../components/ui";
@@ -81,7 +81,7 @@ function ExpenseFormModal({ expense, onClose }) {
 }
 
 export function StatsView() {
-  const { students, payments, attendance, groups, tickets, expenses } = useAppData();
+  const { students, payments, attendance, groups, tickets, expenses, settings, rateHistory } = useAppData();
   const month = currentMonthKey();
   const [statsMonth, setStatsMonth] = useState(month);
   const [creatingExpense, setCreatingExpense] = useState(false);
@@ -123,6 +123,17 @@ export function StatsView() {
   };
   const ticketRevenue = periodTickets.reduce((s, t) => s + (t.price || 0), 0);
   const collectedThisPeriod = Object.values(collectedByType).reduce((a, b) => a + b, 0) + ticketRevenue;
+
+  // Diferencial cambiario: lo cobrado en bolívares quedó registrado a su
+  // valor nominal (tasa BCV), pero si se convierte a dólares reales a tasa
+  // Binance (más alta) da menos — esto suma cuánto es esa diferencia en el
+  // período elegido. No incluye entradas (todavía no guardan en qué moneda
+  // se pagaron) ni gastos (esos se pagan directo en bolívares, sin conversión).
+  const vesPayments = periodPayments.filter((p) => p.currency === "VES" && p.amountVES);
+  const nominalVES = vesPayments.reduce((s, p) => s + p.amount, 0);
+  const realAtBinance = vesPayments.reduce((s, p) => s + realValueAtBinanceRate(p, rateHistory.items, settings.value.binanceRate), 0);
+  const exchangeDiff = nominalVES - realAtBinance;
+  const hasBinanceData = vesPayments.length > 0 && (settings.value.binanceRate > 0 || rateHistory.items.some((r) => r.binanceRate > 0));
 
   const periodExpenses = expenses.items.filter((e) => inSelectedMonth(e.date)).sort((a, b) => (a.date < b.date ? 1 : -1));
   const expensesTotal = periodExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -187,6 +198,27 @@ export function StatsView() {
           </div>
         </div>
       </div>
+
+      {hasBinanceData && (
+        <div className="card space-y-2 border-l-4 border-l-bronze p-4">
+          <p className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Diferencial cambiario (lo cobrado en bolívares)</p>
+          <div className="flex items-center justify-between">
+            <span className="t13 text-muted">A tasa BCV (nominal, como quedó registrado)</span>
+            <span className="t13 font-medium text-ink">{usd(nominalVES)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="t13 text-muted">A tasa Binance (real, si lo conviertes)</span>
+            <span className="t13 font-medium text-ink">{usd(realAtBinance)}</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-line-soft pt-2">
+            <span className="t13 font-semibold text-ink">Diferencia</span>
+            <span className="font-display text-lg text-bronze-dark">{usd(exchangeDiff)}</span>
+          </div>
+          <p className="t11 text-faint">
+            Solo lo pagado por Pago Móvil o transferencia en bolívares — no incluye entradas ni lo pagado en divisas.
+          </p>
+        </div>
+      )}
 
       <div>
         <div className="mb-3 flex items-center justify-between">

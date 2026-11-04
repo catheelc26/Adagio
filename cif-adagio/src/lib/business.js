@@ -19,6 +19,27 @@ export function effectivePrice(student, groups) {
   return basePrice;
 }
 
+// Tasa Binance (paralela) vigente en una fecha — busca en el historial
+// (el mismo registro donde se guarda la tasa BCV del día, ver Ajustes) la
+// más reciente igual o anterior a esa fecha; si no hay ninguna, cae en la
+// tasa Binance actual que esté configurada.
+export function binanceRateOnDate(rateHistory, dateStr, fallbackRate = 0) {
+  const candidates = (rateHistory || [])
+    .filter((r) => r.binanceRate > 0 && r.date <= dateStr)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return candidates[0]?.binanceRate || fallbackRate;
+}
+
+// Cuánto darían realmente los bolívares de un pago (ya cobrado a tasa BCV)
+// si se convirtieran a dólares a la tasa Binance del día de ese pago — para
+// comparar contra el monto nominal con el que quedó registrado el pago.
+export function realValueAtBinanceRate(payment, rateHistory, fallbackBinanceRate = 0) {
+  if (!payment.amountVES) return payment.amount;
+  const rate = binanceRateOnDate(rateHistory, payment.date, fallbackBinanceRate);
+  if (!(rate > 0)) return payment.amount;
+  return payment.amountVES / rate;
+}
+
 // Cuotas de participación del reglamento (ej. para una presentación): una
 // lista configurable de montos (por defecto 2 cuotas de $35 quincenales y
 // una última de $30) que paga cada estudiante inscrito, salvo quien esté

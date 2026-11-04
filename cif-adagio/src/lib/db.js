@@ -34,6 +34,8 @@ const SETTINGS_ID = "settings";
 const DEFAULT_SETTINGS = {
   officialRate: 0,
   rateDate: null,
+  binanceRate: 0,
+  binanceRateDate: null,
   adminPin: "",
   inscriptionFee: 15,
   teacherPin: "",
