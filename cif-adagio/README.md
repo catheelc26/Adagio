@@ -72,7 +72,16 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   cuánto daría realmente si se convierte a dólares a tasa Binance, y la
   diferencia entre ambos, sumada para el período elegido (usa la tasa
   Binance que estuviera vigente el día de cada pago, no siempre la de
-  hoy); un apartado de **gastos de la escuela** (agregar/editar/eliminar, con
+  hoy) — aclarado como un estimado, ya que no todo lo cobrado en
+  bolívares se convierte necesariamente a dólares; justo debajo, un
+  apartado de **cambios registrados** para anotar cada cambio real de
+  bolívares por dólares que se hace (no todo lo que se cobra, ni todos los
+  días), con la fecha, cuántos bolívares se cambiaron y cuántos dólares
+  dieron realmente (agregar/editar/eliminar), mostrando la tasa implícita
+  de cada cambio y, para el período elegido, el total en bolívares, el
+  total en dólares recibidos y la diferencia real contra lo que esos
+  bolívares hubieran valido a tasa BCV ese día; un apartado de **gastos de
+  la escuela** (agregar/editar/eliminar, con
   concepto, monto, fecha y notas) con su propio total para el mismo
   período elegido; un resultado — recaudado menos gastos — que se pone en
   rojo si da negativo; y, siempre fijo abajo sin importar el período

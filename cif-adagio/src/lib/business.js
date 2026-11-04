@@ -30,6 +30,16 @@ export function binanceRateOnDate(rateHistory, dateStr, fallbackRate = 0) {
   return candidates[0]?.binanceRate || fallbackRate;
 }
 
+// Tasa BCV vigente en una fecha — mismo criterio que binanceRateOnDate,
+// para comparar un cambio real contra lo que esos bolívares "valían" ese
+// día según la tasa oficial.
+export function officialRateOnDate(rateHistory, dateStr, fallbackRate = 0) {
+  const candidates = (rateHistory || [])
+    .filter((r) => r.rate > 0 && r.date <= dateStr)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  return candidates[0]?.rate || fallbackRate;
+}
+
 // Cuánto darían realmente los bolívares de un pago (ya cobrado a tasa BCV)
 // si se convirtieran a dólares a la tasa Binance del día de ese pago — para
 // comparar contra el monto nominal con el que quedó registrado el pago.

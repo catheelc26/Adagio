@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { effectivePrice, isActive, owesMonthlyFee, realValueAtBinanceRate } from "../../lib/business";
+import { effectivePrice, isActive, officialRateOnDate, owesMonthlyFee, realValueAtBinanceRate } from "../../lib/business";
 import { currentMonthKey, monthLabel, uid, usd } from "../../lib/format";
 import { useAppData } from "../../lib/AppDataContext";
 import { ConfirmDialog, Field, inputCls } from "../../components/ui";
@@ -80,13 +80,78 @@ function ExpenseFormModal({ expense, onClose }) {
   );
 }
 
+const emptyExchangeForm = () => ({ bsAmount: "", usdReceived: "", date: new Date().toISOString().slice(0, 10), notes: "" });
+
+function ExchangeFormModal({ exchange, onClose }) {
+  const { exchanges, toast } = useAppData();
+  const [f, setF] = useState(() =>
+    exchange ? { bsAmount: String(exchange.bsAmount), usdReceived: String(exchange.usdReceived), date: exchange.date, notes: exchange.notes || "" } : emptyExchangeForm()
+  );
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const impliedRate = Number(f.bsAmount) > 0 && Number(f.usdReceived) > 0 ? Number(f.bsAmount) / Number(f.usdReceived) : null;
+
+  const submit = async () => {
+    setError("");
+    if (!(Number(f.bsAmount) > 0)) return setError("Ingresa cuántos bolívares cambiaste.");
+    if (!(Number(f.usdReceived) > 0)) return setError("Ingresa cuántos dólares recibiste.");
+    if (!f.date) return setError("Selecciona la fecha.");
+    setSaving(true);
+    try {
+      const payload = { bsAmount: Number(f.bsAmount), usdReceived: Number(f.usdReceived), date: f.date, notes: f.notes.trim() || null };
+      if (exchange?.id) await exchanges.update(exchange.id, payload);
+      else await exchanges.add({ id: uid(), ...payload });
+      toast(exchange?.id ? "Cambio actualizado." : "Cambio registrado.");
+      onClose();
+    } catch (err) {
+      setError(err.message || "No se pudo guardar el cambio.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel w-full max-w-sm rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-lg text-ink">{exchange?.id ? "Editar cambio" : "Nuevo cambio"}</h3>
+          <button onClick={onClose} className="text-muted hover:text-ink"><X size={20} /></button>
+        </div>
+        <div className="space-y-4">
+          <Field label="Bolívares cambiados" required>
+            <input type="number" className={inputCls} placeholder="Ej. 300000" value={f.bsAmount} onChange={(e) => setF({ ...f, bsAmount: e.target.value })} />
+          </Field>
+          <Field label="Dólares recibidos" required>
+            <input type="number" className={inputCls} placeholder="Ej. 293" value={f.usdReceived} onChange={(e) => setF({ ...f, usdReceived: e.target.value })} />
+          </Field>
+          {impliedRate !== null && <p className="t11 text-muted">Tasa de este cambio: {impliedRate.toFixed(2)} Bs. por $1</p>}
+          <Field label="Fecha" required>
+            <input type="date" className={inputCls} value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
+          </Field>
+          <Field label="Notas (opcional)">
+            <textarea rows={2} className={inputCls} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} placeholder="Ej. P2P Binance" />
+          </Field>
+        </div>
+        {error && <p className="t13 mt-3 text-wine">{error}</p>}
+        <div className="mt-5 flex gap-3">
+          <button onClick={onClose} className="btn btn-ghost flex-1">Cancelar</button>
+          <button onClick={submit} disabled={saving} className="btn btn-primary flex-1">{saving ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StatsView() {
-  const { students, payments, attendance, groups, tickets, expenses, settings, rateHistory } = useAppData();
+  const { students, payments, attendance, groups, tickets, expenses, exchanges, settings, rateHistory } = useAppData();
   const month = currentMonthKey();
   const [statsMonth, setStatsMonth] = useState(month);
   const [creatingExpense, setCreatingExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [deletingExpense, setDeletingExpense] = useState(null);
+  const [creatingExchange, setCreatingExchange] = useState(false);
+  const [editingExchange, setEditingExchange] = useState(null);
+  const [deletingExchange, setDeletingExchange] = useState(null);
 
   const active = students.items.filter(isActive);
   const owing = active.filter(owesMonthlyFee);
@@ -106,8 +171,9 @@ export function StatsView() {
     payments.items.forEach((p) => p.date && set.add(p.date.slice(0, 7)));
     tickets.items.forEach((t) => t.date && set.add(t.date.slice(0, 7)));
     expenses.items.forEach((e) => e.date && set.add(e.date.slice(0, 7)));
+    exchanges.items.forEach((e) => e.date && set.add(e.date.slice(0, 7)));
     return Array.from(set).sort().reverse();
-  }, [payments.items, tickets.items, expenses.items, month]);
+  }, [payments.items, tickets.items, expenses.items, exchanges.items, month]);
 
   const isAllMonths = statsMonth === "all";
   const inSelectedMonth = (dateStr) => isAllMonths || dateStr?.startsWith(statsMonth);
@@ -139,6 +205,20 @@ export function StatsView() {
   const expensesTotal = periodExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const netThisPeriod = collectedThisPeriod - expensesTotal;
 
+  // Cambios reales que se hicieron (no todo lo cobrado en bolívares se
+  // convierte, ni se convierte a diario) — a diferencia del estimado de
+  // arriba, esto es lo que de verdad se cambió, con lo que realmente dio
+  // cada vez, comparado contra lo que esos mismos bolívares "valían" a
+  // tasa BCV ese día.
+  const periodExchanges = exchanges.items.filter((e) => inSelectedMonth(e.date)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const exchangesBsTotal = periodExchanges.reduce((s, e) => s + (Number(e.bsAmount) || 0), 0);
+  const exchangesUsdTotal = periodExchanges.reduce((s, e) => s + (Number(e.usdReceived) || 0), 0);
+  const exchangesNominalTotal = periodExchanges.reduce((s, e) => {
+    const rate = officialRateOnDate(rateHistory.items, e.date, settings.value.officialRate);
+    return s + (rate > 0 ? (Number(e.bsAmount) || 0) / rate : 0);
+  }, 0);
+  const exchangesDiffTotal = exchangesNominalTotal - exchangesUsdTotal;
+
   const allTimeRevenue =
     payments.items.filter((p) => p.confirmed !== false).reduce((s, p) => s + p.amount, 0) +
     tickets.items.filter((t) => t.confirmed !== false).reduce((s, t) => s + (t.price || 0), 0);
@@ -161,6 +241,12 @@ export function StatsView() {
     if (!deletingExpense) return;
     await expenses.remove(deletingExpense.id);
     setDeletingExpense(null);
+  };
+
+  const handleDeleteExchange = async () => {
+    if (!deletingExchange) return;
+    await exchanges.remove(deletingExchange.id);
+    setDeletingExchange(null);
   };
 
   return (
@@ -201,13 +287,15 @@ export function StatsView() {
 
       {hasBinanceData && (
         <div className="card space-y-2 border-l-4 border-l-bronze p-4">
-          <p className="t11 font-semibold uppercase tracking-wide text-bronze-dark">Diferencial cambiario (lo cobrado en bolívares)</p>
+          <p className="t11 font-semibold uppercase tracking-wide text-bronze-dark">
+            Diferencial estimado — si convirtieras TODO lo cobrado en bolívares
+          </p>
           <div className="flex items-center justify-between">
             <span className="t13 text-muted">A tasa BCV (nominal, como quedó registrado)</span>
             <span className="t13 font-medium text-ink">{usd(nominalVES)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="t13 text-muted">A tasa Binance (real, si lo conviertes)</span>
+            <span className="t13 text-muted">A tasa Binance (si lo convirtieras todo)</span>
             <span className="t13 font-medium text-ink">{usd(realAtBinance)}</span>
           </div>
           <div className="flex items-center justify-between border-t border-line-soft pt-2">
@@ -215,10 +303,59 @@ export function StatsView() {
             <span className="font-display text-lg text-bronze-dark">{usd(exchangeDiff)}</span>
           </div>
           <p className="t11 text-faint">
-            Solo lo pagado por Pago Móvil o transferencia en bolívares — no incluye entradas ni lo pagado en divisas.
+            Es un estimado — no necesariamente conviertes todo lo que cobras en bolívares. Para lo que de verdad
+            cambiaste, mira "Cambios registrados" abajo.
           </p>
         </div>
       )}
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display text-lg text-ink">Cambios registrados {isAllMonths ? "en total" : `en ${monthLabel(statsMonth)}`}</h2>
+          <button onClick={() => setCreatingExchange(true)} className="btn btn-ghost">
+            <Plus size={15} /> Nuevo cambio
+          </button>
+        </div>
+        <div className="space-y-2">
+          {periodExchanges.map((e) => {
+            const rate = officialRateOnDate(rateHistory.items, e.date, settings.value.officialRate);
+            const nominal = rate > 0 ? e.bsAmount / rate : null;
+            const impliedRate = e.usdReceived > 0 ? e.bsAmount / e.usdReceived : null;
+            return (
+              <div key={e.id} className="card flex items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="t13 text-ink">Bs. {e.bsAmount.toLocaleString("es-VE")} → {usd(e.usdReceived)}</p>
+                  <p className="t11 text-muted">
+                    {e.date}{impliedRate ? ` · tasa ${impliedRate.toFixed(2)}` : ""}{e.notes ? ` · ${e.notes}` : ""}
+                    {nominal !== null && ` · a BCV hubiera sido ${usd(nominal)}`}
+                  </p>
+                </div>
+                <button onClick={() => setEditingExchange(e)} className="rounded-lg p-1.5 text-muted hover:bg-line hover:text-ink"><Pencil size={15} /></button>
+                <button onClick={() => setDeletingExchange(e)} className="rounded-lg p-1.5 text-wine hover:bg-wine/10"><Trash2 size={15} /></button>
+              </div>
+            );
+          })}
+          {periodExchanges.length === 0 && (
+            <p className="t13 rounded-xl bg-cream-dim p-4 text-center text-muted">Sin cambios registrados {isAllMonths ? "" : "este mes"}.</p>
+          )}
+          {periodExchanges.length > 0 && (
+            <div className="card space-y-1.5 border-l-4 border-l-bronze p-3">
+              <div className="flex items-center justify-between">
+                <span className="t13 text-muted">Bolívares cambiados</span>
+                <span className="t13 font-medium text-ink">Bs. {exchangesBsTotal.toLocaleString("es-VE")}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="t13 text-muted">Dólares recibidos</span>
+                <span className="t13 font-medium text-ink">{usd(exchangesUsdTotal)}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-line-soft pt-1.5">
+                <span className="t13 font-semibold text-ink">Diferencia real vs. tasa BCV</span>
+                <span className="font-display text-lg text-bronze-dark">{usd(exchangesDiffTotal)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div>
         <div className="mb-3 flex items-center justify-between">
@@ -309,6 +446,23 @@ export function StatsView() {
           destructive
           onConfirm={handleDeleteExpense}
           onCancel={() => setDeletingExpense(null)}
+        />
+      )}
+
+      {(creatingExchange || editingExchange) && (
+        <ExchangeFormModal
+          exchange={editingExchange}
+          onClose={() => { setCreatingExchange(false); setEditingExchange(null); }}
+        />
+      )}
+      {deletingExchange && (
+        <ConfirmDialog
+          title="Eliminar cambio"
+          message={`Se eliminará el cambio de Bs. ${deletingExchange.bsAmount.toLocaleString("es-VE")} por ${usd(deletingExchange.usdReceived)}. Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={handleDeleteExchange}
+          onCancel={() => setDeletingExchange(null)}
         />
       )}
     </div>
