@@ -36,9 +36,18 @@ export function AppDataProvider({ children }) {
     seededGroups.current = true;
     DEFAULT_GROUPS.forEach((g) => { groupsAdd(g).catch(() => {}); });
   }, [groupsAdd, supabaseReady, groupsCollection.loading, groupsCollection.items.length]);
+  // Si falló la conexión (ver `groupsCollection.error`), NO sustituimos por
+  // los 7 grupos de fábrica: eso escondería en silencio los grupos reales
+  // (por ejemplo uno nuevo que administración haya agregado, como "Telas")
+  // detrás de datos viejos cada vez que a alguien se le corte la conexión.
+  // Los de fábrica solo aplican cuando la base de datos está realmente
+  // vacía (primera vez, carga exitosa, cero grupos).
   const groups = {
     ...groupsCollection,
-    items: groupsCollection.items.length > 0 ? groupsCollection.items : DEFAULT_GROUPS,
+    items:
+      !groupsCollection.loading && !groupsCollection.error && groupsCollection.items.length === 0
+        ? DEFAULT_GROUPS
+        : groupsCollection.items,
   };
 
   const [toastMsg, setToastMsg] = useState(null);

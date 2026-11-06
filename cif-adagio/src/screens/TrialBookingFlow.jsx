@@ -111,14 +111,20 @@ export function TrialBookingFlow() {
         <motion.div key="step-0" {...stepMotion}>
           <h1 className="font-display mb-1 text-2xl text-ink">Elige un grupo</h1>
           <p className="t13 mb-6 text-muted">Selecciona la clase a la que te gustaría asistir de prueba.</p>
-          <div className="grid grid-cols-2 gap-3">
-            {groups.items.map((g) => (
-              <button key={g.id} onClick={() => chooseGroup(g)} className="card flex flex-col items-start gap-2 p-4 text-left transition hover:shadow-lift">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
-                <span className="t13 font-semibold text-ink">{g.name}</span>
-              </button>
-            ))}
-          </div>
+          {groups.error && groups.items.length === 0 ? (
+            <p className="t13 rounded-xl bg-cream-dim p-4 text-muted">
+              No se pudieron cargar las clases. Revisa tu conexión a internet y vuelve a intentar.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {groups.items.map((g) => (
+                <button key={g.id} onClick={() => chooseGroup(g)} className="card flex flex-col items-start gap-2 p-4 text-left transition hover:shadow-lift">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: g.color }} />
+                  <span className="t13 font-semibold text-ink">{g.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
 
