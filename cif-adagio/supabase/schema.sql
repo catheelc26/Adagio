@@ -55,6 +55,23 @@ create policy "public update" on documents for update using (true) with check (t
 drop policy if exists "public delete" on documents;
 create policy "public delete" on documents for delete using (true);
 
+-- Actualizaciones sin "pisar" cambios recientes --------------------------
+-- Fusiona (merge) un patch en el `data` de un documento ya existente, de
+-- forma atómica dentro de la base de datos — así dos guardados casi
+-- simultáneos sobre el mismo documento (ej. confirmar un pago en un
+-- dispositivo mientras otro todavía tiene cargada una versión vieja) nunca
+-- se pisan entre sí con datos desactualizados.
+create or replace function merge_document(p_collection text, p_id text, p_patch jsonb)
+returns void as $$
+begin
+  update documents
+  set data = data || p_patch
+  where collection = p_collection and id = p_id;
+end;
+$$ language plpgsql;
+
+grant execute on function merge_document(text, text, jsonb) to anon, authenticated;
+
 -- Tiempo real ----------------------------------------------------------------
 -- Permite que la app reciba cambios en vivo (por ejemplo, que administración
 -- vea al instante un pago que acaba de reportar un representante).

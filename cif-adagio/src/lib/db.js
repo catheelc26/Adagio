@@ -95,15 +95,26 @@ export function useCollection(name) {
     [name]
   );
 
+  // Fusiona el patch directamente en la base de datos (función `merge_document`,
+  // ver supabase/schema.sql) en vez de traer el documento actual a este
+  // dispositivo, mezclarlo aquí y mandarlo completo de vuelta. Eso último
+  // podía "perder" cambios recientes: si alguien confirmaba un pago y, antes
+  // de que le llegara esa actualización en tiempo real, otra pestaña o
+  // dispositivo guardaba cualquier otro cambio sobre el mismo pago, ese
+  // segundo guardado partía de una copia vieja (sin confirmar) y la
+  // confirmación quedaba pisada — por eso a veces un pago ya confirmado
+  // "volvía" a salir como pendiente.
   const update = useCallback(
     async (id, patch) => {
       if (!supabase) throw new Error("La base de datos no está configurada.");
-      const current = items.find((it) => it.id === id) || {};
-      const merged = { ...current, ...patch, id };
-      const { error: err } = await supabase.from("documents").update({ data: merged }).eq("collection", name).eq("id", id);
+      const { error: err } = await supabase.rpc("merge_document", {
+        p_collection: name,
+        p_id: id,
+        p_patch: patch,
+      });
       if (err) throw err;
     },
-    [name, items]
+    [name]
   );
 
   const remove = useCallback(
