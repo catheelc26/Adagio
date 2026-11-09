@@ -3,6 +3,7 @@ import {
   CheckCircle2, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
+import { matchesKnownRepresentative } from "../../lib/business";
 import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
 import { uid, usd } from "../../lib/format";
 import { COLLECTIONS } from "../../lib/db";
@@ -82,7 +83,7 @@ function ShowFormModal({ show, onClose }) {
 }
 
 export function ShowsView() {
-  const { shows, tickets, toast } = useAppData();
+  const { shows, students, tickets, toast } = useAppData();
   const sortedShows = useMemo(() => [...shows.items].sort((a, b) => (a.date < b.date ? -1 : 1)), [shows.items]);
   const [activeShowId, setActiveShowId] = useState(sortedShows[0]?.id || null);
   const [editingShow, setEditingShow] = useState(null);
@@ -121,6 +122,11 @@ export function ShowsView() {
   const confirmedRevenue = showTickets.filter((t) => t.confirmed !== false).reduce((s, t) => s + t.price, 0);
   const pendingCount = showTickets.filter((t) => t.confirmed === false).length;
   const checkedInCount = showTickets.filter((t) => t.checkedIn).length;
+
+  // Representante aunque haya comprado desde la página pública de entradas
+  // (no desde su portal): comparamos su teléfono contra el de los
+  // representantes ya registrados, no solo si quedó marcado reportedBy.
+  const isRepresentativeBuyer = (t) => t.reportedBy === "representante" || matchesKnownRepresentative(students.items, t.buyerPhone);
 
   const confirmTicket = async (t) => {
     await tickets.update(t.id, { confirmed: true });
@@ -233,7 +239,7 @@ export function ShowsView() {
                 </div>
               </div>
 
-              {showTickets.some((t) => t.reportedBy === "representante") && (
+              {showTickets.some(isRepresentativeBuyer) && (
                 <p className="t11 -mb-1 flex items-center gap-1 text-muted">
                   <Star size={11} className="fill-bronze text-bronze" /> = comprada por un representante de la escuela
                 </p>
@@ -247,7 +253,7 @@ export function ShowsView() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="t13 font-medium text-ink">{t.buyerName}</p>
-                        {t.reportedBy === "representante" && (
+                        {isRepresentativeBuyer(t) && (
                           <Star size={13} className="fill-bronze text-bronze" title="Representante de la escuela" />
                         )}
                         {t.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}

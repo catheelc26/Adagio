@@ -1,4 +1,5 @@
 import { DEFAULT_PARTICIPATION_INSTALLMENTS, groupById } from "./constants";
+import { normalizePhoneVE, reminderContactPhone } from "./format";
 
 export const isActive = (student) => student.status !== "inactive";
 
@@ -48,6 +49,19 @@ export function realValueAtBinanceRate(payment, rateHistory, fallbackBinanceRate
   const rate = binanceRateOnDate(rateHistory, payment.date, fallbackBinanceRate);
   if (!(rate > 0)) return payment.amount;
   return payment.amountVES / rate;
+}
+
+// ¿El teléfono de quien compró una entrada coincide con el de algún
+// representante ya registrado (el papá/mamá de un estudiante menor, o el
+// propio estudiante si es mayor de edad)? Compara los números ya
+// normalizados a +58, así da igual si uno quedó escrito con el 0 inicial,
+// con espacios o guiones, o sin el +58 — para detectar compras hechas por
+// representantes desde la página pública de entradas (no solo desde su
+// portal), donde no queda un studentId asociado.
+export function matchesKnownRepresentative(students, phone) {
+  const normalized = normalizePhoneVE(phone);
+  if (!normalized) return false;
+  return (students || []).some((s) => normalizePhoneVE(reminderContactPhone(s)) === normalized);
 }
 
 // Cuotas de participación del reglamento (ej. para una presentación): una
