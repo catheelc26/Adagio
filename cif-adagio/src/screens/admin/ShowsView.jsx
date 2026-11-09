@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Trash2, X,
+  CheckCircle2, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
@@ -233,6 +233,11 @@ export function ShowsView() {
                 </div>
               </div>
 
+              {showTickets.some((t) => t.reportedBy === "representante") && (
+                <p className="t11 -mb-1 flex items-center gap-1 text-muted">
+                  <Star size={11} className="fill-bronze text-bronze" /> = comprada por un representante de la escuela
+                </p>
+              )}
               <div className="space-y-2">
                 {showTickets.length === 0 && (
                   <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">Aún no se ha vendido ninguna entrada para esta función.</p>
@@ -242,6 +247,9 @@ export function ShowsView() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="t13 font-medium text-ink">{t.buyerName}</p>
+                        {t.reportedBy === "representante" && (
+                          <Star size={13} className="fill-bronze text-bronze" title="Representante de la escuela" />
+                        )}
                         {t.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}
                         {t.checkedIn && <span className="t10 flex items-center gap-1 rounded-full bg-teal/15 px-2 py-0.5 font-medium text-teal-dark"><ShieldCheck size={11} /> Escaneada</span>}
                       </div>
