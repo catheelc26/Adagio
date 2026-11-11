@@ -129,12 +129,20 @@ export function ShowsView() {
   const isRepresentativeBuyer = (t) => t.reportedBy === "representante" || matchesKnownRepresentative(students.items, t.buyerPhone);
 
   const confirmTicket = async (t) => {
-    await tickets.update(t.id, { confirmed: true });
-    toast("Pago confirmado.");
+    try {
+      await tickets.update(t.id, { confirmed: true });
+      toast("Pago confirmado.");
+    } catch (err) {
+      toast(err.message || "No se pudo confirmar el pago. Intenta de nuevo.");
+    }
   };
 
   const toggleCheckIn = async (t) => {
-    await tickets.update(t.id, { checkedIn: !t.checkedIn, checkedInAt: !t.checkedIn ? new Date().toISOString() : null });
+    try {
+      await tickets.update(t.id, { checkedIn: !t.checkedIn, checkedInAt: !t.checkedIn ? new Date().toISOString() : null });
+    } catch (err) {
+      toast(err.message || "No se pudo actualizar la entrada. Intenta de nuevo.");
+    }
   };
 
   const handleDeleteTicket = async () => {

@@ -112,9 +112,20 @@ export function useCollection(name) {
         p_id: id,
         p_patch: patch,
       });
-      if (err) throw err;
+      if (err) {
+        // Si el proyecto de Supabase todavía no tiene la función
+        // merge_document (falta correr supabase/schema.sql), no dejamos el
+        // guardado sin hacer nada — mezclamos como antes, desde este
+        // dispositivo, para que la app nunca se quede sin poder guardar.
+        const missingFunction = err.code === "PGRST202" || /merge_document/i.test(err.message || "");
+        if (!missingFunction) throw err;
+        const current = items.find((it) => it.id === id) || {};
+        const merged = { ...current, ...patch, id };
+        const { error: fallbackErr } = await supabase.from("documents").update({ data: merged }).eq("collection", name).eq("id", id);
+        if (fallbackErr) throw fallbackErr;
+      }
     },
-    [name]
+    [name, items]
   );
 
   const remove = useCallback(

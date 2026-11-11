@@ -34,8 +34,12 @@ export function PaymentsView() {
   const total = filtered.filter((p) => p.confirmed !== false).reduce((s, p) => s + p.amount, 0);
 
   const confirmPayment = async (p) => {
-    await payments.update(p.id, { confirmed: true });
-    toast("Pago confirmado.");
+    try {
+      await payments.update(p.id, { confirmed: true });
+      toast("Pago confirmado.");
+    } catch (err) {
+      toast(err.message || "No se pudo confirmar el pago. Intenta de nuevo.");
+    }
   };
 
   const handleDelete = async () => {
