@@ -98,17 +98,18 @@ export function TicketScanner({ onClose }) {
         </div>
 
         <div className="space-y-4 p-5">
-          {!result && (
-            <>
-              <div className="relative overflow-hidden rounded-2xl bg-ink">
-                <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
-                <canvas ref={canvasRef} className="hidden" />
-                <div className="pointer-events-none absolute inset-8 rounded-xl border-2 border-cream/70" />
-              </div>
-              {cameraError && <p className="t13 text-wine">{cameraError}</p>}
-              <p className="t11 text-center text-muted">Apunta la cámara al código QR de la entrada.</p>
-            </>
-          )}
+          {/* La cámara se queda encendida siempre (solo se oculta con CSS) —
+              si este bloque se desmonta al mostrar un resultado, el <video>
+              pierde la conexión con la cámara y, al volver a "Escanear
+              otra", la vista queda pegada: nunca más detecta nada porque es
+              un <video> nuevo sin la transmisión asignada. */}
+          <div className={`relative overflow-hidden rounded-2xl bg-ink ${result ? "hidden" : ""}`}>
+            <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
+            <canvas ref={canvasRef} className="hidden" />
+            <div className="pointer-events-none absolute inset-8 rounded-xl border-2 border-cream/70" />
+          </div>
+          {!result && cameraError && <p className="t13 text-wine">{cameraError}</p>}
+          {!result && <p className="t11 text-center text-muted">Apunta la cámara al código QR de la entrada.</p>}
 
           {result?.ticket && (
             <div className="rounded-2xl border border-line bg-paper p-4 text-center">
