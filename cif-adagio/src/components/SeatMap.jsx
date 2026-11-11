@@ -1,5 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { Armchair } from "lucide-react";
+import { ArrowLeftRight, Armchair } from "lucide-react";
 import { CENTER_PRICE, SIDE_PRICE, THEATER_ROW_LETTERS, isCenterSeat, isSeatTaken, seatGroupsForRow, seatKey } from "../lib/tickets";
 
 // Azul vibrante y rojo navideño (como en el arte de "El Cascanueces"), gris
@@ -19,39 +18,6 @@ const LEGEND = [
   { label: "Ocupado", price: null, colors: SEAT_COLORS.taken },
 ];
 
-/** Encoge el contenido (vía transform: scale) para que quepa en el ancho
- * disponible sin desbordarse — así se ven todas las butacas sin tener que
- * deslizar el dedo a los lados. Nunca agranda más allá del tamaño natural. */
-function useFitWidth() {
-  const wrapperRef = useRef(null);
-  const contentRef = useRef(null);
-  const [scale, setScale] = useState(1);
-  const [height, setHeight] = useState(null);
-
-  useLayoutEffect(() => {
-    const wrapper = wrapperRef.current;
-    const content = contentRef.current;
-    if (!wrapper || !content) return;
-
-    const recalc = () => {
-      const contentWidth = content.scrollWidth;
-      const contentHeight = content.scrollHeight;
-      const wrapperWidth = wrapper.clientWidth;
-      if (!contentWidth || !wrapperWidth) return;
-      const nextScale = Math.min(1, wrapperWidth / contentWidth);
-      setScale(nextScale);
-      setHeight(contentHeight * nextScale);
-    };
-
-    recalc();
-    const ro = new ResizeObserver(recalc);
-    ro.observe(wrapper);
-    return () => ro.disconnect();
-  }, []);
-
-  return { wrapperRef, contentRef, scale, height };
-}
-
 /**
  * Mapa de butacas del teatro: 16 filas (A a la Ñ, y la fila O al fondo) de
  * 21 asientos cada una, agrupados en 3 bloques (izquierdo, centro, derecho)
@@ -61,8 +27,6 @@ function useFitWidth() {
  * vendidos quedan deshabilitados; los seleccionados se marcan.
  */
 export function SeatMap({ showId, tickets, selected, onToggle }) {
-  const { wrapperRef, contentRef, scale, height } = useFitWidth();
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-xl bg-cream-dim px-4 py-3">
@@ -91,20 +55,24 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
         <p className="absolute inset-x-0 bottom-0 text-center t10 font-semibold uppercase tracking-[0.4em] text-faint">Escenario</p>
       </div>
 
+      {/* Antes se encogían las 21 columnas para que cupieran sin deslizar el
+          dedo — pero eso hacía los asientos casi imposibles de tocar bien.
+          Ahora se quedan a su tamaño real (fácil de tocar) y, si no caben
+          todas en la pantalla, simplemente se desliza hacia los lados — las
+          letras de fila quedan fijas para no perderse. */}
+      <p className="flex items-center justify-center gap-1.5 t11 text-muted">
+        <ArrowLeftRight size={13} /> Desliza hacia los lados para ver todos los asientos
+      </p>
       {/* -mx-5 compensa el padding lateral de la pantalla de compra (px-5) para
-          aprovechar todo el ancho disponible y que quepan las 21 columnas. */}
-      <div ref={wrapperRef} className="-mx-5" style={height ? { height } : undefined}>
-        <div
-          ref={contentRef}
-          className="w-max space-y-2 px-1"
-          style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
-        >
+          aprovechar todo el ancho disponible. */}
+      <div className="-mx-5 overflow-x-auto px-5 pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="w-max space-y-3">
           {THEATER_ROW_LETTERS.map((row) => (
             <div key={row} className="flex items-center gap-2">
-              <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
-              <div className="flex gap-5">
+              <span className="sticky left-0 z-10 w-5 shrink-0 bg-cream text-center t10 font-semibold text-faint">{row}</span>
+              <div className="flex gap-4">
                 {seatGroupsForRow(row).map(([from, to], groupIdx) => (
-                  <div key={groupIdx} className="flex gap-1">
+                  <div key={groupIdx} className="flex gap-1.5">
                     {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((seat) => {
                       const key = seatKey(row, seat);
                       const taken = isSeatTaken(tickets, showId, row, seat);
@@ -123,13 +91,13 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
                           disabled={taken}
                           onClick={() => onToggle(row, seat)}
                           title={`Fila ${row} · Asiento ${seat}`}
-                          className={`relative flex h-8 w-7 shrink-0 items-center justify-center transition-transform ${
-                            taken ? "cursor-not-allowed" : "hover:scale-110"
+                          className={`relative flex h-10 w-9 shrink-0 items-center justify-center transition-transform ${
+                            taken ? "cursor-not-allowed" : "hover:scale-110 active:scale-95"
                           }`}
                         >
-                          <Armchair size={24} strokeWidth={1.5} fill={colors.fill} stroke={colors.stroke} />
+                          <Armchair size={28} strokeWidth={1.5} fill={colors.fill} stroke={colors.stroke} />
                           {isSelected && (
-                            <span className="pointer-events-none absolute bottom-[5px] t10 font-semibold text-white">{seat}</span>
+                            <span className="pointer-events-none absolute bottom-[6px] t10 font-semibold text-white">{seat}</span>
                           )}
                         </button>
                       );
@@ -137,7 +105,7 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
                   </div>
                 ))}
               </div>
-              <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+              <span className="sticky right-0 z-10 w-5 shrink-0 bg-cream text-center t10 font-semibold text-faint">{row}</span>
             </div>
           ))}
         </div>
