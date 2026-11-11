@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
+  CheckCircle2, Download, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { matchesKnownRepresentative } from "../../lib/business";
 import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
 import { uid, usd } from "../../lib/format";
 import { COLLECTIONS } from "../../lib/db";
+import { downloadTicketsPdf } from "../../lib/ticketsPdf";
 import { ActionMenu, ConfirmDialog, Field, MenuItem, inputCls } from "../../components/ui";
 import { TicketScanner } from "../../components/TicketScanner";
 import { ProofViewer } from "../../components/ProofViewer";
@@ -274,6 +275,11 @@ export function ShowsView() {
                     <span className="t13 font-medium text-ink">{usd(t.price)}</span>
                     <ActionMenu>
                       {t.confirmed === false && <MenuItem icon={<CheckCircle2 size={15} />} label="Confirmar pago" onClick={() => confirmTicket(t)} />}
+                      <MenuItem
+                        icon={<Download size={15} />}
+                        label="Descargar PDF"
+                        onClick={() => downloadTicketsPdf(showTickets.filter((x) => (x.transactionId || x.id) === (t.transactionId || t.id)), activeShow)}
+                      />
                       {t.hasProof && <MenuItem icon={<ImageIcon size={15} />} label="Ver comprobante" onClick={() => setProofTx(t.transactionId || t.id)} />}
                       <MenuItem icon={<QrCode size={15} />} label={t.checkedIn ? "Desmarcar escaneada" : "Marcar como escaneada"} onClick={() => toggleCheckIn(t)} />
                       <MenuItem icon={<Trash2 size={15} />} label="Eliminar (liberar asiento)" danger onClick={() => setDeletingTicket(t)} />
