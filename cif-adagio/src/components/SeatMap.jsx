@@ -1,4 +1,5 @@
-import { ArrowLeftRight, Armchair } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { ArrowLeft, Armchair } from "lucide-react";
 import { CENTER_PRICE, SIDE_PRICE, THEATER_ROW_LETTERS, isCenterSeat, isSeatTaken, seatGroupsForRow, seatKey } from "../lib/tickets";
 
 // Azul vibrante y rojo navideño (como en el arte de "El Cascanueces"), gris
@@ -18,6 +19,72 @@ const LEGEND = [
   { label: "Ocupado", price: null, colors: SEAT_COLORS.taken },
 ];
 
+// Las 3 zonas en las que se divide cada fila (ver seatGroupsForRow) — para
+// que quien compra pueda tocar una zona y verla más grande, en vez de tener
+// que acertarle a un asiento diminuto en el mapa completo.
+const ZONES = [
+  { label: "Lateral izquierdo", price: SIDE_PRICE },
+  { label: "Centro", price: CENTER_PRICE },
+  { label: "Lateral derecho", price: SIDE_PRICE },
+];
+
+/** Encoge el contenido (vía transform: scale) para que quepa en el ancho
+ * disponible sin desbordarse — así se ve todo el teatro de un vistazo en la
+ * pantalla principal. Nunca agranda más allá del tamaño natural. */
+function useFitWidth() {
+  const wrapperRef = useRef(null);
+  const contentRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [height, setHeight] = useState(null);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    const content = contentRef.current;
+    if (!wrapper || !content) return;
+
+    const recalc = () => {
+      const contentWidth = content.scrollWidth;
+      const contentHeight = content.scrollHeight;
+      const wrapperWidth = wrapper.clientWidth;
+      if (!contentWidth || !wrapperWidth) return;
+      const nextScale = Math.min(1, wrapperWidth / contentWidth);
+      setScale(nextScale);
+      setHeight(contentHeight * nextScale);
+    };
+
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    ro.observe(wrapper);
+    return () => ro.disconnect();
+  }, []);
+
+  return { wrapperRef, contentRef, scale, height };
+}
+
+function SeatButton({ row, seat, taken, isSelected, onToggle }) {
+  const colors = taken
+    ? SEAT_COLORS.taken
+    : isSelected
+    ? SEAT_COLORS.selected
+    : isCenterSeat(seat)
+    ? SEAT_COLORS.centro
+    : SEAT_COLORS.lateral;
+  return (
+    <button
+      type="button"
+      disabled={taken}
+      onClick={() => onToggle(row, seat)}
+      title={`Fila ${row} · Asiento ${seat}`}
+      className={`relative flex h-10 w-9 shrink-0 items-center justify-center transition-transform ${
+        taken ? "cursor-not-allowed" : "hover:scale-110 active:scale-95"
+      }`}
+    >
+      <Armchair size={28} strokeWidth={1.5} fill={colors.fill} stroke={colors.stroke} />
+      {isSelected && <span className="pointer-events-none absolute bottom-[6px] t10 font-semibold text-white">{seat}</span>}
+    </button>
+  );
+}
+
 /**
  * Mapa de butacas del teatro: 16 filas (A a la Ñ, y la fila O al fondo) de
  * 21 asientos cada una, agrupados en 3 bloques (izquierdo, centro, derecho)
@@ -25,8 +92,17 @@ const LEGEND = [
  * sección central (resaltada, $12); el resto son laterales ($10). La fila O
  * tiene los pasillos corridos un puesto hacia cada lado. Los asientos ya
  * vendidos quedan deshabilitados; los seleccionados se marcan.
+ *
+ * La pantalla principal muestra el teatro completo de un vistazo (por eso
+ * se encoge para que quepa) — pero a esa escala los asientos quedan muy
+ * chiquitos para tocarlos con precisión. Por eso se puede tocar una de las
+ * 3 zonas (lateral izquierdo / centro / lateral derecho) para verla sola, a
+ * tamaño real y fácil de tocar, y volver después a la vista completa.
  */
 export function SeatMap({ showId, tickets, selected, onToggle }) {
+  const { wrapperRef, contentRef, scale, height } = useFitWidth();
+  const [zoomedBlock, setZoomedBlock] = useState(null);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-xl bg-cream-dim px-4 py-3">
@@ -55,61 +131,93 @@ export function SeatMap({ showId, tickets, selected, onToggle }) {
         <p className="absolute inset-x-0 bottom-0 text-center t10 font-semibold uppercase tracking-[0.4em] text-faint">Escenario</p>
       </div>
 
-      {/* Antes se encogían las 21 columnas para que cupieran sin deslizar el
-          dedo — pero eso hacía los asientos casi imposibles de tocar bien.
-          Ahora se quedan a su tamaño real (fácil de tocar) y, si no caben
-          todas en la pantalla, simplemente se desliza hacia los lados — las
-          letras de fila quedan fijas para no perderse. */}
-      <p className="flex items-center justify-center gap-1.5 t11 text-muted">
-        <ArrowLeftRight size={13} /> Desliza hacia los lados para ver todos los asientos
-      </p>
-      {/* -mx-5 compensa el padding lateral de la pantalla de compra (px-5) para
-          aprovechar todo el ancho disponible. */}
-      <div className="-mx-5 overflow-x-auto px-5 pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
-        <div className="w-max space-y-3">
-          {THEATER_ROW_LETTERS.map((row) => (
-            <div key={row} className="flex items-center gap-2">
-              <span className="sticky left-0 z-10 w-5 shrink-0 bg-cream text-center t10 font-semibold text-faint">{row}</span>
-              <div className="flex gap-4">
-                {seatGroupsForRow(row).map(([from, to], groupIdx) => (
-                  <div key={groupIdx} className="flex gap-1.5">
-                    {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((seat) => {
-                      const key = seatKey(row, seat);
-                      const taken = isSeatTaken(tickets, showId, row, seat);
-                      const isSelected = selected.includes(key);
-                      const colors = taken
-                        ? SEAT_COLORS.taken
-                        : isSelected
-                        ? SEAT_COLORS.selected
-                        : isCenterSeat(seat)
-                        ? SEAT_COLORS.centro
-                        : SEAT_COLORS.lateral;
-                      return (
-                        <button
-                          key={seat}
-                          type="button"
-                          disabled={taken}
-                          onClick={() => onToggle(row, seat)}
-                          title={`Fila ${row} · Asiento ${seat}`}
-                          className={`relative flex h-10 w-9 shrink-0 items-center justify-center transition-transform ${
-                            taken ? "cursor-not-allowed" : "hover:scale-110 active:scale-95"
-                          }`}
-                        >
-                          <Armchair size={28} strokeWidth={1.5} fill={colors.fill} stroke={colors.stroke} />
-                          {isSelected && (
-                            <span className="pointer-events-none absolute bottom-[6px] t10 font-semibold text-white">{seat}</span>
-                          )}
-                        </button>
-                      );
-                    })}
+      {zoomedBlock === null ? (
+        <>
+          <p className="t11 text-center text-muted">
+            Toca un asiento, o toca una zona de abajo para verla más grande.
+          </p>
+
+          <div className="grid grid-cols-3 gap-2">
+            {ZONES.map((zone, i) => (
+              <button
+                key={zone.label}
+                type="button"
+                onClick={() => setZoomedBlock(i)}
+                className="rounded-xl border border-line bg-cream-dim px-2 py-2.5 text-center transition hover:bg-line-soft"
+              >
+                <span className="t12 block font-medium text-ink">{zone.label}</span>
+                <span className="t10 text-muted">${zone.price}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* -mx-5 compensa el padding lateral de la pantalla de compra (px-5) para
+              aprovechar todo el ancho disponible y que quepan las 21 columnas. */}
+          <div ref={wrapperRef} className="-mx-5" style={height ? { height } : undefined}>
+            <div
+              ref={contentRef}
+              className="w-max space-y-2 px-1"
+              style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
+            >
+              {THEATER_ROW_LETTERS.map((row) => (
+                <div key={row} className="flex items-center gap-2">
+                  <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+                  <div className="flex gap-5">
+                    {seatGroupsForRow(row).map(([from, to], groupIdx) => (
+                      <div key={groupIdx} className="flex gap-1">
+                        {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((seat) => (
+                          <SeatButton
+                            key={seat}
+                            row={row}
+                            seat={seat}
+                            taken={isSeatTaken(tickets, showId, row, seat)}
+                            isSelected={selected.includes(seatKey(row, seat))}
+                            onToggle={onToggle}
+                          />
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <span className="sticky right-0 z-10 w-5 shrink-0 bg-cream text-center t10 font-semibold text-faint">{row}</span>
+                  <span className="w-3 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between">
+            <button type="button" onClick={() => setZoomedBlock(null)} className="flex items-center gap-1.5 t13 text-muted hover:text-ink">
+              <ArrowLeft size={15} /> Ver todo el teatro
+            </button>
+            <span className="t12 font-medium text-ink">{ZONES[zoomedBlock].label}</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2.5">
+            {THEATER_ROW_LETTERS.map((row) => {
+              const [from, to] = seatGroupsForRow(row)[zoomedBlock];
+              return (
+                <div key={row} className="flex items-center gap-2">
+                  <span className="w-5 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: to - from + 1 }, (_, i) => from + i).map((seat) => (
+                      <SeatButton
+                        key={seat}
+                        row={row}
+                        seat={seat}
+                        taken={isSeatTaken(tickets, showId, row, seat)}
+                        isSelected={selected.includes(seatKey(row, seat))}
+                        onToggle={onToggle}
+                      />
+                    ))}
+                  </div>
+                  <span className="w-5 shrink-0 text-center t10 font-semibold text-faint">{row}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
