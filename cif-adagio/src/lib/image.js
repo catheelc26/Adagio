@@ -11,6 +11,13 @@ export function compressImage(file, maxWidth = 900, quality = 0.6) {
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
         const ctx = canvas.getContext("2d");
+        // JPEG no tiene canal de transparencia — si no se rellena primero un
+        // fondo blanco, cualquier parte transparente del original (o que por
+        // algún motivo no se dibuje bien, ej. algunas fotos HEIC de iPhone)
+        // se exporta como NEGRO sólido en vez de blanco. Esto es lo que hacía
+        // que algunos comprobantes de pago se vieran completamente negros.
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
