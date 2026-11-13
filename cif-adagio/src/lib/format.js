@@ -59,6 +59,11 @@ export const trialContactText = (booking, groupName) =>
 export const specialistContactText = (specialist) =>
   `Hola ${specialist.name}, soy representante de una familia de CIF Adagio y me gustaría agendar una consulta de ${specialist.specialty}.`;
 
+export const ticketContactText = (ticket, show) =>
+  `Hola ${ticket.buyerName}, te escribimos de CIF Adagio sobre tu compra de entrada${
+    ticket.row && ticket.seat ? ` (Fila ${ticket.row} · Asiento ${ticket.seat})` : ""
+  } para ${show?.title || "la función"}. Notamos algo que queremos aclarar contigo sobre el pago reportado — ¿tienes un momento?`;
+
 export const waLink = (phone, text) => `https://wa.me/${digitsOnly(normalizePhoneVE(phone))}?text=${encodeURIComponent(text)}`;
 export const mailtoLink = (email, subject, body) =>
   `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2, Download, Image as ImageIcon, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
+  CheckCircle2, Download, Image as ImageIcon, MessageCircle, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { matchesKnownRepresentative } from "../../lib/business";
 import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
-import { uid, usd } from "../../lib/format";
+import { ticketContactText, uid, usd, waLink } from "../../lib/format";
 import { COLLECTIONS } from "../../lib/db";
 import { downloadTicketsPdf } from "../../lib/ticketsPdf";
 import { ActionMenu, ConfirmDialog, Field, MenuItem, inputCls } from "../../components/ui";
@@ -281,6 +281,11 @@ export function ShowsView() {
                         onClick={() => downloadTicketsPdf(showTickets.filter((x) => (x.transactionId || x.id) === (t.transactionId || t.id)), activeShow)}
                       />
                       {t.hasProof && <MenuItem icon={<ImageIcon size={15} />} label="Ver comprobante" onClick={() => setProofTx(t.transactionId || t.id)} />}
+                      <MenuItem
+                        icon={<MessageCircle size={15} />}
+                        label="Contactar por WhatsApp"
+                        onClick={() => window.open(waLink(t.buyerPhone, ticketContactText(t, activeShow)), "_blank", "noopener")}
+                      />
                       <MenuItem icon={<QrCode size={15} />} label={t.checkedIn ? "Desmarcar escaneada" : "Marcar como escaneada"} onClick={() => toggleCheckIn(t)} />
                       <MenuItem icon={<Trash2 size={15} />} label="Eliminar (liberar asiento)" danger onClick={() => setDeletingTicket(t)} />
                     </ActionMenu>
