@@ -34,6 +34,14 @@ const slugify = (str) =>
 export async function downloadTicketsPdf(tickets, show) {
   if (!tickets || tickets.length === 0) return;
 
+  // Se abre la pestaña ANTES de cualquier "await" de esta función — el PDF
+  // tarda en armarse (carga jsPDF, genera cada código QR), y si se abre o
+  // descarga recién al final, varios celulares (sobre todo iPhone) ya no lo
+  // reconocen como originado por el toque de la persona y no dejan ver ni
+  // descargar nada, sin avisar ningún error — por eso a algunas personas
+  // "no les funcionaba" el botón de Descargar PDF.
+  const previewTab = window.open("", "_blank");
+
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -125,5 +133,15 @@ export async function downloadTicketsPdf(tickets, show) {
   }
 
   const name = slugify(show?.title) || "cif-adagio";
-  doc.save(`entradas-${name}.pdf`);
+
+  // Se muestra en la pestaña que ya estaba abierta (más confiable en
+  // celulares que forzar una descarga) — desde ahí la persona puede
+  // guardarla con el botón de compartir/descargar de su propio navegador.
+  if (previewTab && !previewTab.closed) {
+    previewTab.location.href = doc.output("bloburl");
+  } else {
+    // El navegador bloqueó la pestaña (poco común) — como respaldo, se
+    // intenta la descarga directa de todas formas.
+    doc.save(`entradas-${name}.pdf`);
+  }
 }
