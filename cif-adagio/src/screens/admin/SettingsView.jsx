@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Camera, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
+import { useAdminSession } from "../../lib/session";
 import { DEFAULT_PARTICIPATION_INSTALLMENTS, PAYMENT_METHODS, WEEKDAYS, slugifyGroupId } from "../../lib/constants";
 import { participationInstallmentsOf } from "../../lib/business";
 import { normalizePhoneVE, uid, usd } from "../../lib/format";
@@ -17,13 +18,20 @@ const PHONE_FIELDS = ["phone", "guardianPhone", "emergencyPhone", "emergencyPhon
 
 export function SettingsView() {
   const { settings, schedule, rateHistory, groups, students, trialBookings, toast } = useAppData();
+  const [role, setSession] = useAdminSession();
   const s = settings.value;
+  // Igual que en AdminShell: hasta que no haya un PIN de dueña configurado,
+  // se ve y se puede configurar desde aquí mismo (alguien tiene que poder
+  // crearlo la primera vez); una vez configurado, queda solo para quien
+  // entre con ese PIN — ni con el PIN de administración normal se ve.
+  const isOwner = role === "owner" || !s.ownerPin;
 
   const [rateInput, setRateInput] = useState(String(s.officialRate || ""));
   const [binanceInput, setBinanceInput] = useState(String(s.binanceRate || ""));
   const [calcBs, setCalcBs] = useState("");
   const [feeInput, setFeeInput] = useState(String(s.inscriptionFee ?? 15));
   const [teacherPinInput, setTeacherPinInput] = useState(s.teacherPin || "");
+  const [ownerPinInput, setOwnerPinInput] = useState(s.ownerPin || "");
   const [normalizingPhones, setNormalizingPhones] = useState(false);
   const [newSlot, setNewSlot] = useState({ group: groups.items[0]?.id || "", weekday: 0, startTime: "16:00", endTime: "17:00" });
   const [editingGroup, setEditingGroup] = useState(null); // grupo existente, o {} para uno nuevo
@@ -68,6 +76,19 @@ export function SettingsView() {
   const saveTeacherPin = async () => {
     await settings.save({ teacherPin: teacherPinInput.trim() });
     toast("PIN de maestros actualizado.");
+  };
+
+  const saveOwnerPin = async () => {
+    const value = ownerPinInput.trim();
+    if (value.length < 4) return toast("El PIN de dueña debe tener al menos 4 dígitos.");
+    if (value === s.adminPin) return toast("Usa un PIN distinto al de administración normal.");
+    await settings.save({ ownerPin: value });
+    // Sin esto, como esta sesión entró con el PIN normal (antes de que
+    // existiera el de dueña), se quedaría afuera de Estadísticas y
+    // Finanzas personales justo después de crear su propio PIN — se
+    // "sube" de una vez a dueña en esta misma sesión.
+    setSession("owner");
+    toast("PIN de dueña guardado. Estadísticas y Finanzas personales ya quedan solo para ese PIN.");
   };
 
   // Corrige de una vez todos los teléfonos ya guardados (estudiantes,
@@ -388,6 +409,21 @@ export function SettingsView() {
           <button onClick={saveTeacherPin} className="btn btn-teal whitespace-nowrap">Guardar</button>
         </div>
       </section>
+
+      {isOwner && (
+        <section className="card space-y-3 p-4">
+          <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">PIN de dueña</h2>
+          <p className="t11 text-muted">
+            Un PIN aparte, solo tuyo, distinto al de administración normal. En cuanto lo configures, Estadísticas y
+            Finanzas personales dejan de verse con el PIN normal (el que usa tu equipo) — solo entrando con este.
+          </p>
+          <div className="flex gap-2">
+            <input className={inputCls} value={ownerPinInput} onChange={(e) => setOwnerPinInput(e.target.value)} placeholder="Tu PIN, solo tuyo" />
+            <button onClick={saveOwnerPin} className="btn btn-teal whitespace-nowrap">Guardar</button>
+          </div>
+          {s.ownerPin && <p className="t11 text-muted">Ya está configurado — entra con este PIN para ver Estadísticas y Finanzas personales.</p>}
+        </section>
+      )}
 
       <section className="card space-y-3 p-4">
         <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Formato de teléfonos</h2>

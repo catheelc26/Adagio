@@ -29,6 +29,7 @@ export const COLLECTIONS = {
   ticketProofs: "ticketProofs",
   expenses: "expenses",
   exchanges: "exchanges",
+  personalFinances: "personalFinances",
 };
 
 const SETTINGS_ID = "settings";
@@ -38,6 +39,7 @@ const DEFAULT_SETTINGS = {
   binanceRate: 0,
   binanceRateDate: null,
   adminPin: "",
+  ownerPin: "",
   inscriptionFee: 15,
   teacherPin: "",
   studioPhoto: null,

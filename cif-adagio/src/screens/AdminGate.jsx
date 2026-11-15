@@ -25,7 +25,7 @@ export function AdminGate() {
     setSaving(true);
     try {
       await settings.save({ adminPin: pin.trim() });
-      setSession("ok");
+      setSession("staff");
     } catch {
       setError("No se pudo guardar el PIN. Intenta de nuevo.");
     } finally {
@@ -34,8 +34,14 @@ export function AdminGate() {
   };
 
   const handleLogin = () => {
-    if (pin.trim() === settings.value.adminPin) {
-      setSession("ok");
+    const typed = pin.trim();
+    // El PIN de dueña (si ya se configuró en Ajustes) entra con acceso
+    // completo, incluyendo Estadísticas y Finanzas personales — el PIN de
+    // administración normal (el que usa el equipo) entra sin esas dos.
+    if (settings.value.ownerPin && typed === settings.value.ownerPin) {
+      setSession("owner");
+    } else if (typed === settings.value.adminPin) {
+      setSession("staff");
     } else {
       setError("PIN incorrecto.");
     }

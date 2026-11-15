@@ -1,9 +1,10 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Wallet, MoreHorizontal, LogOut, X,
-  CalendarCheck, Calendar, Megaphone, Bell, BarChart3, Settings as SettingsIcon, Ticket,
+  CalendarCheck, Calendar, Megaphone, Bell, BarChart3, Settings as SettingsIcon, Ticket, Lock,
 } from "lucide-react";
 import { useAdminSession } from "../../lib/session";
+import { useAppData } from "../../lib/AppDataContext";
 import { PushToggle } from "../../components/PushToggle";
 import { Dashboard } from "./Dashboard";
 import { StudentsView } from "./StudentsView";
@@ -15,6 +16,7 @@ import { RemindersView } from "./RemindersView";
 import { StatsView } from "./StatsView";
 import { SettingsView } from "./SettingsView";
 import { ShowsView } from "./ShowsView";
+import { FinancesView } from "./FinancesView";
 
 const PRIMARY_TABS = [
   { id: "dashboard", label: "Inicio", icon: LayoutDashboard },
@@ -22,13 +24,18 @@ const PRIMARY_TABS = [
   { id: "payments", label: "Pagos", icon: Wallet },
 ];
 
+// "ownerOnly" — solo las ve quien entró con el PIN de dueña (ver
+// AdminGate/SettingsView). Mientras no se configure un PIN de dueña,
+// nadie queda restringido: todo el mundo ve exactamente lo mismo que
+// siempre (ver isOwner más abajo).
 const SECONDARY_TABS = [
   { id: "trials", label: "Clases de prueba", icon: CalendarCheck },
   { id: "calendar", label: "Calendario", icon: Calendar },
   { id: "announcements", label: "Avisos", icon: Megaphone },
   { id: "reminders", label: "Recordatorios", icon: Bell },
   { id: "shows", label: "Presentaciones", icon: Ticket },
-  { id: "stats", label: "Estadísticas", icon: BarChart3 },
+  { id: "stats", label: "Estadísticas", icon: BarChart3, ownerOnly: true },
+  { id: "finances", label: "Finanzas personales", icon: Lock, ownerOnly: true },
   { id: "settings", label: "Ajustes", icon: SettingsIcon },
 ];
 
@@ -42,16 +49,26 @@ const VIEWS = {
   reminders: RemindersView,
   shows: ShowsView,
   stats: StatsView,
+  finances: FinancesView,
   settings: SettingsView,
 };
 
 export function AdminShell() {
-  const [, setSession] = useAdminSession();
+  const [role, setSession] = useAdminSession();
+  const { settings } = useAppData();
   const [tab, setTab] = useState("dashboard");
   const [showMore, setShowMore] = useState(false);
 
-  const ActiveView = VIEWS[tab];
-  const isSecondary = SECONDARY_TABS.some((t) => t.id === tab);
+  // Hasta que no se configure un PIN de dueña en Ajustes, todo el mundo
+  // sigue viendo exactamente lo mismo que antes (nadie queda bloqueado por
+  // accidente). Una vez configurado, Estadísticas y Finanzas personales
+  // quedan solo para quien entre con ese PIN.
+  const isOwner = role === "owner" || !settings.value.ownerPin;
+  const visibleSecondaryTabs = SECONDARY_TABS.filter((t) => !t.ownerOnly || isOwner);
+  const tabIsAllowed = visibleSecondaryTabs.some((t) => t.id === tab) || PRIMARY_TABS.some((t) => t.id === tab);
+
+  const ActiveView = tabIsAllowed ? VIEWS[tab] : Dashboard;
+  const isSecondary = visibleSecondaryTabs.some((t) => t.id === tab);
 
   return (
     <div className="flex min-h-screen flex-col bg-cream">
@@ -103,7 +120,7 @@ export function AdminShell() {
                 <X size={18} />
               </button>
             </div>
-            {SECONDARY_TABS.map((t) => (
+            {visibleSecondaryTabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => { setTab(t.id); setShowMore(false); }}

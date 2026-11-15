@@ -93,7 +93,13 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   (opcional, ver "Actualización automática de la tasa" más abajo) sin dejar
   de poder corregirlas a mano cuando haga falta, cuota de inscripción, **cuotas de participación** (agregar/editar/
   eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
-  no se configuren las propias), PIN de maestros, **corregir de una vez todos
+  no se configuren las propias), PIN de maestros, un **PIN de dueña**
+  opcional — aparte y distinto al de administración normal — que, en cuanto
+  se configura, deja Estadísticas y un nuevo apartado de **Finanzas
+  personales** (ingresos y gastos propios, nada que ver con la contabilidad
+  de la escuela) visibles solo para quien entre con ese PIN; con el PIN de
+  administración de siempre (el que usa el equipo) esas dos secciones dejan
+  de aparecer, **corregir de una vez todos
   los teléfonos guardados al formato +58 de Venezuela** (sin duplicar el
   código ni dejar el 0 inicial — los números nuevos ya se guardan
   corregidos), **cuentas de Pago Móvil**
@@ -343,7 +349,17 @@ supabase/functions/send-push         Función que envía las notificaciones push
   versión original), no en un servicio de archivos aparte — sencillo y
   suficiente para el volumen de esta escuela. Si en el futuro se vuelve
   pesado, migrar a Supabase Storage es un cambio localizado en `src/lib/db.js`.
-- El PIN de administración, el PIN de maestros y los códigos de acceso de
-  representantes se guardan tal cual (sin cifrar), igual que en la versión
-  original — es un modelo de seguridad intencionalmente simple para una
-  escuela pequeña, no una cuenta de usuario real.
+- El PIN de administración, el PIN de maestros, el PIN de dueña y los
+  códigos de acceso de representantes se guardan tal cual (sin cifrar),
+  igual que en la versión original — es un modelo de seguridad
+  intencionalmente simple para una escuela pequeña, no una cuenta de
+  usuario real.
+- El PIN de dueña (y lo que separa, Estadísticas y Finanzas personales) es
+  una separación a nivel de qué se *muestra* en pantalla, no una cuenta
+  real con sus propios permisos en la base de datos — igual que el resto
+  de la app (ver el punto de Row Level Security en
+  `supabase/schema.sql`). Alguien con conocimientos técnicos que abriera
+  las herramientas de desarrollador del navegador podría, en teoría, leer
+  esos datos igual. Es el mismo nivel de protección que ya tiene todo lo
+  demás en esta app (pagos, estudiantes, etc.), no algo menor a propósito
+  para esto en particular.
