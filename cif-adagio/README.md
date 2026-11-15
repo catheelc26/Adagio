@@ -89,7 +89,9 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   el historial) —, y ajustes (**dos tasas de cambio** — oficial BCV y
   Binance/paralela, con un aviso de cuánto es el diferencial entre ambas
   hoy y una calculadora rápida para convertir un monto en bolívares a las
-  dos —, cuota de inscripción, **cuotas de participación** (agregar/editar/
+  dos — que además se pueden dejar **actualizando solas cada día**
+  (opcional, ver "Actualización automática de la tasa" más abajo) sin dejar
+  de poder corregirlas a mano cuando haga falta, cuota de inscripción, **cuotas de participación** (agregar/editar/
   eliminar, con valores sugeridos de 2 cuotas de $35 y una de $30 mientras
   no se configuren las propias), PIN de maestros, **corregir de una vez todos
   los teléfonos guardados al formato +58 de Venezuela** (sin duplicar el
@@ -276,6 +278,40 @@ Apple, no de esta app. En Android/Chrome funciona directo desde el navegador.
    navegador. Para probar: publica un aviso nuevo desde Administración
    (debería notificar a representantes) o agenda una clase de prueba desde
    `/prueba` (debería notificar a administración).
+
+## Actualización automática de la tasa (opcional)
+
+Sin esto, la tasa oficial BCV y la de Binance/paralela se actualizan a mano
+desde Ajustes (como siempre). Configurando esto, se actualizan solas todos
+los días — y se puede seguir corrigiendo a mano en cualquier momento, nunca
+se pierde esa posibilidad.
+
+Usa [DolarAPI](https://ve.dolarapi.com) (`ve.dolarapi.com`), un servicio
+gratuito y comunitario, sin necesidad de clave — no es la API oficial del
+BCV (el banco no tiene una pública), es la misma fuente que usan muchas
+apps venezolanas para esto. Si alguna vez deja de responder o cambia de
+formato, simplemente ese día no se actualiza nada solo — nunca borra ni
+daña lo que ya estaba guardado.
+
+1. En el panel de Supabase, ve a **Edge Functions** → **Deploy a new
+   function** → nómbrala exactamente **`update-rate`** → borra el
+   contenido de ejemplo y pega todo el archivo
+   [`supabase/functions/update-rate/index.ts`](./supabase/functions/update-rate/index.ts)
+   de este proyecto → **Deploy**. (No hay que agregar ningún secreto nuevo.)
+
+2. En **Project Settings → API**, copia la **Project URL** y la **anon
+   public key** de tu proyecto.
+
+3. Abre [`supabase/schedule-update-rate.sql`](./supabase/schedule-update-rate.sql),
+   reemplaza `<TU-PROJECT-REF>` y `<TU-ANON-KEY>` con esos datos, y corre
+   todo el archivo en el **SQL Editor** de Supabase (una sola vez). Esto
+   programa que la función de arriba se llame sola todos los días hábiles a
+   media mañana, hora de Venezuela.
+
+4. Para probar que funciona sin esperar al día siguiente: en **Edge
+   Functions → update-rate**, usa el botón de **Invoke**/**Test** del panel
+   de Supabase (sin nada en el body alcanza) y revisa en Ajustes que la
+   tasa y su fecha se hayan actualizado.
 
 ## Estructura del proyecto
 

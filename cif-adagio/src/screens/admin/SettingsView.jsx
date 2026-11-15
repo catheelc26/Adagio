@@ -288,6 +288,10 @@ export function SettingsView() {
 
       <section className="card space-y-4 p-4">
         <h2 className="t12 font-semibold uppercase tracking-wide text-bronze-dark">Tasas de cambio (Bs. por $1)</h2>
+        <p className="t11 text-muted">
+          Si configuraste la actualización automática (ver README), estas tasas se completan solas cada día —
+          igual puedes corregirlas aquí a mano cuando quieras.
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Tasa oficial (BCV)" required>
             <input type="number" className={inputCls} value={rateInput} onChange={(e) => setRateInput(e.target.value)} />
