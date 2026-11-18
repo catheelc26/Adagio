@@ -26,22 +26,13 @@ const slugify = (str) =>
     .replace(/^-+|-+$/g, "");
 
 /**
- * Genera un PDF real (no depende del diálogo de impresión del navegador,
- * que en varios celulares no deja nada descargado) con — si hay más de un
- * asiento — una página de recibo con todos los asientos juntos, seguida de
- * una página por cada entrada con su código QR. Lo descarga directo.
+ * Arma el PDF (jsPDF) con — si hay más de un asiento — una página de
+ * recibo con todos los asientos juntos, seguida de una página por cada
+ * entrada con su código QR. Devuelve el documento ya armado, sin
+ * descargarlo ni mostrarlo — lo usan tanto downloadTicketsPdf (lo abre en
+ * una pestaña) como emailTicketsPdf (lo manda adjunto por correo).
  */
-export async function downloadTicketsPdf(tickets, show) {
-  if (!tickets || tickets.length === 0) return;
-
-  // Se abre la pestaña ANTES de cualquier "await" de esta función — el PDF
-  // tarda en armarse (carga jsPDF, genera cada código QR), y si se abre o
-  // descarga recién al final, varios celulares (sobre todo iPhone) ya no lo
-  // reconocen como originado por el toque de la persona y no dejan ver ni
-  // descargar nada, sin avisar ningún error — por eso a algunas personas
-  // "no les funcionaba" el botón de Descargar PDF.
-  const previewTab = window.open("", "_blank");
-
+async function buildTicketsPdf(tickets, show) {
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -133,6 +124,26 @@ export async function downloadTicketsPdf(tickets, show) {
   }
 
   const name = slugify(show?.title) || "cif-adagio";
+  return { doc, name };
+}
+
+/**
+ * Genera el PDF (no depende del diálogo de impresión del navegador, que en
+ * varios celulares no deja nada descargado) y lo muestra. Lo descarga
+ * directo.
+ */
+export async function downloadTicketsPdf(tickets, show) {
+  if (!tickets || tickets.length === 0) return;
+
+  // Se abre la pestaña ANTES de cualquier "await" de esta función — el PDF
+  // tarda en armarse (carga jsPDF, genera cada código QR), y si se abre o
+  // descarga recién al final, varios celulares (sobre todo iPhone) ya no lo
+  // reconocen como originado por el toque de la persona y no dejan ver ni
+  // descargar nada, sin avisar ningún error — por eso a algunas personas
+  // "no les funcionaba" el botón de Descargar PDF.
+  const previewTab = window.open("", "_blank");
+
+  const { doc, name } = await buildTicketsPdf(tickets, show);
 
   // Se muestra en la pestaña que ya estaba abierta (más confiable en
   // celulares que forzar una descarga) — desde ahí la persona puede
@@ -143,5 +154,44 @@ export async function downloadTicketsPdf(tickets, show) {
     // El navegador bloqueó la pestaña (poco común) — como respaldo, se
     // intenta la descarga directa de todas formas.
     doc.save(`entradas-${name}.pdf`);
+  }
+}
+
+/**
+ * Arma el mismo PDF y lo manda por correo (con el PDF adjunto) a través de
+ * la función de Supabase Edge "send-ticket-email" — no bloquea ni rompe
+ * nada si falla (sin correo configurado, sin el comprador no haber puesto
+ * su email, o si Resend no está configurado todavía): solo devuelve si se
+ * pudo enviar o no, para mostrar un aviso si hace falta.
+ */
+export async function emailTicketsPdf(tickets, show, { email, buyerName }) {
+  if (!tickets || tickets.length === 0 || !email) return { sent: false, reason: "Sin correo del comprador." };
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return { sent: false, reason: "La base de datos no está configurada." };
+
+  try {
+    const { doc, name } = await buildTicketsPdf(tickets, show);
+    // doc.output("base64") no devuelve un string en esta versión de jsPDF
+    // (devuelve otra cosa, vacía al mandarla por JSON) — "datauristring" sí
+    // es confiable; nos quedamos solo con la parte de después de la coma.
+    const dataUri = doc.output("datauristring");
+    const pdfBase64 = dataUri.slice(dataUri.indexOf(",") + 1);
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-ticket-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anonKey}`, apikey: anonKey },
+      body: JSON.stringify({
+        to: email,
+        buyerName: buyerName || "",
+        showTitle: show?.title || "tu función",
+        showDate: showDateLabel(show),
+        filename: `entradas-${name}.pdf`,
+        pdfBase64,
+      }),
+    });
+    if (!res.ok) return { sent: false, reason: await res.text().catch(() => "No se pudo enviar el correo.") };
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, reason: err.message || "No se pudo enviar el correo." };
   }
 }

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2, Download, Image as ImageIcon, MessageCircle, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
+  CheckCircle2, Download, Image as ImageIcon, Mail, MessageCircle, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { matchesKnownRepresentative } from "../../lib/business";
 import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
 import { ticketContactText, uid, usd, waLink } from "../../lib/format";
 import { COLLECTIONS } from "../../lib/db";
-import { downloadTicketsPdf } from "../../lib/ticketsPdf";
+import { downloadTicketsPdf, emailTicketsPdf } from "../../lib/ticketsPdf";
 import { ActionMenu, ConfirmDialog, Field, MenuItem, inputCls } from "../../components/ui";
 import { TicketScanner } from "../../components/TicketScanner";
 import { ProofViewer } from "../../components/ProofViewer";
@@ -129,10 +129,40 @@ export function ShowsView() {
   // representantes ya registrados, no solo si quedó marcado reportedBy.
   const isRepresentativeBuyer = (t) => t.reportedBy === "representante" || matchesKnownRepresentative(students.items, t.buyerPhone);
 
+  const transactionTickets = (t) => showTickets.filter((x) => (x.transactionId || x.id) === (t.transactionId || t.id));
+
+  // Botón manual "Enviar por correo" del menú — ahí sí avisa cada paso,
+  // porque la persona lo pidió a propósito y quiere saber qué pasó.
+  const emailTickets = async (t) => {
+    if (!t.buyerEmail) return;
+    toast("Enviando entradas por correo…");
+    const result = await emailTicketsPdf(transactionTickets(t), activeShow, { email: t.buyerEmail, buyerName: t.buyerName });
+    toast(result.sent ? "Entradas enviadas por correo." : `No se pudo enviar el correo (${result.reason || "intenta de nuevo"}).`);
+  };
+
   const confirmTicket = async (t) => {
     try {
       await tickets.update(t.id, { confirmed: true });
-      toast("Pago confirmado.");
+      // Mejor esfuerzo: si el comprador puso su correo, le mandamos las
+      // entradas apenas se confirma el pago — así ya no depende de que
+      // tome captura o descargue el PDF a tiempo. Si falla (sin Resend
+      // configurado, sin internet, etc.) no afecta la confirmación del
+      // pago, que ya quedó guardada, y solo se avisa si falló — si
+      // funcionó, "Pago confirmado." ya fue suficiente aviso.
+      //
+      // Cuando la compra tiene varios asientos, cada uno se confirma por
+      // separado — si mandáramos el correo en cada confirmación, le
+      // llegarían 2 o 3 correos iguales por la misma compra. Por eso solo
+      // se manda cuando ESTA confirmación deja ya todos los asientos de la
+      // compra confirmados (el resto ya tenía que estarlo de antes).
+      const siblings = transactionTickets(t).map((x) => (x.id === t.id ? { ...x, confirmed: true } : x));
+      const allConfirmedNow = siblings.every((x) => x.confirmed !== false);
+      if (t.buyerEmail && allConfirmedNow) {
+        const result = await emailTicketsPdf(siblings, activeShow, { email: t.buyerEmail, buyerName: t.buyerName });
+        toast(result.sent ? "Pago confirmado y entradas enviadas por correo." : `Pago confirmado — no se pudo enviar el correo (${result.reason || "intenta de nuevo"}).`);
+      } else {
+        toast("Pago confirmado.");
+      }
     } catch (err) {
       toast(err.message || "No se pudo confirmar el pago. Intenta de nuevo.");
     }
@@ -278,8 +308,11 @@ export function ShowsView() {
                       <MenuItem
                         icon={<Download size={15} />}
                         label="Descargar PDF"
-                        onClick={() => downloadTicketsPdf(showTickets.filter((x) => (x.transactionId || x.id) === (t.transactionId || t.id)), activeShow)}
+                        onClick={() => downloadTicketsPdf(transactionTickets(t), activeShow)}
                       />
+                      {t.buyerEmail && (
+                        <MenuItem icon={<Mail size={15} />} label="Enviar por correo" onClick={() => emailTickets(t)} />
+                      )}
                       {t.hasProof && <MenuItem icon={<ImageIcon size={15} />} label="Ver comprobante" onClick={() => setProofTx(t.transactionId || t.id)} />}
                       <MenuItem
                         icon={<MessageCircle size={15} />}

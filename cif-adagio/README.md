@@ -56,7 +56,17 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   WhatsApp/correo (ya no avisan de meses exonerados), **presentaciones**
   (crear funciones, mapa de butacas del teatro con precio por asiento — $12
   los asientos centrales 8 a 14 de cada fila, $10 el resto —, ver y confirmar las entradas
-  vendidas de cada función con su comprador y asiento, y **escanear el QR
+  vendidas de cada función con su comprador y asiento — con un botón para
+  **descargar el PDF de cualquier entrada** desde administración (por si
+  alguien no guardó la suya), uno para **contactar por WhatsApp** a quien
+  compró (con un mensaje ya armado, para cuando se note algo irregular con
+  el pago), una ⭐ junto al nombre de quien compró y es representante de la
+  escuela (ya sea porque compró desde su portal, o porque su teléfono
+  coincide con el de un representante registrado, aunque haya comprado
+  desde la página pública), y, si configuraste el envío automático por
+  correo (ver "Enviar las entradas por correo al confirmar el pago" más
+  abajo), un botón **"Enviar por correo"** para reenviarlo manualmente
+  cuando haga falta —, y **escanear el QR
   de cada entrada** desde la cámara del celular o buscarla manualmente para
   verificarla en la puerta el día de la función; **al eliminar una función
   se eliminan también sus entradas vendidas** — así dejan de aparecer en
@@ -318,6 +328,56 @@ daña lo que ya estaba guardado.
    Functions → update-rate**, usa el botón de **Invoke**/**Test** del panel
    de Supabase (sin nada en el body alcanza) y revisa en Ajustes que la
    tasa y su fecha se hayan actualizado.
+
+## Enviar las entradas por correo al confirmar el pago (opcional)
+
+Sin esto, quien compra entradas tiene que guardar una captura o descargar
+el PDF por su cuenta — y a veces, mientras espera a que administración
+confirme el pago, se le olvida. Configurando esto, en cuanto administración
+toca "Confirmar pago" (si la compra tiene varios asientos, en cuanto se
+confirma el último que faltaba), se manda automáticamente un correo con el
+PDF de las entradas adjunto a quien compró — siempre que haya puesto su
+correo al comprar (es opcional, no todos lo ponen). También queda
+disponible un botón "Enviar por correo" en cada entrada para reenviarlo
+manualmente cuando haga falta.
+
+Usa [Resend](https://resend.com), un servicio de envío de correos con un
+plan gratuito (3.000 correos al mes, 100 al día).
+
+**Importante antes de empezar:** sin verificar un dominio propio en Resend,
+el correo de prueba de Resend (`onboarding@resend.dev`) **solo entrega al
+correo de tu propia cuenta de Resend** — nunca a compradores reales. Para
+que de verdad les llegue a las personas que compran, hace falta:
+1. Tener un dominio propio (ej. `cifadagio.com` — el `.netlify.app` gratis
+   de Netlify no sirve para esto, porque no puedes agregar registros DNS
+   ahí).
+2. En Resend → **Domains** → agregar ese dominio y seguir sus instrucciones
+   (agregar un par de registros DNS donde tengas el dominio — SPF y DKIM).
+   Resend lo confirma solo, normalmente en minutos a un par de horas.
+
+Si todavía no tienes un dominio propio, puedes dejar esto para más
+adelante — las entradas se pueden seguir descargando en PDF o escribiendo
+por WhatsApp mientras tanto, como ya funciona hoy.
+
+Pasos para configurarlo:
+
+1. Crea una cuenta gratis en [resend.com](https://resend.com) y, en **API
+   Keys**, crea una clave nueva.
+2. Verifica tu dominio propio (ver arriba) y, en Resend, anota el
+   remitente que vas a usar, por ejemplo `CIF Adagio <entradas@tudominio.com>`.
+3. En el panel de Supabase → **Edge Functions** → **Deploy a new
+   function** → nómbrala exactamente **`send-ticket-email`** → pega todo
+   el archivo
+   [`supabase/functions/send-ticket-email/index.ts`](./supabase/functions/send-ticket-email/index.ts)
+   de este proyecto → **Deploy**.
+4. Dentro de esa función, en **Secrets**, agrega:
+   - `RESEND_API_KEY` → la clave que creaste en el paso 1.
+   - `RESEND_FROM` → el remitente del paso 2 (ej.
+     `CIF Adagio <entradas@tudominio.com>`). Si lo dejas sin configurar,
+     usa el remitente de pruebas de Resend (solo te llega a ti, ver arriba).
+5. Prueba comprando una entrada con tu propio correo (o el de alguien de
+   confianza) y confirmando el pago desde Presentaciones — debería
+   llegarte el correo con el PDF adjunto.
 
 ## Estructura del proyecto
 
