@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Camera, CheckCircle2, ChevronRight, Download, Ticket as TicketIcon, X } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, ChevronRight, Download, Search, X } from "lucide-react";
 import { PAYMENT_METHODS, paymentMethodInfo } from "../lib/constants";
 import { pagoMovilAccountForGroup } from "../lib/business";
 import { groupTicketsByTransaction, isSeatTaken, seatKey, seatPrice, showLabel, ticketsForShow } from "../lib/tickets";
@@ -17,7 +17,6 @@ import { SeatMap } from "../components/SeatMap";
 import { TicketQR } from "../components/TicketQR";
 import { TicketReceipt } from "../components/TicketReceipt";
 
-const MY_TICKETS_KEY = "adagioMyTicketIds";
 const EASE_OUT = [0.23, 1, 0.32, 1];
 const stepMotion = {
   initial: { opacity: 0, y: 14 },
@@ -26,21 +25,86 @@ const stepMotion = {
   transition: { duration: 0.28, ease: EASE_OUT },
 };
 
-const rememberMyTickets = (ids) => {
-  try {
-    const prev = JSON.parse(localStorage.getItem(MY_TICKETS_KEY) || "[]");
-    localStorage.setItem(MY_TICKETS_KEY, JSON.stringify(Array.from(new Set([...prev, ...ids]))));
-  } catch {
-    // localStorage puede no estar disponible (modo privado) — no es crítico.
-  }
-};
-const readMyTicketIds = () => {
-  try {
-    return JSON.parse(localStorage.getItem(MY_TICKETS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
+/**
+ * Buscador para quien compró entradas desde afuera (no representante) y no
+ * guardó su PDF ni su captura — antes solo quedaban las entradas de este
+ * mismo celular (guardadas en el navegador), así que si cambiaban de
+ * dispositivo o borraban datos, no había forma de recuperarlas. Ahora busca
+ * directo en la base de datos por nombre, teléfono, correo o cómo pagaron,
+ * sin importar desde qué celular se compró.
+ */
+function TicketLookupModal({ onClose }) {
+  const { tickets, shows } = useAppData();
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const matches = useMemo(() => {
+    if (normalizedQuery.length < 3) return [];
+    const found = tickets.items.filter((t) => {
+      const haystack = [t.buyerName, t.buyerPhone, t.buyerEmail, paymentMethodInfo(t.method).label, t.reference]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+    return groupTicketsByTransaction(found);
+  }, [tickets.items, normalizedQuery]);
+
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-lg text-ink">Buscar mis entradas</h3>
+          <button onClick={onClose} className="text-muted hover:text-ink"><X size={20} /></button>
+        </div>
+
+        <Field label="Tu nombre, teléfono, correo o cómo pagaste">
+          <input
+            className={inputCls}
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ej. María Pérez, 0414-1234567, pago móvil…"
+          />
+        </Field>
+
+        <div className="mt-4 space-y-3">
+          {query.trim().length > 0 && normalizedQuery.length < 3 && (
+            <p className="t12 text-muted">Escribe al menos 3 letras para buscar.</p>
+          )}
+          {normalizedQuery.length >= 3 && matches.length === 0 && (
+            <p className="t13 rounded-xl bg-cream-dim p-4 text-center text-muted">
+              No encontramos ninguna entrada con eso. Revisa cómo lo escribiste, o escríbenos por WhatsApp si sigues
+              sin encontrarla.
+            </p>
+          )}
+          {matches.map((group) => {
+            const first = group[0];
+            const s = shows.items.find((x) => x.id === first.showId);
+            const sorted = group.slice().sort((a, b) => (a.row === b.row ? a.seat - b.seat : a.row.localeCompare(b.row)));
+            return (
+              <div key={first.transactionId || first.id} className="card space-y-2 p-3">
+                <div>
+                  <p className="t13 font-semibold text-ink">{s?.title || "Función"}</p>
+                  {s && <p className="t11 text-muted">{showLabel(s)}</p>}
+                </div>
+                <p className="t12 text-ink">
+                  {first.buyerName} — {sorted.map((t) => `Fila ${t.row} · Asiento ${t.seat}`).join(", ")}
+                </p>
+                {first.confirmed === false && (
+                  <p className="t11 font-medium text-bronze-dark">Pago por confirmar</p>
+                )}
+                <button onClick={() => downloadTicketsPdf(group, s)} className="btn btn-primary w-full">
+                  <Download size={15} /> Descargar PDF
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Compra de entradas con selección de butaca, como en un cine. Se usa tanto
@@ -84,6 +148,7 @@ export function TicketBookingFlow({ student, onClose }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [createdTickets, setCreatedTickets] = useState(null);
+  const [showLookup, setShowLookup] = useState(false);
 
   const show = shows.items.find((s) => s.id === showId);
   const currency = paymentMethodInfo(method).currency;
@@ -179,7 +244,6 @@ export function TicketBookingFlow({ student, onClose }) {
         created.push(payload);
       }
       if (proofPreview) await setImage(COLLECTIONS.ticketProofs, transactionId, proofPreview);
-      if (!student) rememberMyTickets(created.map((t) => t.id));
       notifyPush({
         target: { role: "admin" },
         title: "Nueva compra de entradas",
@@ -208,7 +272,17 @@ export function TicketBookingFlow({ student, onClose }) {
         <AnimatePresence mode="wait">
           {stage === "show" && (
             <motion.div key="show" {...stepMotion}>
-              <h1 className="font-display mb-1 text-2xl text-ink">Elige una función</h1>
+              <div className="mb-1 flex items-start justify-between gap-3">
+                <h1 className="font-display text-2xl text-ink">Elige una función</h1>
+                {!student && (
+                  <button
+                    onClick={() => setShowLookup(true)}
+                    className="btn btn-ghost shrink-0 whitespace-nowrap"
+                  >
+                    <Search size={14} /> Ya compré
+                  </button>
+                )}
+              </div>
               {openShows.length === 0 ? (
                 <p className="t13 mt-6 rounded-xl bg-cream-dim p-4 text-center text-muted">
                   No hay funciones con entradas disponibles por ahora. Vuelve pronto.
@@ -367,10 +441,13 @@ export function TicketBookingFlow({ student, onClose }) {
               {!student && (
                 <div className="mb-5 rounded-2xl border-2 border-bronze bg-bronze/10 p-4 text-center">
                   <Camera size={28} className="mx-auto mb-2 text-bronze-dark" />
-                  <p className="font-display text-lg text-bronze-dark">¡Toma una captura de pantalla!</p>
+                  <p className="font-display text-lg uppercase tracking-wide text-bronze-dark">
+                    GUARDA TUS ENTRADAS AHORA
+                  </p>
                   <p className="t13 mt-1 text-ink">
-                    Guarda tus entradas en tu teléfono (captura de pantalla) o descarga el PDF abajo — es tu respaldo
-                    en caso de cualquier error, para que no haya sorpresas el día de la función.
+                    Toma una captura de pantalla o descarga el PDF abajo <strong>antes de salir de esta pantalla</strong>.
+                    No hace falta imprimirlas, pero sí tenerlas guardadas en tu teléfono — las vas a necesitar a la
+                    mano el día de la función.
                   </p>
                 </div>
               )}
@@ -392,50 +469,7 @@ export function TicketBookingFlow({ student, onClose }) {
           )}
         </AnimatePresence>
       </div>
-    </div>
-  );
-}
-
-/** Recuperar entradas ya compradas en este dispositivo (flujo público, sin login). */
-export function MyTicketsPanel({ onClose }) {
-  const { tickets, shows } = useAppData();
-  const [ids] = useState(readMyTicketIds);
-  const myTickets = tickets.items.filter((t) => ids.includes(t.id)).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const groups = groupTicketsByTransaction(myTickets);
-
-  return (
-    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
-      <div className="modal-panel max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-cream shadow-2xl sm:max-w-md sm:rounded-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-cream px-5 pb-3 pt-5">
-          <h3 className="font-display text-lg text-ink">Mis entradas</h3>
-          <button onClick={onClose} className="text-muted hover:text-ink">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="space-y-6 p-5">
-          {myTickets.length === 0 && (
-            <div className="flex flex-col items-center py-8 text-center">
-              <TicketIcon size={28} className="mb-2 text-faint" />
-              <p className="t13 text-muted">No encontramos entradas compradas desde este dispositivo.</p>
-            </div>
-          )}
-          {groups.map((group) => {
-            const show = shows.items.find((s) => s.id === group[0].showId);
-            const groupKey = group[0].transactionId || group[0].id;
-            return (
-              <div key={groupKey} className="space-y-4">
-                {group.length > 1 && <TicketReceipt tickets={group} show={show} />}
-                {group.map((t) => (
-                  <TicketQR key={t.id} ticket={t} show={show} />
-                ))}
-                <button onClick={() => downloadTicketsPdf(group, show)} className="btn btn-primary w-full">
-                  <Download size={15} /> Descargar PDF
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {showLookup && <TicketLookupModal onClose={() => setShowLookup(false)} />}
     </div>
   );
 }
