@@ -30,8 +30,10 @@ const stepMotion = {
  * guardó su PDF ni su captura — antes solo quedaban las entradas de este
  * mismo celular (guardadas en el navegador), así que si cambiaban de
  * dispositivo o borraban datos, no había forma de recuperarlas. Ahora busca
- * directo en la base de datos por nombre, teléfono, correo o cómo pagaron,
- * sin importar desde qué celular se compró.
+ * directo en la base de datos por nombre, teléfono o correo, sin importar
+ * desde qué celular se compró. No busca por método de pago a propósito —
+ * casi todo el mundo paga por pago móvil, así que eso devolvería demasiados
+ * resultados para ser útil.
  */
 function TicketLookupModal({ onClose }) {
   const { tickets, shows } = useAppData();
@@ -41,7 +43,7 @@ function TicketLookupModal({ onClose }) {
   const matches = useMemo(() => {
     if (normalizedQuery.length < 3) return [];
     const found = tickets.items.filter((t) => {
-      const haystack = [t.buyerName, t.buyerPhone, t.buyerEmail, paymentMethodInfo(t.method).label, t.reference]
+      const haystack = [t.buyerName, t.buyerPhone, t.buyerEmail, t.reference]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -58,13 +60,13 @@ function TicketLookupModal({ onClose }) {
           <button onClick={onClose} className="text-muted hover:text-ink"><X size={20} /></button>
         </div>
 
-        <Field label="Tu nombre, teléfono, correo o cómo pagaste">
+        <Field label="Tu nombre, teléfono o correo">
           <input
             className={inputCls}
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ej. María Pérez, 0414-1234567, pago móvil…"
+            placeholder="Ej. María Pérez, 0414-1234567, maria@correo.com…"
           />
         </Field>
 
