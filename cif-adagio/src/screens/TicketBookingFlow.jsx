@@ -12,6 +12,7 @@ import { useAppData } from "../lib/AppDataContext";
 import { notifyPush } from "../lib/push";
 import { downloadTicketsPdf } from "../lib/ticketsPdf";
 import { CopyButton, CopyRow, Field, inputCls } from "../components/ui";
+import { InAppBrowserBanner } from "../components/InAppBrowserBanner";
 import { SeatMap } from "../components/SeatMap";
 import { TicketQR } from "../components/TicketQR";
 import { TicketReceipt } from "../components/TicketReceipt";
@@ -201,6 +202,8 @@ export function TicketBookingFlow({ student, onClose }) {
           <CloseOrBack onClose={onClose} />
           <span className="t11 uppercase tracking-widest text-faint">Entradas</span>
         </div>
+
+        {!onClose && <InAppBrowserBanner />}
 
         <AnimatePresence mode="wait">
           {stage === "show" && (
