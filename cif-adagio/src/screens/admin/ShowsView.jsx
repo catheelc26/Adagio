@@ -94,15 +94,27 @@ export function ShowsView() {
   const [proofTx, setProofTx] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [clearingOrphans, setClearingOrphans] = useState(false);
+  const [showOrphanDetail, setShowOrphanDetail] = useState(false);
+  const [confirmingClearOrphans, setConfirmingClearOrphans] = useState(false);
 
-  // Entradas de funciones que ya no existen (ej. de pruebas que se borraron
-  // antes de que eliminar una función se llevara también sus entradas) —
-  // sin esto, seguían apareciendo en "Mis entradas" y en el portal de
-  // representantes aunque la función ya no estuviera.
+  // Entradas de funciones que ya no existen — puede ser de pruebas que se
+  // borraron antes de que eliminar una función se llevara también sus
+  // entradas, PERO también puede ser una compra real: si alguien tenía la
+  // página de comprar entradas abierta justo cuando se borró o se volvió a
+  // crear una función, su compra quedó guardada apuntando a la función
+  // vieja. Por eso ya no se borran con un solo clic sin avisar — se puede
+  // ver el detalle de cada una (comprador, asientos, fecha) y, si es una
+  // compra real, pasarla a la función activa en vez de borrarla.
   const orphanedTickets = useMemo(
     () => tickets.items.filter((t) => !shows.items.some((s) => s.id === t.showId)),
     [tickets.items, shows.items]
   );
+
+  const reassignTicket = async (t) => {
+    if (!activeShow) return;
+    await tickets.update(t.id, { showId: activeShow.id });
+    toast(`Entrada de ${t.buyerName} pasada a "${activeShow.title}".`);
+  };
 
   const clearOrphanedTickets = async () => {
     setClearingOrphans(true);
@@ -111,6 +123,7 @@ export function ShowsView() {
         await tickets.remove(t.id);
       }
       toast(`${orphanedTickets.length} entrada${orphanedTickets.length > 1 ? "s" : ""} de funciones ya eliminadas, borrada${orphanedTickets.length > 1 ? "s" : ""}.`);
+      setConfirmingClearOrphans(false);
     } finally {
       setClearingOrphans(false);
     }
@@ -217,16 +230,61 @@ export function ShowsView() {
       </div>
 
       {orphanedTickets.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-bronze/10 p-4">
-          <p className="t13 text-ink">
-            Hay {orphanedTickets.length} entrada{orphanedTickets.length > 1 ? "s" : ""} de función{orphanedTickets.length > 1 ? "es" : ""} que
-            ya no existe{orphanedTickets.length > 1 ? "n" : ""} (probablemente de pruebas) — siguen apareciendo en "Mis entradas" y en el
-            portal de representantes.
-          </p>
-          <button onClick={clearOrphanedTickets} disabled={clearingOrphans} className="btn btn-bronze whitespace-nowrap">
-            {clearingOrphans ? "Eliminando…" : "Eliminarlas"}
-          </button>
+        <div className="space-y-3 rounded-xl bg-bronze/10 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="t13 text-ink">
+              Hay {orphanedTickets.length} entrada{orphanedTickets.length > 1 ? "s" : ""} que no pertenece
+              {orphanedTickets.length > 1 ? "n" : ""} a ninguna función actual — puede ser de pruebas, o una compra
+              real de alguien que estaba comprando justo cuando se borró o se volvió a crear una función. Revisa el
+              detalle antes de eliminarlas.
+            </p>
+            <div className="flex shrink-0 gap-2">
+              <button onClick={() => setShowOrphanDetail((v) => !v)} className="btn btn-ghost whitespace-nowrap">
+                {showOrphanDetail ? "Ocultar detalle" : "Ver detalle"}
+              </button>
+              <button onClick={() => setConfirmingClearOrphans(true)} disabled={clearingOrphans} className="btn btn-bronze whitespace-nowrap">
+                Eliminarlas
+              </button>
+            </div>
+          </div>
+
+          {showOrphanDetail && (
+            <div className="space-y-2">
+              {orphanedTickets.map((t) => (
+                <div key={t.id} className="card flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="t13 text-ink">{t.buyerName || "Sin nombre"}</p>
+                    <p className="t11 text-muted">
+                      Fila {t.row} · Asiento {t.seat} · {t.date || "sin fecha"} · {t.buyerPhone}
+                      {t.confirmed === false ? " · Por confirmar" : " · Pago confirmado"}
+                    </p>
+                  </div>
+                  <span className="t13 font-medium text-ink">{usd(t.price)}</span>
+                  {activeShow && (
+                    <button
+                      onClick={() => reassignTicket(t)}
+                      className="btn btn-ghost whitespace-nowrap"
+                      title={`Pasar a "${activeShow.title}"`}
+                    >
+                      Pasar a "{activeShow.title}"
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {confirmingClearOrphans && (
+        <ConfirmDialog
+          title="Eliminar entradas sin función"
+          message={`Vas a eliminar ${orphanedTickets.length} entrada${orphanedTickets.length > 1 ? "s" : ""} (revisa el detalle arriba primero — si alguna es de un comprador real, pásala a la función activa en vez de eliminarla). Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={clearOrphanedTickets}
+          onCancel={() => setConfirmingClearOrphans(false)}
+        />
       )}
 
       {sortedShows.length === 0 ? (
