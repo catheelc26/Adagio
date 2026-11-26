@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { effectivePrice, isActive, officialRateOnDate, owesMonthlyFee, realValueAtBinanceRate } from "../../lib/business";
+import { countsInStats, effectivePrice, isActive, officialRateOnDate, owesMonthlyFee, realValueAtBinanceRate } from "../../lib/business";
 import { currentMonthKey, monthLabel, uid, usd } from "../../lib/format";
 import { useAppData } from "../../lib/AppDataContext";
 import { ConfirmDialog, Field, inputCls } from "../../components/ui";
@@ -153,15 +153,24 @@ export function StatsView() {
   const [editingExchange, setEditingExchange] = useState(null);
   const [deletingExchange, setDeletingExchange] = useState(null);
 
-  const active = students.items.filter(isActive);
+  // Cuentas de pruebas (ver countsInStats) quedan completamente afuera de
+  // esta pantalla — ni como estudiante, ni sus pagos, ni sus entradas, ni
+  // su asistencia — para poder probar la app sin ensuciar los números
+  // reales de la escuela.
+  const testStudentIds = new Set(students.items.filter((s) => !countsInStats(s)).map((s) => s.id));
+  const realPayments = payments.items.filter((p) => !testStudentIds.has(p.studentId));
+  const realTickets = tickets.items.filter((t) => !testStudentIds.has(t.studentId));
+  const realAttendance = attendance.items.filter((a) => !testStudentIds.has(a.studentId));
+
+  const active = students.items.filter(isActive).filter(countsInStats);
   const owing = active.filter(owesMonthlyFee);
   const paidThisMonth = owing.filter((s) =>
-    payments.items.some((p) => p.studentId === s.id && p.type === "mensualidad" && p.month === month && p.confirmed !== false)
+    realPayments.some((p) => p.studentId === s.id && p.type === "mensualidad" && p.month === month && p.confirmed !== false)
   );
   const collectionRate = owing.length ? Math.round((paidThisMonth.length / owing.length) * 100) : 100;
 
-  const attendanceTotal = attendance.items.length;
-  const attendancePresent = attendance.items.filter((a) => a.present).length;
+  const attendanceTotal = realAttendance.length;
+  const attendancePresent = realAttendance.filter((a) => a.present).length;
   const attendanceRate = attendanceTotal ? Math.round((attendancePresent / attendanceTotal) * 100) : null;
 
   // Meses con algún dato (pagos, entradas o gastos) para elegir en el selector
@@ -178,8 +187,8 @@ export function StatsView() {
   const isAllMonths = statsMonth === "all";
   const inSelectedMonth = (dateStr) => isAllMonths || dateStr?.startsWith(statsMonth);
 
-  const periodPayments = payments.items.filter((p) => p.confirmed !== false && inSelectedMonth(p.date));
-  const periodTickets = tickets.items.filter((t) => t.confirmed !== false && inSelectedMonth(t.date));
+  const periodPayments = realPayments.filter((p) => p.confirmed !== false && inSelectedMonth(p.date));
+  const periodTickets = realTickets.filter((t) => t.confirmed !== false && inSelectedMonth(t.date));
   const collectedByType = {
     mensualidad: periodPayments.filter((p) => p.type === "mensualidad").reduce((s, p) => s + p.amount, 0),
     inscripcion: periodPayments.filter((p) => p.type === "inscripcion").reduce((s, p) => s + p.amount, 0),
@@ -220,8 +229,8 @@ export function StatsView() {
   const exchangesDiffTotal = exchangesNominalTotal - exchangesUsdTotal;
 
   const allTimeRevenue =
-    payments.items.filter((p) => p.confirmed !== false).reduce((s, p) => s + p.amount, 0) +
-    tickets.items.filter((t) => t.confirmed !== false).reduce((s, t) => s + (t.price || 0), 0);
+    realPayments.filter((p) => p.confirmed !== false).reduce((s, p) => s + p.amount, 0) +
+    realTickets.filter((t) => t.confirmed !== false).reduce((s, t) => s + (t.price || 0), 0);
   const allTimeExpenses = expenses.items.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
   const scholarshipCounts = {

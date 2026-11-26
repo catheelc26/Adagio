@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertCircle, HeartHandshake, Users, GraduationCap, Clock } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById } from "../../lib/constants";
-import { effectivePrice, isActive, monthOwedAmount, owedMonths, owesMonthlyFee, sortByGroupThenName } from "../../lib/business";
+import { countsInStats, effectivePrice, isActive, monthOwedAmount, owedMonths, owesMonthlyFee, sortByGroupThenName } from "../../lib/business";
 import { monthLabel, studentDisplayName, usd } from "../../lib/format";
 import { ActionMenu, MenuItem, StudentAvatar } from "../../components/ui";
 import { ExemptMonthModal } from "../../components/ExemptMonthModal";
@@ -25,14 +25,18 @@ function StatCard({ icon: Icon, label, value, tone = 0 }) {
 
 export function Dashboard() {
   const { students, payments, groups } = useAppData();
-  const activeStudents = students.items.filter(isActive);
+  // Las cuentas de pruebas (ver countsInStats) no cuentan aquí tampoco — ni
+  // como estudiante activo, ni sus pagos pendientes.
+  const testStudentIds = new Set(students.items.filter((s) => !countsInStats(s)).map((s) => s.id));
+  const realPayments = payments.items.filter((p) => !testStudentIds.has(p.studentId));
+  const activeStudents = students.items.filter(isActive).filter(countsInStats);
   const [exemptingEntry, setExemptingEntry] = useState(null);
 
   const pendingEntries = sortByGroupThenName(activeStudents.filter(owesMonthlyFee), groups.items)
-    .map((s) => ({ student: s, owed: owedMonths(s, payments.items, groups.items) }))
+    .map((s) => ({ student: s, owed: owedMonths(s, realPayments, groups.items) }))
     .filter((e) => e.owed.length > 0);
 
-  const unconfirmed = payments.items.filter((p) => p.confirmed === false);
+  const unconfirmed = realPayments.filter((p) => p.confirmed === false);
   const scholarships = activeStudents.filter((s) => s.scholarshipType && s.scholarshipType !== "none");
 
   return (
@@ -67,7 +71,7 @@ export function Dashboard() {
               const { student: s, owed } = entry;
               const g = groupById(groups.items, s.group);
               const price = effectivePrice(s, groups.items);
-              const owedPerMonth = owed.map((m) => ({ month: m, amount: monthOwedAmount(payments.items, s, m, groups.items) }));
+              const owedPerMonth = owed.map((m) => ({ month: m, amount: monthOwedAmount(realPayments, s, m, groups.items) }));
               const totalOwed = owedPerMonth.reduce((sum, o) => sum + o.amount, 0);
               return (
                 <div key={s.id} className="card flex items-center gap-3 p-3">

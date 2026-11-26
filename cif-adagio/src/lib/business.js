@@ -3,6 +3,14 @@ import { normalizePhoneVE, reminderContactPhone } from "./format";
 
 export const isActive = (student) => student.status !== "inactive";
 
+// Cuentas de pruebas (ver el checkbox en el formulario de estudiante, solo
+// administración) quedan completamente afuera de cualquier estadística —
+// cupos de grupo, recaudado, becas, asistencia — para poder probar la app
+// (inscribirse, pagar, asistir) sin ensuciar ningún número real. La cuenta
+// sigue funcionando normal en todo lo demás (portal de representantes,
+// pagos, asistencia).
+export const countsInStats = (student) => !student?.isTestAccount;
+
 // Mensualidad efectiva de un estudiante, aplicando modalidad de pareja (Salsa) y becas.
 // En modalidad "pareja" el registro representa a las DOS personas a la vez (un solo
 // registro, un solo pago que cubre a ambas), así que el precio es el de la pareja completa.

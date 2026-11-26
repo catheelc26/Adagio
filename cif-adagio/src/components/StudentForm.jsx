@@ -47,6 +47,7 @@ const emptyStudent = (defaultGroupId) => ({
   paymentSchedule: "mensual",
   adminNotes: "",
   hasPhoto: false,
+  isTestAccount: false,
 });
 
 /**
@@ -477,6 +478,18 @@ export function StudentForm({ student, isAdmin, extraFields, skipCodeScreen, onC
                   <Field label="Notas internas">
                     <textarea rows={3} className={inputCls} value={f.adminNotes} onChange={(e) => set({ adminNotes: e.target.value })} />
                   </Field>
+                </div>
+                <div className="col-span-2 flex items-center gap-2 rounded-lg bg-bronze/10 p-2.5">
+                  <input
+                    id="is-test-account"
+                    type="checkbox"
+                    checked={f.isTestAccount}
+                    onChange={(e) => set({ isTestAccount: e.target.checked })}
+                  />
+                  <label htmlFor="is-test-account" className="t13 text-ink">
+                    Es una cuenta de pruebas — no cuenta en grupos ni en ninguna estadística (ni él ni sus pagos ni
+                    su asistencia), pero sigue funcionando normal para probar la app.
+                  </label>
                 </div>
               </div>
             </section>
