@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, FileSpreadsheet, HeartHandshake, Image as ImageIcon, Pencil, Plus, Receipt, Trash2 } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, HeartHandshake, Image as ImageIcon, Pencil, Plus, Receipt, Search, Trash2 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, paymentMethodInfo } from "../../lib/constants";
 import { currentMonthKey, monthLabel, studentDisplayName, usd } from "../../lib/format";
@@ -14,6 +14,7 @@ import { ProofViewer } from "../../components/ProofViewer";
 export function PaymentsView() {
   const { payments, students, groups, toast } = useAppData();
   const [month, setMonth] = useState(currentMonthKey());
+  const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [exempting, setExempting] = useState(false);
   const [receiptId, setReceiptId] = useState(null);
@@ -27,9 +28,23 @@ export function PaymentsView() {
     return Array.from(set).sort().reverse();
   }, [payments.items]);
 
-  const filtered = payments.items
-    .filter((p) => (month === "all" ? true : p.date?.startsWith(month)))
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  // Buscar por nombre, concepto o referencia — a propósito ignora el mes
+  // elegido arriba y busca en TODO el historial, porque el objetivo es
+  // encontrar un pago puntual (ej. una inscripción duplicada de otro año)
+  // sin tener que ir cambiando de mes en mes para dar con él.
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = (
+    normalizedSearch
+      ? payments.items.filter((p) => {
+          const student = students.items.find((s) => s.id === p.studentId);
+          const haystack = [student ? studentDisplayName(student) : "", p.concept, p.reference]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(normalizedSearch);
+        })
+      : payments.items.filter((p) => (month === "all" ? true : p.date?.startsWith(month)))
+  ).sort((a, b) => (a.date < b.date ? 1 : -1));
 
   const total = filtered.filter((p) => p.confirmed !== false).reduce((s, p) => s + p.amount, 0);
 
@@ -69,12 +84,28 @@ export function PaymentsView() {
         </div>
       </div>
 
-      <select className="field-input sm:w-56" value={month} onChange={(e) => setMonth(e.target.value)}>
-        <option value="all">Todos los meses</option>
-        {months.map((m) => (
-          <option key={m} value={m}>{monthLabel(m)}</option>
-        ))}
-      </select>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+          <input
+            className="field-input pl-9"
+            placeholder="Buscar por estudiante, concepto o referencia…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <select className="field-input sm:w-56" value={month} onChange={(e) => setMonth(e.target.value)} disabled={Boolean(normalizedSearch)}>
+          <option value="all">Todos los meses</option>
+          {months.map((m) => (
+            <option key={m} value={m}>{monthLabel(m)}</option>
+          ))}
+        </select>
+      </div>
+      {normalizedSearch && (
+        <p className="t11 -mt-2 text-muted">
+          Buscando en todo el historial, sin importar el mes elegido arriba — {filtered.length} resultado{filtered.length === 1 ? "" : "s"}.
+        </p>
+      )}
 
       <div className="space-y-2">
         {filtered.map((p) => {
@@ -105,7 +136,11 @@ export function PaymentsView() {
             </div>
           );
         })}
-        {filtered.length === 0 && <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">No hay pagos este mes.</p>}
+        {filtered.length === 0 && (
+          <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">
+            {normalizedSearch ? "No se encontró ningún pago con esa búsqueda." : "No hay pagos este mes."}
+          </p>
+        )}
       </div>
 
       {creating && <PaymentForm isAdmin onClose={() => setCreating(false)} />}
