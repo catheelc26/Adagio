@@ -215,6 +215,16 @@ export function monthIsSettled(payments, student, month, groups) {
   return monthPaidAmount(payments, student.id, month) >= due;
 }
 
+// ¿Ya tiene un estudiante una inscripción registrada en un año dado (confirmada
+// o todavía por confirmar)? La inscripción es anual, así que una vez
+// reportada o registrada no debería volver a cobrarse el mismo año — evita
+// que, por accidente o por no revisar antes, quede cobrada dos veces y se
+// infle lo recaudado en Estadísticas. Mismo criterio que usa el portal de
+// representantes para decidir si todavía hay que pedirla.
+export function hasInscriptionForYear(payments, studentId, year) {
+  return payments.some((p) => p.studentId === studentId && p.type === "inscripcion" && p.date?.startsWith(String(year)));
+}
+
 // Cuánto le falta a un estudiante por pagar de un mes puntual (0 si ya quedó resuelto).
 export function monthOwedAmount(payments, student, month, groups) {
   if (monthIsSettled(payments, student, month, groups)) return 0;

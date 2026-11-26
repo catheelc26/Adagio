@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { Camera, Plus, Trash2, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
 import {
-  effectivePrice, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup,
-  participationFeeOwed, participationFeePaidAmount, participationFeeTotal, participationInstallmentsOf, proratedFirstMonth,
+  effectivePrice, hasInscriptionForYear, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount,
+  pagoMovilAccountForGroup, participationFeeOwed, participationFeePaidAmount, participationFeeTotal,
+  participationInstallmentsOf, proratedFirstMonth,
 } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
@@ -145,6 +146,9 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
       if (it.type === "cuota_participacion" && participationFeeOwed(payments.items, student, installments) <= 0) {
         return setError("Las cuotas de participación de este estudiante ya están completas (o está exento).");
       }
+      if (it.type === "inscripcion" && hasInscriptionForYear(payments.items, student.id, date.slice(0, 4))) {
+        return setError(`${studentDisplayName(student)} ya tiene una inscripción registrada en ${date.slice(0, 4)}. Si fue un error, corrígela o elimínala desde Pagos en vez de crear una nueva.`);
+      }
     }
 
     setSaving(true);
@@ -264,6 +268,11 @@ export function PaymentForm({ student: fixedStudent, isAdmin, onClose }) {
                     </p>
                   ) : null;
                 })()}
+                {it.type === "inscripcion" && student && hasInscriptionForYear(payments.items, student.id, date.slice(0, 4)) && (
+                  <p className="t11 text-wine">
+                    {studentDisplayName(student)} ya tiene una inscripción registrada en {date.slice(0, 4)} — no se podrá guardar otra para este año.
+                  </p>
+                )}
                 {it.type === "cuota_participacion" && (
                   <Field label="Cuota">
                     <select className={inputCls} value={it.installmentId || ""} onChange={(e) => setInstallment(it.key, e.target.value)}>

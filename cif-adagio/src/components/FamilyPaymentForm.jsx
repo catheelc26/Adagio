@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { Camera, ChevronDown, Plus, Trash2, UserPlus, X } from "lucide-react";
 import { groupById, PAYMENT_METHODS, paymentMethodInfo, requiresInscription } from "../lib/constants";
 import {
-  effectivePrice, familyMembersOf, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled, monthPaidAmount, pagoMovilAccountForGroup,
-  participationFeeOwed, participationFeePaidAmount, participationFeeTotal, participationInstallmentsOf, proratedFirstMonth,
+  effectivePrice, familyMembersOf, hasInscriptionForYear, isMonthOverdue, LATE_FEE, monthDueAmount, monthIsSettled,
+  monthPaidAmount, pagoMovilAccountForGroup, participationFeeOwed, participationFeePaidAmount, participationFeeTotal,
+  participationInstallmentsOf, proratedFirstMonth,
 } from "../lib/business";
 import { currentMonthKey, monthLabel, studentDisplayName, uid, usd } from "../lib/format";
 import { compressImage } from "../lib/image";
@@ -183,6 +184,9 @@ export function FamilyPaymentForm({ student, onClose }) {
         if (it.type === "cuota_participacion" && participationFeeOwed(payments.items, entryStudent, installments) <= 0) {
           return setError(`Las cuotas de participación de ${name} ya están completas (o está exento).`);
         }
+        if (it.type === "inscripcion" && hasInscriptionForYear(payments.items, entryStudent.id, date.slice(0, 4))) {
+          return setError(`${name} ya tiene una inscripción registrada en ${date.slice(0, 4)}.`);
+        }
       }
     }
 
@@ -312,6 +316,11 @@ export function FamilyPaymentForm({ student, onClose }) {
                             </p>
                           ) : null;
                         })()}
+                        {it.type === "inscripcion" && hasInscriptionForYear(payments.items, entryStudent.id, date.slice(0, 4)) && (
+                          <p className="t11 text-wine">
+                            {studentDisplayName(entryStudent)} ya tiene una inscripción registrada en {date.slice(0, 4)} — no se podrá guardar otra para este año.
+                          </p>
+                        )}
                         {it.type === "cuota_participacion" && (
                           <Field label="Cuota">
                             <select className={inputCls} value={it.installmentId || ""} onChange={(e) => setInstallment(entryStudent, it.key, e.target.value)}>

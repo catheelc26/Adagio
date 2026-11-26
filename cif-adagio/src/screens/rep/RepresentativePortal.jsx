@@ -6,7 +6,8 @@ import {
 import { useAppData } from "../../lib/AppDataContext";
 import { groupById, requiresInscription, WEEKDAYS, eventTypeInfo } from "../../lib/constants";
 import {
-  daysUntilMonthEnd, familyMembersOf, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount, owedMonths, owesMonthlyFee,
+  daysUntilMonthEnd, familyMembersOf, hasInscriptionForYear, isMonthOverdue, LATE_FEE, monthIsSettled, monthOwedAmount,
+  owedMonths, owesMonthlyFee,
 } from "../../lib/business";
 import { showLabel } from "../../lib/tickets";
 import { currentMonthKey, monthLabel, specialistContactText, usd, waLink } from "../../lib/format";
@@ -107,8 +108,7 @@ export function RepresentativePortal({ student, onLogout, onSwitchStudent }) {
 
   const currentYear = String(new Date().getFullYear());
   const needsInscription =
-    requiresInscription(groups.items, student.group) &&
-    !payments.items.some((p) => p.studentId === student.id && p.type === "inscripcion" && p.date?.startsWith(currentYear));
+    requiresInscription(groups.items, student.group) && !hasInscriptionForYear(payments.items, student.id, currentYear);
 
   const visibleAnnouncements = announcements.items.filter(
     (a) => (a.group === null || a.group === undefined || a.group === student.group) && (!a.expiresAt || a.expiresAt >= new Date().toISOString().slice(0, 10))
