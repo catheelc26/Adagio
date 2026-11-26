@@ -21,10 +21,16 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   del mes — ordenados por grupo y luego alfabéticamente, mostrando todos
   los meses que debe cada quien si son varios y, si abonó solo una parte
   de algún mes, cuánto le falta todavía — un abono parcial nunca se marca
-  como mes pagado), estudiantes (alta/edición/
+  como mes pagado; esto ya excluye a cualquier **cuenta de pruebas**, ver
+  más abajo), estudiantes (alta/edición/
   baja — incluye cambiar de grupo, becas, marcar exento de cuotas de
   participación o darle una rebaja, exportación a Excel, también
-  ordenados por grupo), pagos (mensualidad, clases sueltas, inscripción,
+  ordenados por grupo; marcar una ficha como **cuenta de pruebas** —
+  para poder probar la app de punta a punta, incluyendo inscribirse,
+  pagar y asistir, sin que ese estudiante, sus pagos, sus entradas ni su
+  asistencia cuenten en ningún número real de Inicio o Estadísticas; el
+  resto sigue funcionando normal, incluido su acceso al portal de
+  representantes), pagos (mensualidad, clases sueltas, inscripción,
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles;
@@ -66,7 +72,13 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   desde la página pública), y, si configuraste el envío automático por
   correo (ver "Enviar las entradas por correo al confirmar el pago" más
   abajo), un botón **"Enviar por correo"** para reenviarlo manualmente
-  cuando haga falta —, y **escanear el QR
+  cuando haga falta —, **entradas de cortesía** para invitados que no
+  pagan (botón "Cortesía" junto a la función elegida: se elige el asiento
+  en el mismo mapa de butacas, queda a $0 y confirmada de una vez, con su
+  propia insignia, y se puede descargar o enviar por correo igual que
+  cualquier otra; una entrada ya creada también se puede convertir en
+  cortesía desde su menú con "Marcar como cortesía", sin tener que
+  borrarla y rehacerla), y **escanear el QR
   de cada entrada** desde la cámara del celular o buscarla manualmente para
   verificarla en la puerta el día de la función; **al eliminar una función
   se eliminan también sus entradas vendidas** — así dejan de aparecer en
