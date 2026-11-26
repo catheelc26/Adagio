@@ -30,7 +30,10 @@ Construido con **Vite + React + Tailwind CSS v4 + Supabase**.
   pagar y asistir, sin que ese estudiante, sus pagos, sus entradas ni su
   asistencia cuenten en ningún número real de Inicio o Estadísticas; el
   resto sigue funcionando normal, incluido su acceso al portal de
-  representantes), pagos (mensualidad, clases sueltas, inscripción,
+  representantes), pagos (mensualidad, clases sueltas, **inscripción**
+  — anual, no se puede registrar dos veces para el mismo estudiante en el
+  mismo año: si ya tiene una, el formulario avisa y bloquea el guardado,
+  tanto desde administración como desde el portal de representantes —,
   extras, **exoneración de un mes puntual** — para ayudas económicas, sin
   registrar cobro — con foto y grupo del estudiante visibles en cada fila;
   confirmación de pagos reportados por representantes; recibos imprimibles;
