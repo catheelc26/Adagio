@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2, Download, Image as ImageIcon, Mail, MessageCircle, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
+  CheckCircle2, Download, Gift, Image as ImageIcon, Mail, MessageCircle, Pencil, Plus, QrCode, ScanLine, ShieldCheck, Star, Trash2, X,
 } from "lucide-react";
 import { useAppData } from "../../lib/AppDataContext";
 import { matchesKnownRepresentative } from "../../lib/business";
-import { seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
+import { isSeatTaken, seatKey, seatSection, showLabel, ticketsForShow } from "../../lib/tickets";
 import { ticketContactText, uid, usd, waLink } from "../../lib/format";
 import { COLLECTIONS } from "../../lib/db";
 import { downloadTicketsPdf, emailTicketsPdf } from "../../lib/ticketsPdf";
 import { ActionMenu, ConfirmDialog, Field, MenuItem, inputCls } from "../../components/ui";
+import { SeatMap } from "../../components/SeatMap";
 import { TicketScanner } from "../../components/TicketScanner";
 import { ProofViewer } from "../../components/ProofViewer";
 
@@ -83,6 +84,122 @@ function ShowFormModal({ show, onClose }) {
   );
 }
 
+// Entradas de regalo (invitados, canjes, etc.) que no se pagan — quedan
+// guardadas como una compra normal (mismo mapa de asientos, mismo PDF) pero
+// con price: 0 y confirmed: true desde el momento en que se crean, así no
+// aparecen como "por confirmar" ni inflan lo recaudado.
+function ComplimentaryTicketModal({ show, onClose }) {
+  const { tickets, toast } = useAppData();
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [selected, setSelected] = useState([]);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const toggleSeat = (row, seat) => {
+    setSelected((prev) => {
+      const exists = prev.some((s) => s.row === row && s.seat === seat);
+      if (exists) return prev.filter((s) => !(s.row === row && s.seat === seat));
+      return [...prev, { row, seat }];
+    });
+  };
+
+  const submit = async () => {
+    setError("");
+    if (!buyerName.trim()) return setError("Escribe el nombre de quien recibe las entradas.");
+    if (selected.length === 0) return setError("Elige al menos un asiento.");
+
+    const takenNow = selected.filter((s) => isSeatTaken(tickets.items, show.id, s.row, s.seat));
+    if (takenNow.length > 0) {
+      setSelected((prev) => prev.filter((s) => !takenNow.some((t) => t.row === s.row && t.seat === s.seat)));
+      return setError("Alguien más ocupó uno de los asientos elegidos mientras completabas el formulario. Revisa tu selección.");
+    }
+
+    setSaving(true);
+    try {
+      const transactionId = uid();
+      for (const seat of selected) {
+        await tickets.add({
+          id: uid(),
+          transactionId,
+          showId: show.id,
+          row: seat.row,
+          seat: seat.seat,
+          price: 0,
+          buyerName: buyerName.trim(),
+          buyerPhone: buyerPhone.trim() || null,
+          buyerEmail: buyerEmail.trim() || null,
+          studentId: null,
+          date: new Date().toISOString().slice(0, 10),
+          method: null,
+          reference: null,
+          hasProof: false,
+          confirmed: true,
+          complimentary: true,
+          reportedBy: "cortesia",
+          checkedIn: false,
+          checkedInAt: null,
+        });
+      }
+      toast(`${selected.length} entrada${selected.length > 1 ? "s" : ""} de cortesía creada${selected.length > 1 ? "s" : ""}.`);
+      onClose();
+    } catch (err) {
+      setError(err.message || "No se pudo crear la entrada de cortesía.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+      <div className="modal-panel max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-2xl bg-cream p-5 shadow-2xl sm:rounded-2xl">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-lg text-ink">Entrada de cortesía</h3>
+          <button onClick={onClose} className="text-muted hover:text-ink">
+            <X size={20} />
+          </button>
+        </div>
+        <p className="t12 text-muted">
+          Para invitados que no pagan. Queda confirmada y marcada como cortesía desde que se crea — se puede descargar
+          el PDF o enviarlo por correo igual que cualquier otra entrada.
+        </p>
+        <div className="space-y-3">
+          <Field label="Nombre" required>
+            <input
+              className={inputCls}
+              value={buyerName}
+              onChange={(e) => setBuyerName(e.target.value)}
+              placeholder="Nombre de quien recibe las entradas"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Teléfono">
+              <input className={inputCls} value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} />
+            </Field>
+            <Field label="Correo">
+              <input type="email" className={inputCls} value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} />
+            </Field>
+          </div>
+        </div>
+        <SeatMap showId={show.id} tickets={tickets.items} selected={selected.map((s) => seatKey(s.row, s.seat))} onToggle={toggleSeat} />
+        {selected.length > 0 && (
+          <p className="t12 text-center text-muted">
+            {selected.length} asiento{selected.length > 1 ? "s" : ""} · {selected.map((s) => `${s.row}${s.seat}`).join(", ")}
+          </p>
+        )}
+        {error && <p className="t13 text-wine">{error}</p>}
+        <div className="flex gap-3">
+          <button onClick={onClose} className="btn btn-ghost flex-1">Cancelar</button>
+          <button onClick={submit} disabled={saving} className="btn btn-primary flex-1">
+            {saving ? "Creando…" : "Crear entrada de cortesía"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ShowsView() {
   const { shows, students, tickets, toast } = useAppData();
   const sortedShows = useMemo(() => [...shows.items].sort((a, b) => (a.date < b.date ? -1 : 1)), [shows.items]);
@@ -93,6 +210,7 @@ export function ShowsView() {
   const [deletingTicket, setDeletingTicket] = useState(null);
   const [proofTx, setProofTx] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [issuingComplimentary, setIssuingComplimentary] = useState(false);
   const [clearingOrphans, setClearingOrphans] = useState(false);
   const [showOrphanDetail, setShowOrphanDetail] = useState(false);
   const [confirmingClearOrphans, setConfirmingClearOrphans] = useState(false);
@@ -178,6 +296,18 @@ export function ShowsView() {
       }
     } catch (err) {
       toast(err.message || "No se pudo confirmar el pago. Intenta de nuevo.");
+    }
+  };
+
+  // Para convertir una entrada que ya se creó como venta normal (por
+  // ejemplo, una hecha por error con un usuario de pruebas) en una entrada
+  // de cortesía, sin tener que borrarla y volver a crearla.
+  const markComplimentary = async (t) => {
+    try {
+      await tickets.update(t.id, { complimentary: true, price: 0, confirmed: true });
+      toast("Entrada marcada como cortesía.");
+    } catch (err) {
+      toast(err.message || "No se pudo marcar como cortesía. Intenta de nuevo.");
     }
   };
 
@@ -312,6 +442,9 @@ export function ShowsView() {
                   <p className="t12 text-muted">{showLabel(activeShow)}{activeShow.venue ? ` · ${activeShow.venue}` : ""}</p>
                 </div>
                 <div className="flex gap-2">
+                  <button onClick={() => setIssuingComplimentary(true)} className="btn btn-ghost">
+                    <Gift size={14} /> Cortesía
+                  </button>
                   <button onClick={() => setEditingShow(activeShow)} className="btn btn-ghost">
                     <Pencil size={14} /> Editar
                   </button>
@@ -341,6 +474,11 @@ export function ShowsView() {
                   <Star size={11} className="fill-bronze text-bronze" /> = comprada por un representante de la escuela
                 </p>
               )}
+              {showTickets.some((t) => t.complimentary) && (
+                <p className="t11 -mb-1 flex items-center gap-1 text-muted">
+                  <Gift size={11} className="text-teal-dark" /> = entrada de cortesía (no se paga)
+                </p>
+              )}
               <div className="space-y-2">
                 {showTickets.length === 0 && (
                   <p className="t13 rounded-xl bg-cream-dim p-6 text-center text-muted">Aún no se ha vendido ninguna entrada para esta función.</p>
@@ -354,6 +492,7 @@ export function ShowsView() {
                           <Star size={13} className="fill-bronze text-bronze" title="Representante de la escuela" />
                         )}
                         {t.confirmed === false && <span className="t10 rounded-full bg-bronze/15 px-2 py-0.5 font-medium text-bronze-dark">Por confirmar</span>}
+                        {t.complimentary && <span className="t10 flex items-center gap-1 rounded-full bg-teal/15 px-2 py-0.5 font-medium text-teal-dark"><Gift size={11} /> Cortesía</span>}
                         {t.checkedIn && <span className="t10 flex items-center gap-1 rounded-full bg-teal/15 px-2 py-0.5 font-medium text-teal-dark"><ShieldCheck size={11} /> Escaneada</span>}
                       </div>
                       <p className="t11 text-muted">
@@ -372,6 +511,9 @@ export function ShowsView() {
                         <MenuItem icon={<Mail size={15} />} label="Enviar por correo" onClick={() => emailTickets(t)} />
                       )}
                       {t.hasProof && <MenuItem icon={<ImageIcon size={15} />} label="Ver comprobante" onClick={() => setProofTx(t.transactionId || t.id)} />}
+                      {!t.complimentary && (
+                        <MenuItem icon={<Gift size={15} />} label="Marcar como cortesía" onClick={() => markComplimentary(t)} />
+                      )}
                       <MenuItem
                         icon={<MessageCircle size={15} />}
                         label="Contactar por WhatsApp"
@@ -392,6 +534,9 @@ export function ShowsView() {
         <ShowFormModal show={editingShow} onClose={() => { setCreatingShow(false); setEditingShow(null); }} />
       )}
       {scanning && <TicketScanner onClose={() => setScanning(false)} />}
+      {issuingComplimentary && activeShow && (
+        <ComplimentaryTicketModal show={activeShow} onClose={() => setIssuingComplimentary(false)} />
+      )}
       {proofTx && <ProofViewer transactionId={proofTx} collection={COLLECTIONS.ticketProofs} onClose={() => setProofTx(null)} />}
       {deletingTicket && (
         <ConfirmDialog
